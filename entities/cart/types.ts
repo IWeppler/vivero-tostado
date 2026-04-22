@@ -1,7 +1,8 @@
 export type CartItem = {
   productoId: string;
   nombre: string;
-  temporada: string;
+  cuidados: string;
+  tipo: string;
   variante: string;
   cantidad: number;
   precioUnitario: number;
@@ -10,8 +11,8 @@ export type CartItem = {
 export interface CartItemStore {
   productoId: string;
   nombre: string;
-  temporada: string;
-  tipo?: string;
+  cuidados: string;
+  tipo: string;
   variante: string;
   precio: number;
   cantidad: number;

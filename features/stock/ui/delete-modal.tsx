@@ -20,13 +20,13 @@ import { Trash2 } from "lucide-react";
 interface EliminarProductoModalProps {
   id: string;
   nombre: string;
-  temporada: string;
+  cuidados: string;
 }
 
 export function EliminarProductoModal({
   id,
   nombre,
-  temporada,
+  cuidados,
 }: Readonly<EliminarProductoModalProps>) {
   const [isOpen, setIsOpen] = useState(false);
 

@@ -23,7 +23,7 @@ export async function registrarVentaAction(
 
   if (items.length === 0) {
     return {
-      error: "Agrega al menos una camiseta a la lista para confirmar la venta.",
+      error: "Agrega al menos un producto a la lista para confirmar la venta.",
       success: false,
     };
   }
@@ -31,12 +31,9 @@ export async function registrarVentaAction(
   const cookieStore = await cookies();
   const supabase = createClient(cookieStore);
 
-  // Arreglo para guardar la información procesada (evita hacer dobles consultas a la BD)
   const itemsProcesados = [];
 
-  // 1. Verificamos el stock de TODOS los items y obtenemos el costo real (para no registrar ventas a medias)
   for (const item of items) {
-    // Usamos la relación para traer el stock Y el precio_costo actual de la camiseta en una sola consulta
     const { data: stockActual, error: stockError } = await supabase
       .from("productos_stock")
       .select("cantidad, id, producto:productos(precio_costo)")

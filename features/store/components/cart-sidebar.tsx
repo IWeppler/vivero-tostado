@@ -31,10 +31,10 @@ export function CartSidebar({
 
   const generarLinkWhatsApp = () => {
     let mensaje =
-      "¡Hola Ninja Camisetas! 🥷\nQuiero realizar el siguiente pedido:\n\n";
+      "¡Hola Vivero Tostado! 🥷\nQuiero realizar el siguiente pedido:\n\n";
 
     items.forEach((item) => {
-      mensaje += `${item.cantidad}x ${item.nombre} (${item.temporada})\n`;
+      mensaje += `${item.cantidad}x ${item.nombre} (${item.cuidados})\n`;
       mensaje += ` └ Talle: ${item.variante} - $${(item.precio * item.cantidad).toLocaleString("es-AR")}\n`;
     });
 
@@ -129,7 +129,7 @@ export function CartSidebar({
                       {item.nombre}
                     </h3>
                     <p className="text-[10px] text-muted-foreground uppercase tracking-widest mt-1">
-                      {item.temporada} • Talle {item.variante}
+                      {item.cuidados} • Talle {item.variante}
                     </p>
                   </div>
 

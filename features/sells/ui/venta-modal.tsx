@@ -40,7 +40,9 @@ export function RegistrarVentaModal({ productos = [] }: Readonly<Props>) {
   const [selectedProductoId, setSelectedProductoId] = useState<
     string | undefined
   >();
-  const [selectedVariante, setSelectedVariante] = useState<string | undefined>();
+  const [selectedVariante, setSelectedVariante] = useState<
+    string | undefined
+  >();
   const [cantidadToAdd, setCantidadToAdd] = useState<number>(1);
 
   // Estados para manejar el stock en tiempo real
@@ -103,7 +105,8 @@ export function RegistrarVentaModal({ productos = [] }: Readonly<Props>) {
         ?.cantidad || 0;
     const enCarrito = items
       .filter(
-        (i) => i.productoId === selectedProductoId && i.variante === varianteBuscado,
+        (i) =>
+          i.productoId === selectedProductoId && i.variante === varianteBuscado,
       )
       .reduce((acc, curr) => acc + curr.cantidad, 0);
     return stockOriginal - enCarrito;
@@ -129,7 +132,8 @@ export function RegistrarVentaModal({ productos = [] }: Readonly<Props>) {
 
     // Buscamos si ya existe el mismo modelo+talle en el carrito para sumarle la cantidad
     const existingIndex = items.findIndex(
-      (i) => i.productoId === selectedProductoId && i.variante === selectedVariante,
+      (i) =>
+        i.productoId === selectedProductoId && i.variante === selectedVariante,
     );
 
     if (existingIndex >= 0) {
@@ -142,7 +146,8 @@ export function RegistrarVentaModal({ productos = [] }: Readonly<Props>) {
         {
           productoId: selectedProductoId,
           nombre: productoSeleccionado.nombre,
-          temporada: productoSeleccionado.temporada,
+          tipo: productoSeleccionado.tipo,
+          cuidados: productoSeleccionado.cuidados,
           variante: selectedVariante,
           cantidad: cantidadToAdd,
           precioUnitario: productoSeleccionado.precio,
@@ -215,7 +220,7 @@ export function RegistrarVentaModal({ productos = [] }: Readonly<Props>) {
                 <SelectContent className="z-100">
                   {listaProductos.map((p) => (
                     <SelectItem key={p.id} value={p.id}>
-                      {p.nombre} {p.temporada} ($
+                      {p.nombre} {p.cuidados} ($
                       {p.precio.toLocaleString("es-AR")})
                     </SelectItem>
                   ))}
@@ -298,7 +303,7 @@ export function RegistrarVentaModal({ productos = [] }: Readonly<Props>) {
                         <p className="font-semibold text-sm leading-none">
                           {item.nombre}{" "}
                           <span className="font-normal text-muted-foreground">
-                            ({item.temporada})
+                            ({item.cuidados})
                           </span>
                         </p>
                         <p className="text-xs text-muted-foreground mt-1">

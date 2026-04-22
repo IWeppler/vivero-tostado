@@ -27,8 +27,8 @@ import { Pencil, ImagePlus } from "lucide-react";
 import { ScrollArea } from "@/shared/ui/scroll-area";
 import {
   TIPO_OPTIONS,
-  TALLE_OPTIONS,
-  TEMPORADA_OPTIONS,
+  VARIANTE_OPTIONS,
+  CUIDADOS_OPTIONS,
 } from "@/entities/productos/constants";
 
 interface EditarProductoModalProps {
@@ -134,16 +134,16 @@ export function EditarProductoModal({
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="temporada">Temporada</Label>
+                <Label htmlFor="cuidados">Cuidados</Label>
                 <Select
-                  name="temporada"
-                  defaultValue={producto.temporada.toLowerCase()}
+                  name="cuidados"
+                  defaultValue={producto.cuidados.toLowerCase()}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Selecciona..." />
                   </SelectTrigger>
                   <SelectContent>
-                    {TEMPORADA_OPTIONS.filter(
+                    {CUIDADOS_OPTIONS.filter(
                       (opt) => opt.value !== "todos",
                     ).map((opt) => (
                       <SelectItem key={opt.value} value={opt.value}>
@@ -282,7 +282,7 @@ export function EditarProductoModal({
                 Actualizar Stock por Talle
               </h3>
               <div className="grid grid-cols-7 gap-2">
-                {TALLE_OPTIONS.filter((opt) => opt.value !== "todos").map(
+                {VARIANTE_OPTIONS.filter((opt) => opt.value !== "todos").map(
                   (opt) => (
                     <div
                       key={opt.value}

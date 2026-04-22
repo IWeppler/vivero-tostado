@@ -7,8 +7,8 @@ export interface ProductoStock {
 export interface Producto {
   id: string;
   nombre: string;
-  temporada: string;
   tipo: string;
+  cuidados: string;
   precio: number;
   precio_costo: number;
   imagen_url: string | null;

@@ -25,9 +25,9 @@ import { Plus, ImagePlus } from "lucide-react";
 import { ScrollArea } from "@/shared/ui/scroll-area";
 import {
   TIPO_OPTIONS,
-  TALLE_OPTIONS,
-  TEMPORADA_OPTIONS,
-  getTemporadaActual,
+  VARIANTE_OPTIONS,
+  CUIDADOS_OPTIONS,
+  getCategoriaPrincipal,
 } from "@/entities/productos/constants";
 
 export function CrearProductoModal() {
@@ -57,7 +57,7 @@ export function CrearProductoModal() {
       if (result.success) {
         setIsOpen(false);
         setArchivos([]);
-        toast.success("Camiseta añadido al inventario con éxito");
+        toast.success("Producto añadido al inventario con éxito");
       } else if (result.error) {
         toast.error(result.error);
       }
@@ -70,13 +70,13 @@ export function CrearProductoModal() {
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         <Button className="w-full sm:w-auto py-4">
-          <Plus className="mr-2 h-4 w-4" /> Nueva Camiseta
+          <Plus className="mr-2 h-4 w-4" /> Nuevo Producto
         </Button>
       </DialogTrigger>
 
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>Añadir Nueva Camiseta</DialogTitle>
+          <DialogTitle>Añadir Nueva Producto</DialogTitle>
         </DialogHeader>
 
         <ScrollArea className="max-h-[80vh]">
@@ -92,13 +92,13 @@ export function CrearProductoModal() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="temporada">Temporada</Label>
-                <Select name="temporada" defaultValue={getTemporadaActual()}>
+                <Label htmlFor="categoria">Categoría</Label>
+                <Select name="categoria" defaultValue={getCategoriaPrincipal()}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Selecciona temporada..." />
+                    <SelectValue placeholder="Selecciona categoría..." />
                   </SelectTrigger>
                   <SelectContent>
-                    {TEMPORADA_OPTIONS.filter(
+                    {TIPO_OPTIONS.filter(
                       (opt) => opt.value !== "todos",
                     ).map((opt) => (
                       <SelectItem key={opt.value} value={opt.value}>
@@ -111,13 +111,13 @@ export function CrearProductoModal() {
             </div>
 
             <div className="space-y-2">
-              <Label>Tipo</Label>
-              <Select name="tipo" defaultValue="local">
+              <Label>Cuidados</Label>
+              <Select name="cuidados" defaultValue="local">
                 <SelectTrigger>
                   <SelectValue placeholder="Selecciona..." />
                 </SelectTrigger>
                 <SelectContent>
-                  {TIPO_OPTIONS.filter((opt) => opt.value !== "todos").map(
+                  {CUIDADOS_OPTIONS.filter((opt) => opt.value !== "todos").map(
                     (opt) => (
                       <SelectItem key={opt.value} value={opt.value}>
                         {opt.label}
@@ -211,10 +211,10 @@ export function CrearProductoModal() {
 
             <div className="border-t border-border pt-4">
               <h3 className="text-sm font-medium mb-3">
-                Stock Inicial por Talle
+                Stock Inicial por Variante
               </h3>
               <div className="grid grid-cols-7 gap-2">
-                {TALLE_OPTIONS.filter((opt) => opt.value !== "todos").map(
+                {VARIANTE_OPTIONS.filter((opt) => opt.value !== "todos").map(
                   (opt) => (
                     <div
                       key={opt.value}

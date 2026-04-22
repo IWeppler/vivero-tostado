@@ -16,13 +16,13 @@ export default async function StorePage() {
               Catálogo Oficial
             </h1>
             <p className="text-md text-muted-foreground mt-1">
-              Encontrá la camiseta de tu equipo. Stock limitado.
+              Encontrá la planta ideal para vos. Stock limitado.
             </p>
           </div>
 
           <div className="flex items-center gap-2">
             <a
-              href="https://instagram.com/ninja.camisetas"
+              href="https://instagram.com/vivero_tostado"
               target="_blank"
               rel="noopener noreferrer"
               className="w-10 h-10 flex items-center justify-center rounded-full bg-muted/30 hover:bg-muted text-muted-foreground hover:text-foreground transition-all"

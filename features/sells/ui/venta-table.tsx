@@ -46,7 +46,7 @@ export function VentasTable({
   productos = [],
 }: Readonly<VentasTableProps>) {
   const [filtroNombre, setFiltroNombre] = useState("");
-  const [filtroTemporada, setFiltroTemporada] = useState("");
+  const [filtroCuidados, setFiltroCuidados] = useState("");
   const [filtroTipo, setFiltroTipo] = useState("todos");
   const [filtroVariante, setFiltroVariante] = useState("todos");
   const [orden, setOrden] = useState("recientes");
@@ -64,18 +64,18 @@ export function VentasTable({
     // 1. Filtrar
     const resultado = ventas.filter((venta) => {
       const nombre = venta.producto?.nombre?.toLowerCase() || "";
-      const temporada = venta.producto?.temporada?.toLowerCase() || "";
+      const cuidados = venta.producto?.cuidados?.toLowerCase() || "";
       const tipo = venta.producto?.tipo?.toLowerCase() || "";
       const variante = venta.variante?.toLowerCase() || "";
 
       const matchNombre = nombre.includes(filtroNombre.toLowerCase());
-      const matchTemporada = temporada.includes(filtroTemporada.toLowerCase());
+      const matchCuidados = cuidados.includes(filtroCuidados.toLowerCase());
       const matchTipo =
         filtroTipo === "todos" || tipo === filtroTipo.toLowerCase();
       const matchVariante =
         filtroVariante === "todos" || variante === filtroVariante.toLowerCase();
 
-      return matchNombre && matchTemporada && matchTipo && matchVariante;
+      return matchNombre && matchCuidados && matchTipo && matchVariante;
     });
 
     // 2. Ordenar
@@ -111,18 +111,11 @@ export function VentasTable({
     });
 
     return resultado;
-  }, [
-    ventas,
-    filtroNombre,
-    filtroTemporada,
-    filtroTipo,
-    filtroVariante,
-    orden,
-  ]);
+  }, [ventas, filtroNombre, filtroCuidados, filtroTipo, filtroVariante, orden]);
 
   const limpiarFiltros = () => {
     setFiltroNombre("");
-    setFiltroTemporada("");
+    setFiltroCuidados("");
     setFiltroTipo("todos");
     setFiltroVariante("todos");
     setOrden("recientes");
@@ -130,7 +123,7 @@ export function VentasTable({
 
   const hayFiltrosActivos =
     filtroNombre !== "" ||
-    filtroTemporada !== "" ||
+    filtroCuidados !== "" ||
     filtroTipo !== "todos" ||
     filtroVariante !== "todos" ||
     orden !== "recientes";
@@ -154,8 +147,8 @@ export function VentasTable({
           searchQuery={filtroNombre}
           onSearchChange={setFiltroNombre}
           searchPlaceholder="Buscar por equipo..."
-          temporada={filtroTemporada}
-          onTemporadaChange={setFiltroTemporada}
+          cuidados={filtroCuidados}
+          onCuidadosChange={setFiltroCuidados}
           tipo={filtroTipo}
           onTipoChange={setFiltroTipo}
           variante={filtroVariante}
@@ -186,8 +179,8 @@ export function VentasTable({
         searchQuery={filtroNombre}
         onSearchChange={setFiltroNombre}
         searchPlaceholder="Buscar por equipo..."
-        temporada={filtroTemporada}
-        onTemporadaChange={setFiltroTemporada}
+        cuidados={filtroCuidados}
+        onCuidadosChange={setFiltroCuidados}
         tipo={filtroTipo}
         onTipoChange={setFiltroTipo}
         variante={filtroVariante}
@@ -242,7 +235,7 @@ export function VentasTable({
                 const isEliminado = !venta.producto;
                 const nombreProducto = isEliminado
                   ? "Producto eliminado"
-                  : `${venta.producto?.nombre} (${venta.producto?.temporada})`;
+                  : `${venta.producto?.nombre} (${venta.producto?.cuidados})`;
 
                 // Cálculo de ganancia
                 const costoUnitario = venta.precio_costo || 0;
@@ -275,7 +268,7 @@ export function VentasTable({
                         <>
                           <div>{venta.producto?.nombre}</div>
                           <div className="text-xs text-muted-foreground font-normal">
-                            {venta.producto?.temporada}
+                            {venta.producto?.cuidados}
                           </div>
                         </>
                       )}

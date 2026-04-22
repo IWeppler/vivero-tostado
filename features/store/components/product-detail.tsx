@@ -11,7 +11,7 @@ import {
   ShoppingCart,
 } from "lucide-react";
 import Link from "next/link";
-import { TALLE_OPTIONS } from "@/entities/productos/constants";
+import { VARIANTE_OPTIONS } from "@/entities/productos/constants";
 import { useCartStore } from "@/features/store/store/cart-store";
 import { toast } from "sonner";
 
@@ -79,18 +79,15 @@ export function ProductDetail({ producto }: Readonly<ProductDetailProps>) {
 
     addItem({
       productoId: producto.id,
-      camisetaId: producto.id,
       nombre: producto.nombre || "Sin nombre",
-      equipo: producto.nombre || "Sin equipo",
-      temporada: producto.temporada,
+      cuidados: producto.cuidados,
       tipo: producto.tipo,
       variante: varianteSeleccionada,
-      talle: varianteSeleccionada,
       precio: producto.precio,
       cantidad: 1,
       imagenUrl: imagenes[0] || null,
       stockMaximo: stockMaximo,
-    } as any);
+    });
   };
 
   return (
@@ -170,7 +167,7 @@ export function ProductDetail({ producto }: Readonly<ProductDetailProps>) {
           <div className="mb-6">
             <div className="flex items-center gap-2 mb-2">
               <span className="text-xs font-bold tracking-widest text-muted-foreground uppercase">
-                {producto.temporada}
+                {producto.cuidados}
               </span>
               {producto.tipo && (
                 <>
@@ -201,7 +198,7 @@ export function ProductDetail({ producto }: Readonly<ProductDetailProps>) {
             </div>
 
             <div className="grid grid-cols-4 gap-2">
-              {TALLE_OPTIONS.filter((o) => o.value !== "todos").map((opt) => {
+              {VARIANTE_OPTIONS.filter((o) => o.value !== "todos").map((opt) => {
                 const stockDeVariante = producto.stock?.find(
                   (s) =>
                     (s.variante || "").toLowerCase() ===

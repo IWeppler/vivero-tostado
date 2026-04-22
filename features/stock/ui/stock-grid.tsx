@@ -84,7 +84,7 @@ export function StockGrid({ productos }: Readonly<StockGridProps>) {
                 {producto.nombre}
               </h3>
               <p className="text-sm text-muted-foreground mt-1 mb-4">
-                {producto.temporada}
+                {producto.cuidados}
               </p>
 
               <div className="mb-4">
@@ -126,7 +126,7 @@ export function StockGrid({ productos }: Readonly<StockGridProps>) {
                   <EliminarProductoModal
                     id={producto.id}
                     nombre={producto.nombre}
-                    temporada={producto.temporada}
+                    cuidados={producto.cuidados}
                   />
                 </div>
               </div>

@@ -3,12 +3,12 @@
 import { createClient } from "@/shared/config/supabase/server";
 import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
-import { TALLE_OPTIONS } from "@/entities/productos/constants";
+import { VARIANTE_OPTIONS } from "@/entities/productos/constants";
 import { slugify } from "@/shared/utils/sluglify";
 
 type UpdateProductoData = {
   nombre: string;
-  temporada: string;
+  cuidados: string;
   tipo: string;
   precio: number;
   precio_costo: number;
@@ -22,7 +22,7 @@ export async function editarProductoAction(
 ) {
   const id = formData.get("id") as string;
   const nombre = formData.get("nombre") as string;
-  const temporada = formData.get("temporada") as string;
+  const cuidados = formData.get("cuidados") as string;
   const tipo = formData.get("tipo") as string;
   const precio = Number.parseFloat(formData.get("precio") as string);
   const precio_costo = Number.parseFloat(
@@ -33,7 +33,7 @@ export async function editarProductoAction(
   if (
     !id ||
     !nombre ||
-    !temporada ||
+    !cuidados ||
     !tipo ||
     Number.isNaN(precio) ||
     Number.isNaN(precio_costo)
@@ -74,14 +74,14 @@ export async function editarProductoAction(
   }
 
   // 1. Generamos el nuevo Slug
-  let slug = slugify(`${nombre}-${tipo}-${temporada}`);
+  let slug = slugify(`${nombre}-${tipo}-${cuidados}`);
   const sufijo = Math.random().toString(36).substring(2, 6);
   slug = `${slug}-${sufijo}`;
 
   // 2. Preparamos los datos a actualizar
   const updateData: UpdateProductoData = {
     nombre,
-    temporada,
+    cuidados,
     tipo,
     precio,
     precio_costo,
@@ -107,7 +107,7 @@ export async function editarProductoAction(
   }
 
   // 4. Actualizamos el stock (Arreglado el bug del Object)
-  const stockParaUpsert = TALLE_OPTIONS.filter(
+  const stockParaUpsert = VARIANTE_OPTIONS.filter(
     (opt) => opt.value !== "todos",
   ).map((opt) => {
     const cantidadStr = formData.get(`stock_${opt.value}`) as string;

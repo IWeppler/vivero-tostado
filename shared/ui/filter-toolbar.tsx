@@ -24,24 +24,24 @@ import {
   SlidersHorizontal,
   X,
 } from "lucide-react";
-import { TALLE_OPTIONS, TIPO_OPTIONS } from "@/entities/productos/constants";
+import { VARIANTE_OPTIONS, TIPO_OPTIONS } from "@/entities/productos/constants";
 import { SelectOption } from "@/shared/types/select";
 import { useState } from "react";
 
 const CATEGORIAS_SIMPLIFICADAS = [
   { value: "todas", label: "Todas las categorías" },
-  { value: "2025/2026", label: "25/26 (Actual)" },
-  { value: "otras", label: "Otras temporadas" },
-  { value: "retro", label: "Retro" },
-  { value: "especiales", label: "Especiales" },
+  { value: "interior", label: "Plantas de Interior" },
+  { value: "exterior", label: "Plantas de Exterior" },
+  { value: "suculentas", label: "Suculentas" },
+  { value: "macetas", label: "Macetas" },
 ];
 
 interface FilterToolbarProps {
   searchQuery: string;
   onSearchChange: (value: string) => void;
   searchPlaceholder?: string;
-  temporada: string;
-  onTemporadaChange: (value: string) => void;
+  cuidados: string;
+  onCuidadosChange: (value: string) => void;
   tipo: string;
   onTipoChange: (value: string) => void;
   variante: string;
@@ -58,8 +58,8 @@ export function FilterToolbar({
   searchQuery,
   onSearchChange,
   searchPlaceholder = "Buscar...",
-  temporada,
-  onTemporadaChange,
+  cuidados,
+  onCuidadosChange,
   orden,
   tipo,
   onTipoChange,
@@ -79,7 +79,7 @@ export function FilterToolbar({
       {/* MOBILE TOOLBAR */}
       {/* ========================================= */}
       <div className="flex flex-col sm:hidden w-full border border-border bg-white shadow-sm overflow-hidden rounded-md">
-        {/* Fila 1: Buscador + Botón Nueva Camiseta (Inyectado) */}
+        {/* Fila 1: Buscador + Botón Nuevo Producto (Inyectado) */}
         <div className="flex items-center border-b border-border bg-white">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -117,7 +117,7 @@ export function FilterToolbar({
               </Button>
             </DialogTrigger>
 
-            <DialogContent className="fixed inset-0 z-50 w-screen h-dvh max-w-none !translate-x-0 !translate-y-0 !top-0 !left-0 m-0 p-0 rounded-none border-none bg-white flex flex-col overflow-hidden [&>button]:hidden">
+            <DialogContent className="fixed inset-0 z-50 w-screen h-dvh max-w-none translate-x-0 translate-y-0 top-0 left-0 m-0 p-0 rounded-none border-none bg-white flex flex-col overflow-hidden [&>button]:hidden">
               <DialogHeader className="p-4 border-b border-border flex flex-row items-center justify-between shadow-none space-y-0">
                 <DialogTitle className="uppercase tracking-widest text-sm font-bold m-0">
                   Filtros de Búsqueda
@@ -138,9 +138,9 @@ export function FilterToolbar({
                     Categoría
                   </Label>
                   <Select
-                    value={temporada === "" ? "todas" : temporada}
+                    value={cuidados === "" ? "todas" : cuidados}
                     onValueChange={(val) =>
-                      onTemporadaChange(val === "todas" ? "" : val)
+                      onCuidadosChange(val === "todas" ? "" : val)
                     }
                   >
                     <SelectTrigger className="w-full h-12 rounded-none bg-[#f5f4f4] border-0 shadow-none uppercase tracking-widest text-xs font-bold focus:ring-0">
@@ -184,14 +184,14 @@ export function FilterToolbar({
 
                 <div className="space-y-3">
                   <Label className="uppercase tracking-widest text-[10px] text-muted-foreground font-bold">
-                    Talle
+                    Variante
                   </Label>
                   <Select value={variante} onValueChange={onVarianteChange}>
                     <SelectTrigger className="w-full h-12 rounded-none bg-[#f5f4f4] border-0 shadow-none uppercase tracking-widest text-xs font-bold focus:ring-0">
-                      <SelectValue placeholder="Talle" />
+                      <SelectValue placeholder="Variante" />
                     </SelectTrigger>
                     <SelectContent className="rounded-none border-border shadow-xl">
-                      {TALLE_OPTIONS.map((opt) => (
+                      {VARIANTE_OPTIONS.map((opt) => (
                         <SelectItem
                           key={opt.value}
                           value={opt.value}
@@ -267,8 +267,8 @@ export function FilterToolbar({
         </div>
 
         <Select
-          value={temporada === "" ? "todas" : temporada}
-          onValueChange={(val) => onTemporadaChange(val === "todas" ? "" : val)}
+          value={cuidados === "" ? "todas" : cuidados}
+          onValueChange={(val) => onCuidadosChange(val === "todas" ? "" : val)}
         >
           <SelectTrigger className="w-full sm:w-[150px] rounded-none shadow-none cursor-pointer border-border/60 hover:border-foreground/40 bg-white focus:ring-0 transition-colors text-xs font-medium h-10">
             <SelectValue placeholder="Categoría" />
@@ -305,10 +305,10 @@ export function FilterToolbar({
 
         <Select value={variante} onValueChange={onVarianteChange}>
           <SelectTrigger className="w-full sm:w-[120px] rounded-none shadow-none cursor-pointer border-border/60 hover:border-foreground/40 bg-white focus:ring-0 transition-colors text-xs font-medium h-10">
-            <SelectValue placeholder="Talle" />
+            <SelectValue placeholder="Variante" />
           </SelectTrigger>
           <SelectContent className="rounded-none shadow-md">
-            {TALLE_OPTIONS.map((opt) => (
+            {VARIANTE_OPTIONS.map((opt) => (
               <SelectItem
                 key={opt.value}
                 value={opt.value}

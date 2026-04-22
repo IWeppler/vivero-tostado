@@ -45,9 +45,9 @@ export function StockTable({ productos }: Readonly<StockTableProps>) {
           <TableRow>
             <TableHead className="w-[80px]">Imagen</TableHead>
             <TableHead>Equipo</TableHead>
-            <TableHead>Temporada</TableHead>
+            <TableHead>Cuidados</TableHead>
             <TableHead>Tipo</TableHead>
-            <TableHead>Stock por Talle</TableHead>
+            <TableHead>Stock por Variante</TableHead>
             <TableHead className="text-center">Visible</TableHead>
             <TableHead className="text-right">Costo</TableHead>
             <TableHead className="text-right">Precio</TableHead>
@@ -101,7 +101,7 @@ export function StockTable({ productos }: Readonly<StockTableProps>) {
                   {producto.nombre}
                 </TableCell>
                 <TableCell className="text-muted-foreground">
-                  {producto.temporada}
+                  {producto.cuidados}
                 </TableCell>
                 <TableCell>
                   <Badge variant="secondary" className="font-normal">
@@ -151,7 +151,7 @@ export function StockTable({ productos }: Readonly<StockTableProps>) {
                     <EliminarProductoModal
                       id={producto.id}
                       nombre={producto.nombre}
-                      temporada={producto.temporada}
+                      cuidados={producto.cuidados}
                     />
                   </div>
                 </TableCell>

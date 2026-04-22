@@ -1,54 +1,40 @@
 import { SelectOption } from "@/shared/types/select";
 
+// 1. Categorías del Vivero (Reemplaza a "Temporadas" o "Tipos")
 export const TIPO_OPTIONS: SelectOption[] = [
-  { value: "todos", label: "Todos los tipos" },
-  { value: "local", label: "Local" },
-  { value: "visitante", label: "Visitante" },
-  { value: "alternativa", label: "Alternativa" },
-  { value: "retro", label: "Retro" },
-  { value: "seleccion", label: "Selección" },
-  { value: "arquero", label: "Arquero" },
+  { value: "todos", label: "Todas las categorías" },
+  { value: "interior", label: "Plantas de Interior" },
+  { value: "exterior", label: "Plantas de Exterior" },
+  { value: "suculentas", label: "Suculentas y Cactus" },
+  { value: "aromaticas", label: "Aromáticas y Huerta" },
+  { value: "macetas", label: "Macetas y Decoración" },
+  { value: "sustratos", label: "Sustratos y Fertilizantes" },
 ];
 
-export const TALLE_OPTIONS: SelectOption[] = [
-  { value: "todos", label: "Todos los talles" },
-  { value: "xs", label: "XS" },
-  { value: "s", label: "S" },
-  { value: "m", label: "M" },
-  { value: "l", label: "L" },
-  { value: "xl", label: "XL" },
-  { value: "xxl", label: "XXL" },
-  { value: "xxxl", label: "XXXL" },
+
+// 2. Tamaños / Variantes (Reemplaza a "Talles")
+// En los viveros se suele usar el número de la maceta (N12 = 12cm de diámetro) o Litros.
+export const VARIANTE_OPTIONS: SelectOption[] = [
+  { value: "todos", label: "Todos los tamaños" },
+  { value: "N9", label: "Maceta N°9" },
+  { value: "N12", label: "Maceta N°12" },
+  { value: "N14", label: "Maceta N°14" },
+  { value: "N20", label: "Maceta N°20" },
+  { value: "3L", label: "Envase 3 Litros" },
+  { value: "10L", label: "Envase 10 Litros" },
+  { value: "Unico", label: "Tamaño Único" },
 ];
 
-function generarTemporadas(desde: number, hasta: number): SelectOption[] {
-  const temporadas: SelectOption[] = [];
 
-  for (let year = hasta; year >= desde; year--) {
-    temporadas.push({
-      value: `${year}/${year + 1}`,
-      label: `${year}/${year + 1}`,
-    });
-  }
-
-  return temporadas;
-}
-
-const CURRENT_YEAR = new Date().getFullYear();
-
-export const TEMPORADA_OPTIONS: SelectOption[] = [
-  { value: "todos", label: "Todas las temporadas" },
-  ...generarTemporadas(1990, CURRENT_YEAR),
+// 3. Nivel de Cuidados (Filtro extra genial para un Vivero)
+export const CUIDADOS_OPTIONS: SelectOption[] = [
+  { value: "todos", label: "Cualquier cuidado" },
+  { value: "facil", label: "Fácil cuidado (Ideal principiantes)" },
+  { value: "poca_luz", label: "Tolera poca luz" },
+  { value: "sol_directo", label: "Sol directo pleno" },
+  { value: "pet_friendly", label: "Pet Friendly (No tóxica)" },
 ];
 
-export function getTemporadaActual(): string {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = now.getMonth();
+// Función helper (Opcional)
+export const getCategoriaPrincipal = () => "interior";
 
-  if (month >= 6) {
-    return `${year}/${year + 1}`;
-  }
-
-  return `${year - 1}/${year}`;
-}

@@ -29,14 +29,14 @@ import {
   DialogTrigger,
 } from "@/shared/ui/dialog";
 import { Label } from "@/shared/ui/label";
-import { TALLE_OPTIONS, TIPO_OPTIONS } from "@/entities/productos/constants";
+import { VARIANTE_OPTIONS, TIPO_OPTIONS } from "@/entities/productos/constants";
 
 const CATEGORIAS_SIMPLIFICADAS = [
   { value: "todas", label: "Todas las categorías" },
-  { value: "2025/2026", label: "25/26" },
-  { value: "otras", label: "Otras temporadas" },
-  { value: "especiales", label: "Especiales" },
-  { value: "retro", label: "Retro" },
+  { value: "interior", label: "Plantas de Interior" },
+  { value: "exterior", label: "Plantas de Exterior" },
+  { value: "suculentas", label: "Suculentas" },
+  { value: "macetas", label: "Macetas" },
 ];
 
 interface StoreCatalogProps {
@@ -51,7 +51,7 @@ function CatalogContent({ productos }: { productos: Producto[] }) {
   const pathname = usePathname();
   const searchQuery = searchParams.get("q") || "";
 
-  const [temporada, setTemporada] = useState("");
+  const [cuidados, setCuidados] = useState("");
   const [tipo, setTipo] = useState("todos");
   const [variante, setVariante] = useState("todos");
   const [orden, setOrden] = useState("recientes");
@@ -73,7 +73,7 @@ function CatalogContent({ productos }: { productos: Producto[] }) {
       const matchSearch = nombreStr
         .toLowerCase()
         .includes(searchQuery.toLowerCase());
-      const matchTemporada = temporada === "" || c.temporada === temporada;
+      const matchCuidados = cuidados === "" || c.cuidados === cuidados;
       const matchTipo =
         tipo === "todos" || tipoStr.toLowerCase() === tipo.toLowerCase();
 
@@ -86,7 +86,7 @@ function CatalogContent({ productos }: { productos: Producto[] }) {
               s.cantidad > 0,
           ));
 
-      return matchSearch && matchTemporada && matchTipo && matchVariante;
+      return matchSearch && matchCuidados && matchTipo && matchVariante;
     });
 
     resultado.sort((a, b) => {
@@ -102,7 +102,7 @@ function CatalogContent({ productos }: { productos: Producto[] }) {
     });
 
     return resultado;
-  }, [productos, searchQuery, temporada, tipo, variante, orden]);
+  }, [productos, searchQuery, cuidados, tipo, variante, orden]);
 
   const productosVisibles = productosFiltradas.slice(0, visibleCount);
   const hayMasProductos = visibleCount < productosFiltradas.length;
@@ -114,7 +114,7 @@ function CatalogContent({ productos }: { productos: Producto[] }) {
     };
 
   const limpiarFiltros = () => {
-    setTemporada("");
+    setCuidados("");
     setTipo("todos");
     setVariante("todos");
     setOrden("recientes");
@@ -127,7 +127,7 @@ function CatalogContent({ productos }: { productos: Producto[] }) {
   };
 
   const hayFiltrosActivos =
-    temporada !== "" ||
+    cuidados !== "" ||
     tipo !== "todos" ||
     variante !== "todos" ||
     orden !== "recientes" ||
@@ -189,9 +189,9 @@ function CatalogContent({ productos }: { productos: Producto[] }) {
                   Categoría
                 </Label>
                 <Select
-                  value={temporada === "" ? "todas" : temporada}
+                  value={cuidados === "" ? "todas" : cuidados}
                   onValueChange={(val) => {
-                    setTemporada(val === "todas" ? "" : val);
+                    setCuidados(val === "todas" ? "" : val);
                     setVisibleCount(ITEMS_POR_PAGINA);
                   }}
                 >
@@ -243,10 +243,10 @@ function CatalogContent({ productos }: { productos: Producto[] }) {
                   onValueChange={handleFiltrar(setVariante)}
                 >
                   <SelectTrigger className="w-full h-12 rounded-none bg-[#f5f4f4] border-0 shadow-none uppercase tracking-widest text-xs font-bold focus:ring-0">
-                    <SelectValue placeholder="Talle" />
+                    <SelectValue placeholder="Variante" />
                   </SelectTrigger>
                   <SelectContent className="rounded-none border-border shadow-xl">
-                    {TALLE_OPTIONS.map((opt) => (
+                    {VARIANTE_OPTIONS.map((opt) => (
                       <SelectItem
                         key={opt.value}
                         value={opt.value}
@@ -312,9 +312,9 @@ function CatalogContent({ productos }: { productos: Producto[] }) {
           </span>
 
           <Select
-            value={temporada === "" ? "todas" : temporada}
+            value={cuidados === "" ? "todas" : cuidados}
             onValueChange={(val) =>
-              handleFiltrar(setTemporada)(val === "todas" ? "" : val)
+              handleFiltrar(setCuidados)(val === "todas" ? "" : val)
             }
           >
             <SelectTrigger className="w-[200px] h-10 rounded-none border-0 bg-[#f5f4f4] shadow-none uppercase tracking-widest text-[10px] font-bold focus:ring-0 px-3">
@@ -352,10 +352,10 @@ function CatalogContent({ productos }: { productos: Producto[] }) {
 
           <Select value={variante} onValueChange={handleFiltrar(setVariante)}>
             <SelectTrigger className="w-[170px] h-10 rounded-none border-0 bg-[#f5f4f4] shadow-none uppercase tracking-widest text-[10px] font-bold focus:ring-0 px-3">
-              <SelectValue placeholder="Talle" />
+              <SelectValue placeholder="Variante" />
             </SelectTrigger>
             <SelectContent className="rounded-none border-border shadow-xl">
-              {TALLE_OPTIONS.map((opt) => (
+              {VARIANTE_OPTIONS.map((opt) => (
                 <SelectItem
                   key={opt.value}
                   value={opt.value}
@@ -487,7 +487,7 @@ function CatalogContent({ productos }: { productos: Producto[] }) {
                       </h3>
                     </Link>
                     <p className="text-[10px] text-muted-foreground mt-1 uppercase tracking-widest font-bold">
-                      {producto.temporada}
+                      {producto.cuidados}
                     </p>
                     <div className="mt-2">
                       <span className="text-sm font-bold text-foreground">

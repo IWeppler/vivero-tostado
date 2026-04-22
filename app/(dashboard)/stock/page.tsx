@@ -11,10 +11,10 @@ export default async function StockPage() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-foreground">
-            Inventario de camisetas
+            Inventario de Productos
           </h1>
           <p className="text-muted-foreground mt-1">
-            Acá podés gestionar el stock de las camisetas.
+            Acá podés gestionar el stock de los productos.
           </p>
         </div>
       </div>

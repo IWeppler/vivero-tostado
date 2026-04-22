@@ -3,8 +3,8 @@ import "./globals.css";
 import { Toaster } from "@/shared/ui/sonner";
 
 export const metadata: Metadata = {
-  title: "Ninja Camisetas | Sistema de Gestión",
-  description: "Aplicación para el control de ventas de camisetas",
+  title: "Vivero Tostado | Sistema de Gestión",
+  description: "Aplicación para el control de ventas de plantas",
 };
 
 export default function RootLayout({

@@ -102,14 +102,14 @@ export function Navbar() {
           <div className="w-10 h-10 flex items-center justify-center rounded-none overflow-hidden bg-black text-white">
             <Image
               src="/ninja-logo.jpg"
-              alt="Ninja Camisetas"
+              alt="Vivero Tostado"
               width={40}
               height={40}
               className="object-cover"
             />
           </div>
           <span className="font-black text-xl tracking-tight hidden sm:block uppercase">
-            Ninja Camisetas
+           Vivero Tostado
           </span>
         </Link>
 

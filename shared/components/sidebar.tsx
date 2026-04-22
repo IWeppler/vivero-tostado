@@ -32,14 +32,14 @@ export function Sidebar() {
           <div className="w-9 h-9 flex items-center justify-center rounded-lg overflow-hidden shadow-sm border border-gray-100 bg-white shrink-0">
             <Image
               src="/ninja-logo.jpg"
-              alt="Logo Ninja Camisetas"
+              alt="Logo Vivero Tostado"
               width={36}
               height={36}
               className="object-cover"
             />
           </div>
           <span className="font-bold text-gray-900 tracking-tight">
-            Ninja Camisetas
+            Vivero Tostado
           </span>
         </div>
         <button
@@ -71,14 +71,14 @@ export function Sidebar() {
           <div className="w-10 h-10 flex items-center justify-center rounded-xl overflow-hidden shadow-sm border border-gray-100 bg-white shrink-0">
             <Image
               src="/ninja-logo.jpg"
-              alt="Logo Ninja Camisetas"
+              alt="Logo Vivero Tostado"
               width={40}
               height={40}
               className="object-cover"
             />
           </div>
           <span className="font-bold text-lg text-gray-900 tracking-tight">
-            Ninja Camisetas
+            Vivero Tostado
           </span>
         </div>
 

@@ -2,8 +2,8 @@ import { Navbar } from "@/shared/components/navbar";
 import { CartSidebar } from "@/features/store/components/cart-sidebar";
 
 export const metadata = {
-  title: "Tienda Oficial | Ninja Camisetas",
-  description: "Encuentra la camiseta de tu equipo.",
+  title: "Tienda Oficial | Vivero Tostado",
+  description: "Encuentra la planta que buscás.",
 };
 
 export default function PublicLayout({
@@ -22,7 +22,7 @@ export default function PublicLayout({
       {/* FOOTER BÁSICO */}
       <footer className="bg-neutral-900 border-t border-border py-8 mt-auto">
         <div className="max-w-7xl mx-auto px-4 text-center text-sm text-neutral-400">
-          © {new Date().getFullYear()} Ninja Camisetas. Todos los derechos
+          © {new Date().getFullYear()} Vivero Tostado. Todos los derechos
           reservados.
         </div>
       </footer>

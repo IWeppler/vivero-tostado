@@ -20,7 +20,7 @@ export function StockView({ productos }: Readonly<StockViewProps>) {
   const [paginaActual, setPaginaActual] = useState(1);
 
   const [filtroNombre, setFiltroNombre] = useState("");
-  const [filtroTemporada, setFiltroTemporada] = useState("");
+  const [filtroCuidados, setFiltroCuidados] = useState("");
   const [filtroTipo, setFiltroTipo] = useState("todos");
   const [filtroVariante, setFiltroVariante] = useState("todos");
   const [orden, setOrden] = useState("recientes");
@@ -35,7 +35,7 @@ export function StockView({ productos }: Readonly<StockViewProps>) {
   const productosFiltradosYOrdenados = useMemo(() => {
     const resultado = productos.filter((producto) => {
       const nombre = producto.nombre?.toLowerCase() || "";
-      const temporada = producto.temporada?.toLowerCase() || "";
+      const cuidados = producto.cuidados?.toLowerCase() || "";
       const tipo = producto.tipo?.toLowerCase() || "";
 
       let tieneVariante = false;
@@ -50,11 +50,11 @@ export function StockView({ productos }: Readonly<StockViewProps>) {
       }
 
       const matchNombre = nombre.includes(filtroNombre.toLowerCase());
-      const matchTemporada = temporada.includes(filtroTemporada.toLowerCase());
+      const matchCuidados = cuidados.includes(filtroCuidados.toLowerCase());
       const matchTipo =
         filtroTipo === "todos" || tipo === filtroTipo.toLowerCase();
 
-      return matchNombre && matchTemporada && matchTipo && tieneVariante;
+      return matchNombre && matchCuidados && matchTipo && tieneVariante;
     });
 
     resultado.sort((a, b) => {
@@ -80,7 +80,7 @@ export function StockView({ productos }: Readonly<StockViewProps>) {
   }, [
     productos,
     filtroNombre,
-    filtroTemporada,
+    filtroCuidados,
     filtroTipo,
     filtroVariante,
     orden,
@@ -96,7 +96,7 @@ export function StockView({ productos }: Readonly<StockViewProps>) {
 
   const limpiarFiltros = () => {
     setFiltroNombre("");
-    setFiltroTemporada("");
+    setFiltroCuidados("");
     setFiltroTipo("todos");
     setFiltroVariante("todos");
     setOrden("recientes");
@@ -107,8 +107,8 @@ export function StockView({ productos }: Readonly<StockViewProps>) {
     setFiltroNombre(v);
     setPaginaActual(1);
   };
-  const handleFiltroTemporada = (v: string) => {
-    setFiltroTemporada(v);
+  const handleFiltroCuidados = (v: string) => {
+    setFiltroCuidados(v);
     setPaginaActual(1);
   };
   const handleFiltroTipo = (v: string) => {
@@ -126,13 +126,12 @@ export function StockView({ productos }: Readonly<StockViewProps>) {
 
   const hayFiltrosActivos =
     filtroNombre !== "" ||
-    filtroTemporada !== "" ||
+    filtroCuidados !== "" ||
     filtroTipo !== "todos" ||
     filtroVariante !== "todos" ||
     orden !== "recientes";
 
   // Aquí configuramos los botones de acción para que el Toggle se oculte en mobile,
-  // pero el botón de "Nueva Camiseta" se mantenga siempre visible
   const actionButtons = (
     <>
       <div className="hidden sm:flex items-center gap-1 bg-muted p-1 rounded-md justify-center mr-2">
@@ -171,8 +170,8 @@ export function StockView({ productos }: Readonly<StockViewProps>) {
         searchQuery={filtroNombre}
         onSearchChange={handleFiltroNombre}
         searchPlaceholder="Buscar por nombre..."
-        temporada={filtroTemporada}
-        onTemporadaChange={handleFiltroTemporada}
+        cuidados={filtroCuidados}
+        onCuidadosChange={handleFiltroCuidados}
         tipo={filtroTipo}
         onTipoChange={handleFiltroTipo}
         variante={filtroVariante}

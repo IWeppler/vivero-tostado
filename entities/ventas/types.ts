@@ -10,7 +10,7 @@ export interface Venta {
 
   producto?: {
     nombre: string;
-    temporada: string;
+    cuidados: string;
     imagen_url: string | null;
     tipo?: string;
   } | null;
