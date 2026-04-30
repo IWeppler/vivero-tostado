@@ -29,7 +29,10 @@ import {
   DialogTrigger,
 } from "@/shared/ui/dialog";
 import { Label } from "@/shared/ui/label";
-import { VARIANTE_OPTIONS, TIPO_OPTIONS } from "@/entities/productos/constants";
+import {
+  TIPO_OPTIONS,
+  TODAS_LAS_VARIANTES,
+} from "@/entities/productos/constants";
 
 const CATEGORIAS_SIMPLIFICADAS = [
   { value: "todas", label: "Todas las categorías" },
@@ -45,7 +48,8 @@ interface StoreCatalogProps {
 
 const ITEMS_POR_PAGINA = 12;
 
-function CatalogContent({ productos }: { productos: Producto[] }) {
+// 💡 1. FIX: Marcamos las props como Readonly para satisfacer a TypeScript/ESLint
+function CatalogContent({ productos }: Readonly<{ productos: Producto[] }>) {
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
@@ -77,14 +81,16 @@ function CatalogContent({ productos }: { productos: Producto[] }) {
       const matchTipo =
         tipo === "todos" || tipoStr.toLowerCase() === tipo.toLowerCase();
 
+      // 💡 2. FIX: Usamos Optional Chaining (?.) en lugar del && anidado
+      // Le agregamos '?? false' al final para asegurarnos de que la expresión siempre devuelva un booleano estricto.
       const matchVariante =
         variante === "todos" ||
-        (c.stock &&
-          c.stock.some(
-            (s) =>
-              (s.variante || "").toLowerCase() === variante.toLowerCase() &&
-              s.cantidad > 0,
-          ));
+        (c.stock?.some(
+          (s) =>
+            (s.variante || "").toLowerCase() === variante.toLowerCase() &&
+            s.cantidad > 0,
+        ) ??
+          false);
 
       return matchSearch && matchCuidados && matchTipo && matchVariante;
     });
@@ -246,13 +252,13 @@ function CatalogContent({ productos }: { productos: Producto[] }) {
                     <SelectValue placeholder="Variante" />
                   </SelectTrigger>
                   <SelectContent className="rounded-none border-border shadow-xl">
-                    {VARIANTE_OPTIONS.map((opt) => (
+                    {TODAS_LAS_VARIANTES.map((opt) => (
                       <SelectItem
-                        key={opt.value}
-                        value={opt.value}
+                        key={opt}
+                        value={opt}
                         className="rounded-none uppercase tracking-widest text-xs py-3"
                       >
-                        {opt.label}
+                        {opt}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -355,13 +361,13 @@ function CatalogContent({ productos }: { productos: Producto[] }) {
               <SelectValue placeholder="Variante" />
             </SelectTrigger>
             <SelectContent className="rounded-none border-border shadow-xl">
-              {VARIANTE_OPTIONS.map((opt) => (
+              {TODAS_LAS_VARIANTES.map((opt) => (
                 <SelectItem
-                  key={opt.value}
-                  value={opt.value}
+                  key={opt}
+                  value={opt}
                   className="rounded-none uppercase tracking-widest text-[11px] py-2.5"
                 >
-                  {opt.label}
+                  {opt}
                 </SelectItem>
               ))}
             </SelectContent>

@@ -1,4 +1,4 @@
-import { getStockAction } from "@/features/stock/actions/get-producto";
+import { getStockAction } from "@/features/stock/actions/get-product";
 import { StockView } from "@/features/stock/ui/stock-view";
 
 export const dynamic = "force-dynamic";

@@ -38,10 +38,10 @@ function SearchBar() {
       params.delete("q");
     }
 
-    if (pathname.includes("/tienda")) {
-      router.replace(`/tienda?${params.toString()}`);
+    if (pathname.includes("/store")) {
+      router.replace(`/store?${params.toString()}`);
     } else {
-      router.push(`/tienda?${params.toString()}`);
+      router.push(`/store?${params.toString()}`);
     }
   };
 
@@ -96,7 +96,7 @@ export function Navbar() {
     <header className="bg-white border-b border-border sticky top-0 z-40">
       <div className="w-full mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
         <Link
-          href="/tienda"
+          href="/store"
           className="flex items-center gap-3 transition-opacity hover:opacity-80 shrink-0"
         >
           <div className="w-10 h-10 flex items-center justify-center rounded-none overflow-hidden bg-black text-white">

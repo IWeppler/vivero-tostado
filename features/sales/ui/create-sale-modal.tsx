@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useActionState, useEffect, useMemo } from "react";
-import { registrarVentaAction } from "../actions/create-venta";
+import { registrarVentaAction } from "../actions/create-sale";
 import { getProductosAction } from "@/features/store/actions/store-actions";
 import { Producto } from "@/entities/productos/types";
 import { CartItem } from "@/entities/cart/types";

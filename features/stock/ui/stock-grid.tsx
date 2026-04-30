@@ -126,7 +126,7 @@ export function StockGrid({ productos }: Readonly<StockGridProps>) {
                   <EliminarProductoModal
                     id={producto.id}
                     nombre={producto.nombre}
-                    cuidados={producto.cuidados}
+                    tipo={producto.tipo}
                   />
                 </div>
               </div>

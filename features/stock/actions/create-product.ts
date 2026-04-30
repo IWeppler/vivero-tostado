@@ -3,8 +3,8 @@
 import { createClient } from "@/shared/config/supabase/server";
 import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
-import { VARIANTE_OPTIONS } from "@/entities/productos/constants";
-import { slugify } from "@/shared/utils/sluglify";
+import { TODAS_LAS_VARIANTES } from "@/entities/productos/constants";
+import { slugify } from "@/shared/utils/slugify";
 
 export async function crearProductoAction(
   prevState: { error: string | null; success: boolean },
@@ -12,7 +12,7 @@ export async function crearProductoAction(
 ) {
   const nombre = formData.get("nombre") as string;
   const cuidados = formData.get("cuidados") as string;
-  const tipo = formData.get("tipo") as string;
+  const categoria = formData.get("categoria") as string;
   const precio = Number.parseFloat(formData.get("precio") as string);
   const precio_costo = Number.parseFloat(
     formData.get("precio_costo") as string,
@@ -23,7 +23,7 @@ export async function crearProductoAction(
   if (
     !nombre ||
     !cuidados ||
-    !tipo ||
+    !categoria ||
     Number.isNaN(precio) ||
     Number.isNaN(precio_costo)
   ) {
@@ -38,11 +38,12 @@ export async function crearProductoAction(
 
   let imagen_url = null;
 
-  // 1. Subimos las imágenes a Supabase Storage
+  // Las imágenes ya vienen optimizadas y en formato .webp gracias al cliente
   const validFiles = archivos.filter((f) => f.size > 0);
   if (validFiles.length > 0) {
     const urls = [];
     for (const file of validFiles) {
+      // Como ya vienen en WebP, esta extensión suele ser siempre "webp"
       const fileExt = file.name.split(".").pop();
       const fileName = `${crypto.randomUUID()}.${fileExt}`;
 
@@ -65,18 +66,18 @@ export async function crearProductoAction(
     }
   }
 
-  // 2. Generamos el Slug amigable para la URL de la tienda
-  let slug = slugify(`${nombre}-${tipo}-${cuidados}`);
+  // Generamos el Slug amigable para la URL de la tienda
+  let slug = slugify(`${nombre}-${categoria}-${cuidados}`);
   const sufijo = Math.random().toString(36).substring(2, 6);
   slug = `${slug}-${sufijo}`;
 
-  // 3. Insertamos el producto en la tabla principal
+  // Insertamos el producto en la tabla principal
   const { data: nuevoProducto, error: errorProducto } = await supabase
     .from("productos")
     .insert({
       nombre,
       cuidados,
-      tipo,
+      categoria,
       precio,
       precio_costo,
       imagen_url,
@@ -94,18 +95,27 @@ export async function crearProductoAction(
     };
   }
 
-  // 4. Preparamos el stock por talle
-  const stockParaInsertar = VARIANTE_OPTIONS.filter((opt) => opt.value !== "todos")
-    .map((opt) => {
-      const cantidadStr = formData.get(`stock_${opt.value}`) as string;
+  // Preparamos el stock usando el array plano con todas las variantes de manera segura
+  const stockParaInsertar: {
+    producto_id: string;
+    variante: string;
+    cantidad: number;
+  }[] = [];
+
+  TODAS_LAS_VARIANTES.forEach((varianteValor) => {
+    const cantidadStr = formData.get(`stock_${varianteValor}`) as string;
+
+    if (cantidadStr) {
       const cantidad = Number.parseInt(cantidadStr, 10);
-      return {
-        producto_id: nuevoProducto.id,
-        variante: opt.value,
-        cantidad: Number.isNaN(cantidad) ? 0 : cantidad,
-      };
-    })
-    .filter((stock) => stock.cantidad > 0);
+      if (!Number.isNaN(cantidad) && cantidad > 0) {
+        stockParaInsertar.push({
+          producto_id: nuevoProducto.id,
+          variante: varianteValor,
+          cantidad,
+        });
+      }
+    }
+  });
 
   if (stockParaInsertar.length > 0) {
     const { error: errorStock } = await supabase

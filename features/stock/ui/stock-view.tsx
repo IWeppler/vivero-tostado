@@ -6,7 +6,8 @@ import { StockTable } from "./stock-table";
 import { StockGrid } from "./stock-grid";
 import { Button } from "@/shared/ui/button";
 import { LayoutGrid, List, ChevronLeft, ChevronRight } from "lucide-react";
-import { CrearProductoModal } from "./add-modal";
+import { CrearProductoModal } from "@/features/stock/ui/create-modal";
+import { ImportarPedidoModal } from "@/features/purchases/ui/create-purchase-modal";
 import { FilterToolbar } from "@/shared/ui/filter-toolbar";
 
 interface StockViewProps {
@@ -131,41 +132,42 @@ export function StockView({ productos }: Readonly<StockViewProps>) {
     filtroVariante !== "todos" ||
     orden !== "recientes";
 
-  // Aquí configuramos los botones de acción para que el Toggle se oculte en mobile,
-  const actionButtons = (
-    <>
-      <div className="hidden sm:flex items-center gap-1 bg-muted p-1 rounded-md justify-center mr-2">
-        <Button
-          variant={view === "table" ? "default" : "ghost"}
-          className={`font-medium transition-all h-8 ${
-            view === "table"
-              ? "shadow-sm bg-neutral-900 text-white"
-              : "text-muted-foreground"
-          }`}
-          onClick={() => setView("table")}
-        >
-          <List className="h-4 w-4 mr-1" /> Tabla
-        </Button>
-        <Button
-          variant={view === "grid" ? "default" : "ghost"}
-          className={`font-medium transition-all h-8 ${
-            view === "grid"
-              ? "shadow-sm bg-neutral-900 text-white"
-              : "text-muted-foreground"
-          }`}
-          onClick={() => setView("grid")}
-        >
-          <LayoutGrid className="h-4 w-4 mr-1" /> Grilla
-        </Button>
-      </div>
-
-      {/* El botón Modal en sí (Ahora formateado para ser solo '+' en móviles) */}
-      <CrearProductoModal />
-    </>
+  // 💡 Dejamos SOLO el selector de vista (Tabla/Grilla) en la Toolbar
+  const viewToggleButtons = (
+    <div className="hidden sm:flex items-center gap-1 bg-muted p-1 rounded-md justify-center">
+      <Button
+        variant={view === "table" ? "default" : "ghost"}
+        className={`font-medium transition-all h-8 ${
+          view === "table"
+            ? "shadow-sm bg-neutral-900 text-white"
+            : "text-muted-foreground cursor-pointer"
+        }`}
+        onClick={() => setView("table")}
+      >
+        <List className="h-4 w-4 mr-1" /> Tabla
+      </Button>
+      <Button
+        variant={view === "grid" ? "default" : "ghost"}
+        className={`font-medium transition-all h-8 ${
+          view === "grid"
+            ? "shadow-sm bg-neutral-900 text-white"
+            : "text-muted-foreground cursor-pointer"
+        }`}
+        onClick={() => setView("grid")}
+      >
+        <LayoutGrid className="h-4 w-4 mr-1" /> Grilla
+      </Button>
+    </div>
   );
 
   return (
     <div className="space-y-4">
+      {/* 💡 Acciones Superiores: Las extraemos de la barra de filtros y las ponemos en su propio contenedor */}
+      <div className="flex flex-wrap items-center justify-end gap-3 w-full -mt-4 mb-2">
+        <ImportarPedidoModal />
+        <CrearProductoModal />
+      </div>
+
       <FilterToolbar
         searchQuery={filtroNombre}
         onSearchChange={handleFiltroNombre}
@@ -181,7 +183,7 @@ export function StockView({ productos }: Readonly<StockViewProps>) {
         ordenOptions={ordenOptions}
         onLimpiar={limpiarFiltros}
         hayFiltrosActivos={hayFiltrosActivos}
-        actionButtons={actionButtons}
+        actionButtons={viewToggleButtons}
       />
 
       {view === "table" ? (

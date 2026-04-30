@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { eliminarProductoAction } from "../actions/delete-producto";
+import { eliminarProductoAction } from "../actions/delete-product";
 import { toast } from "sonner";
 
 import {
@@ -20,13 +20,13 @@ import { Trash2 } from "lucide-react";
 interface EliminarProductoModalProps {
   id: string;
   nombre: string;
-  cuidados: string;
+  tipo: string;
 }
 
 export function EliminarProductoModal({
   id,
   nombre,
-  cuidados,
+  tipo,
 }: Readonly<EliminarProductoModalProps>) {
   const [isOpen, setIsOpen] = useState(false);
 

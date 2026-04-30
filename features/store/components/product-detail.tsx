@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Producto } from "@/entities/productos/types";
 import {
   ShoppingBag,
@@ -11,7 +11,7 @@ import {
   ShoppingCart,
 } from "lucide-react";
 import Link from "next/link";
-import { VARIANTE_OPTIONS } from "@/entities/productos/constants";
+import { TODAS_LAS_VARIANTES } from "@/entities/productos/constants";
 import { useCartStore } from "@/features/store/store/cart-store";
 import { toast } from "sonner";
 
@@ -29,22 +29,29 @@ export function ProductDetail({ producto }: Readonly<ProductDetailProps>) {
 
   const addItem = useCartStore((state) => state.addItem);
 
-  let imagenes: string[] = [];
-  if (Array.isArray(producto.imagen_url)) {
-    imagenes = producto.imagen_url;
-  } else if (typeof producto.imagen_url === "string") {
-    try {
-      const parsed = JSON.parse(producto.imagen_url);
-      imagenes = Array.isArray(parsed) ? parsed : [producto.imagen_url];
-    } catch {
-      imagenes = [producto.imagen_url];
+  // Manejo robusto de imágenes
+  const imagenes = useMemo(() => {
+    if (Array.isArray(producto.imagen_url)) {
+      return producto.imagen_url;
+    } else if (typeof producto.imagen_url === "string") {
+      try {
+        const parsed = JSON.parse(producto.imagen_url);
+        return Array.isArray(parsed) ? parsed : [producto.imagen_url];
+      } catch {
+        return [producto.imagen_url];
+      }
     }
-  }
+    return [];
+  }, [producto.imagen_url]);
 
-  const stockTotal =
-    producto.stock?.reduce((acc, s) => acc + s.cantidad, 0) || 0;
+  // Cálculo del stock total
+  const stockTotal = useMemo(() => {
+    return producto.stock?.reduce((acc, s) => acc + s.cantidad, 0) || 0;
+  }, [producto.stock]);
+
   const estaAgotado = stockTotal === 0;
 
+  // Manejo del carrusel de imágenes
   const handlePrevImage = () => {
     setCurrentImageIndex((prev) =>
       prev === 0 ? imagenes.length - 1 : prev - 1,
@@ -57,6 +64,7 @@ export function ProductDetail({ producto }: Readonly<ProductDetailProps>) {
     );
   };
 
+  // Función para añadir al carrito
   const handleAddToCart = () => {
     if (estaAgotado) return;
 
@@ -80,15 +88,24 @@ export function ProductDetail({ producto }: Readonly<ProductDetailProps>) {
     addItem({
       productoId: producto.id,
       nombre: producto.nombre || "Sin nombre",
-      cuidados: producto.cuidados,
-      tipo: producto.tipo,
+      cuidados: producto.cuidados || "",
+      tipo: producto.tipo || "",
       variante: varianteSeleccionada,
       precio: producto.precio,
       cantidad: 1,
       imagenUrl: imagenes[0] || null,
       stockMaximo: stockMaximo,
-    });
+    } as any);
+
+    toast.success("Producto añadido al carrito");
   };
+
+  const variantesDisponibles = useMemo(() => {
+    const variantesUnicas = Array.from(new Set(TODAS_LAS_VARIANTES)).filter(
+      (v) => v.toLowerCase() !== "todos",
+    );
+    return variantesUnicas;
+  }, []);
 
   return (
     <div className="max-w-7xl mx-auto">
@@ -103,6 +120,7 @@ export function ProductDetail({ producto }: Readonly<ProductDetailProps>) {
       </div>
 
       <div className="flex flex-col md:flex-row gap-10 lg:gap-16 items-start">
+        {/* Lado izquierdo: Imágenes */}
         <div className="w-full md:w-3/5 lg:w-2/3 flex flex-col gap-4">
           <div className="relative aspect-4/4 bg-[#f7f7f7] w-full flex items-center justify-center group overflow-hidden border border-border/40">
             {imagenes.length > 0 ? (
@@ -139,11 +157,12 @@ export function ProductDetail({ producto }: Readonly<ProductDetailProps>) {
             )}
           </div>
 
+          {/* Miniaturas */}
           {imagenes.length > 1 && (
             <div className="flex gap-3 overflow-x-auto pb-2 custom-scrollbar">
               {imagenes.map((img, index) => (
                 <button
-                  key={index}
+                  key={`thumb-${index}`}
                   onClick={() => setCurrentImageIndex(index)}
                   className={`relative w-20 h-24 sm:w-24 sm:h-28 shrink-0 bg-[#f7f7f7] transition-all border-2 cursor-pointer ${
                     currentImageIndex === index
@@ -163,6 +182,7 @@ export function ProductDetail({ producto }: Readonly<ProductDetailProps>) {
           )}
         </div>
 
+        {/* Lado derecho: Información del producto */}
         <div className="w-full md:w-2/5 lg:w-1/3 flex flex-col sticky top-24">
           <div className="mb-6">
             <div className="flex items-center gap-2 mb-2">
@@ -190,6 +210,7 @@ export function ProductDetail({ producto }: Readonly<ProductDetailProps>) {
 
           <div className="w-full h-px bg-border/60 mb-8"></div>
 
+          {/* Selección de Variantes */}
           <div className="mb-8">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-xs font-bold uppercase tracking-widest text-foreground">
@@ -198,37 +219,46 @@ export function ProductDetail({ producto }: Readonly<ProductDetailProps>) {
             </div>
 
             <div className="grid grid-cols-4 gap-2">
-              {VARIANTE_OPTIONS.filter((o) => o.value !== "todos").map((opt) => {
+              {variantesDisponibles.map((nombreVariante) => {
+                // Buscamos si hay stock para esta variante en el producto actual
                 const stockDeVariante = producto.stock?.find(
                   (s) =>
                     (s.variante || "").toLowerCase() ===
-                    opt.value.toLowerCase(),
+                    nombreVariante.toLowerCase(),
                 );
-                const tieneStock =
-                  stockDeVariante && stockDeVariante.cantidad > 0;
-                const isSelected = varianteSeleccionada === opt.value;
+
+                const tieneStock = stockDeVariante
+                  ? stockDeVariante.cantidad > 0
+                  : false;
+                const isSelected = varianteSeleccionada === nombreVariante;
+
+                // 💡 2. Eliminamos el ternario anidado usando variables de clase claras
+                let buttonClassName =
+                  "py-3 rounded-none border text-sm font-semibold uppercase transition-all ";
+
+                if (isSelected) {
+                  buttonClassName +=
+                    "border-foreground bg-foreground text-background cursor-pointer";
+                } else if (tieneStock) {
+                  buttonClassName +=
+                    "border-border bg-transparent text-foreground hover:border-foreground/40 cursor-pointer";
+                } else {
+                  buttonClassName +=
+                    "border-border/40 bg-transparent text-muted-foreground opacity-40 cursor-not-allowed line-through";
+                }
 
                 return (
                   <button
-                    key={opt.value}
+                    key={nombreVariante}
                     type="button"
                     disabled={!tieneStock}
                     onClick={() => {
-                      setVarianteSeleccionada(opt.value);
+                      setVarianteSeleccionada(nombreVariante);
                       setErrorVariante(false);
                     }}
-                    className={`
-                      py-3 rounded-none border text-sm font-semibold uppercase transition-all
-                      ${
-                        isSelected
-                          ? "border-foreground bg-foreground text-background cursor-pointer"
-                          : tieneStock
-                            ? "border-border bg-transparent text-foreground hover:border-foreground/40 cursor-pointer"
-                            : "border-border/40 bg-transparent text-muted-foreground opacity-40 cursor-not-allowed line-through"
-                      }
-                    `}
+                    className={buttonClassName}
                   >
-                    {opt.value}
+                    {nombreVariante}
                   </button>
                 );
               })}
@@ -242,6 +272,7 @@ export function ProductDetail({ producto }: Readonly<ProductDetailProps>) {
             )}
           </div>
 
+          {/* Botón de añadir al carrito */}
           <div className="mt-4">
             <button
               onClick={handleAddToCart}

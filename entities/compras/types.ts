@@ -1,0 +1,26 @@
+export interface OrdenCompra {
+  id: string;
+  proveedor: string;
+  fecha_remito: string;
+  total_presupuestado: number;
+  estado: "PENDIENTE" | "APROBADA";
+  creado_en: string;
+}
+
+export interface ItemResuelto {
+  id?: string;
+  orden_id?: string;
+  producto_id: string | null;
+  raw_nombre: string;
+  raw_variante: string;
+  variante_match: string;
+  cantidad: number;
+  precio_costo: number;
+  precio_venta_actualizado?: number;
+  estado_match:
+    | "PERFECTO"
+    | "MODIFICADO"
+    | "DESCONOCIDO"
+    | "NUEVO_ALIAS"
+    | "RESUELTO";
+}

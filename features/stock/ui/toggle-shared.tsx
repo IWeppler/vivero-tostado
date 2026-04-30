@@ -1,7 +1,7 @@
 "use client";
 
 import { useTransition } from "react";
-import { togglePublicadoAction } from "../actions/toggle-publicado";
+import { togglePublicadoAction } from "../actions/toggle-shared";
 import { toast } from "sonner";
 
 export function TogglePublicado({

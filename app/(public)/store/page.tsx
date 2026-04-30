@@ -1,6 +1,6 @@
 import { getProductosAction } from "@/features/store/actions/store-actions";
 import { StoreCatalog } from "@/features/store/components/store-catalog";
-import { FaInstagram } from "react-icons/fa";
+import { FaFacebook, FaInstagram } from "react-icons/fa";
 
 export const dynamic = "force-dynamic";
 
@@ -33,7 +33,7 @@ export default async function StorePage() {
             </a>
 
             {/* Ejemplo: Descomentar para agregar más redes en el futuro */}
-            {/* <a
+            <a
               href="https://facebook.com"
               target="_blank"
               rel="noopener noreferrer"
@@ -43,7 +43,7 @@ export default async function StorePage() {
               <FaFacebook className="w-5 h-5" />
               <span className="sr-only">Facebook</span>
             </a>
-            */}
+           
           </div>
         </div>
 

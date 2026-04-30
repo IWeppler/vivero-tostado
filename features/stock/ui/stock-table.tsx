@@ -1,5 +1,6 @@
 "use client";
 
+import { Producto } from "@/entities/productos/types";
 import {
   Table,
   TableBody,
@@ -12,8 +13,7 @@ import { Badge } from "@/shared/ui/badge";
 import { Image as ImageIcon } from "lucide-react";
 import { EditarProductoModal } from "./edit-modal";
 import { EliminarProductoModal } from "./delete-modal";
-import { TogglePublicado } from "./toggle-publicado";
-import { Producto } from "@/entities/productos/types";
+import { TogglePublicado } from "./toggle-shared";
 
 interface StockTableProps {
   productos: Producto[];
@@ -25,6 +25,12 @@ const formatearMoneda = (monto: number) => {
     currency: "ARS",
     maximumFractionDigits: 0,
   }).format(monto);
+};
+
+// Pequeño helper para embellecer los textos de la categoría y cuidados
+const capitalizar = (str: string) => {
+  if (!str) return "";
+  return str.charAt(0).toUpperCase() + str.slice(1).replace("_", " ");
 };
 
 export function StockTable({ productos }: Readonly<StockTableProps>) {
@@ -44,9 +50,9 @@ export function StockTable({ productos }: Readonly<StockTableProps>) {
         <TableHeader>
           <TableRow>
             <TableHead className="w-[80px]">Imagen</TableHead>
-            <TableHead>Equipo</TableHead>
+            <TableHead>Producto</TableHead>
+            <TableHead>Categoría</TableHead>
             <TableHead>Cuidados</TableHead>
-            <TableHead>Tipo</TableHead>
             <TableHead>Stock por Variante</TableHead>
             <TableHead className="text-center">Visible</TableHead>
             <TableHead className="text-right">Costo</TableHead>
@@ -77,9 +83,9 @@ export function StockTable({ productos }: Readonly<StockTableProps>) {
               }
             }
 
-            // Calculamos la ganancia unitaria estimada (Venta - Costo) de forma tipada
+            // Calculamos la ganancia unitaria estimada (Venta - Costo)
             const precioCosto = producto.precio_costo || 0;
-            const margenEstiado = producto.precio - precioCosto;
+            const margenEstimado = producto.precio - precioCosto;
 
             return (
               <TableRow key={producto.id}>
@@ -100,12 +106,15 @@ export function StockTable({ productos }: Readonly<StockTableProps>) {
                 <TableCell className="font-medium text-card-foreground">
                   {producto.nombre}
                 </TableCell>
-                <TableCell className="text-muted-foreground">
-                  {producto.cuidados}
+                <TableCell className="text-muted-foreground capitalize">
+                  {capitalizar(producto.tipo)}
                 </TableCell>
                 <TableCell>
-                  <Badge variant="secondary" className="font-normal">
-                    {producto.tipo}
+                  <Badge
+                    variant="secondary"
+                    className="font-normal capitalize bg-emerald-50 text-emerald-700 border-emerald-100 hover:bg-emerald-100"
+                  >
+                    {capitalizar(producto.cuidados)}
                   </Badge>
                 </TableCell>
                 <TableCell>
@@ -122,7 +131,7 @@ export function StockTable({ productos }: Readonly<StockTableProps>) {
                       ))
                     ) : (
                       <span className="text-sm text-muted-foreground italic">
-                        Sin definir
+                        Sin stock
                       </span>
                     )}
                   </div>
@@ -140,7 +149,7 @@ export function StockTable({ productos }: Readonly<StockTableProps>) {
                 </TableCell>
                 <TableCell
                   className="text-right font-medium"
-                  title={`Ganancia estimada: ${formatearMoneda(margenEstiado)}`}
+                  title={`Ganancia estimada: ${formatearMoneda(margenEstimado)}`}
                 >
                   {formatearMoneda(producto.precio)}
                 </TableCell>
@@ -151,7 +160,7 @@ export function StockTable({ productos }: Readonly<StockTableProps>) {
                     <EliminarProductoModal
                       id={producto.id}
                       nombre={producto.nombre}
-                      cuidados={producto.cuidados}
+                      tipo={producto.tipo}
                     />
                   </div>
                 </TableCell>

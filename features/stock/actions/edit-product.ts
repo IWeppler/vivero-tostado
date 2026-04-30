@@ -3,13 +3,13 @@
 import { createClient } from "@/shared/config/supabase/server";
 import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
-import { VARIANTE_OPTIONS } from "@/entities/productos/constants";
-import { slugify } from "@/shared/utils/sluglify";
+import { TODAS_LAS_VARIANTES } from "@/entities/productos/constants";
+import { slugify } from "@/shared/utils/slugify";
 
 type UpdateProductoData = {
   nombre: string;
+  categoria: string;
   cuidados: string;
-  tipo: string;
   precio: number;
   precio_costo: number;
   slug: string;
@@ -22,19 +22,20 @@ export async function editarProductoAction(
 ) {
   const id = formData.get("id") as string;
   const nombre = formData.get("nombre") as string;
+  const categoria = formData.get("categoria") as string;
   const cuidados = formData.get("cuidados") as string;
-  const tipo = formData.get("tipo") as string;
   const precio = Number.parseFloat(formData.get("precio") as string);
   const precio_costo = Number.parseFloat(
     formData.get("precio_costo") as string,
   );
+
   const archivos = formData.getAll("imagenes") as File[];
 
   if (
     !id ||
     !nombre ||
+    !categoria ||
     !cuidados ||
-    !tipo ||
     Number.isNaN(precio) ||
     Number.isNaN(precio_costo)
   ) {
@@ -49,6 +50,7 @@ export async function editarProductoAction(
 
   let imagen_url: string | undefined = undefined;
 
+  // Las imágenes ya vienen livianas (optimizadas a WebP) desde el cliente
   const validFiles = archivos.filter((f) => f.size > 0);
   if (validFiles.length > 0) {
     const urls = [];
@@ -74,15 +76,15 @@ export async function editarProductoAction(
   }
 
   // 1. Generamos el nuevo Slug
-  let slug = slugify(`${nombre}-${tipo}-${cuidados}`);
+  let slug = slugify(`${nombre}-${categoria}-${cuidados}`);
   const sufijo = Math.random().toString(36).substring(2, 6);
   slug = `${slug}-${sufijo}`;
 
   // 2. Preparamos los datos a actualizar
   const updateData: UpdateProductoData = {
     nombre,
+    categoria,
     cuidados,
-    tipo,
     precio,
     precio_costo,
     slug,
@@ -106,29 +108,40 @@ export async function editarProductoAction(
     };
   }
 
-  // 4. Actualizamos el stock (Arreglado el bug del Object)
-  const stockParaUpsert = VARIANTE_OPTIONS.filter(
-    (opt) => opt.value !== "todos",
-  ).map((opt) => {
-    const cantidadStr = formData.get(`stock_${opt.value}`) as string;
-    const cantidad = Number.parseInt(cantidadStr, 10);
-    return {
-      producto_id: id,
-      variante: opt.value,
-      cantidad: Number.isNaN(cantidad) ? 0 : cantidad,
-    };
+  // 4. Actualizamos el stock (Usando el array seguro anti-crasheos)
+  const stockParaUpsert: {
+    producto_id: string;
+    variante: string;
+    cantidad: number;
+  }[] = [];
+
+  TODAS_LAS_VARIANTES.forEach((varianteValor) => {
+    const cantidadStr = formData.get(`stock_${varianteValor}`) as string;
+
+    if (cantidadStr) {
+      const cantidad = Number.parseInt(cantidadStr, 10);
+      if (!Number.isNaN(cantidad)) {
+        stockParaUpsert.push({
+          producto_id: id,
+          variante: varianteValor,
+          cantidad,
+        });
+      }
+    }
   });
 
-  const { error: errorStock } = await supabase
-    .from("productos_stock")
-    .upsert(stockParaUpsert, { onConflict: "producto_id, variante" });
+  if (stockParaUpsert.length > 0) {
+    const { error: errorStock } = await supabase
+      .from("productos_stock")
+      .upsert(stockParaUpsert, { onConflict: "producto_id, variante" });
 
-  if (errorStock) {
-    console.error(errorStock);
-    return {
-      error: "Producto actualizado, pero hubo un error con el stock.",
-      success: false,
-    };
+    if (errorStock) {
+      console.error(errorStock);
+      return {
+        error: "Producto actualizado, pero hubo un error con el stock.",
+        success: false,
+      };
+    }
   }
 
   revalidatePath("/stock");

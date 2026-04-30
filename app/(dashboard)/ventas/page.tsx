@@ -1,6 +1,6 @@
-import { getVentasAction } from "@/features/sells/actions/get-venta";
-import { getStockAction } from "@/features/stock/actions/get-producto";
-import { VentasTable } from "@/features/sells/ui/venta-table";
+import { getVentasAction } from "@/features/sales/actions/get-sales";
+import { getStockAction } from "@/features/stock/actions/get-product";
+import { VentasTable } from "@/features/sales/ui/sale-table";
 
 export const dynamic = "force-dynamic";
 

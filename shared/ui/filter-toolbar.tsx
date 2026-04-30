@@ -24,31 +24,46 @@ import {
   SlidersHorizontal,
   X,
 } from "lucide-react";
-import { VARIANTE_OPTIONS, TIPO_OPTIONS } from "@/entities/productos/constants";
+import {
+  VARIANTE_OPTIONS,
+  TIPO_OPTIONS,
+  CUIDADOS_OPTIONS,
+} from "@/entities/productos/constants";
 import { SelectOption } from "@/shared/types/select";
 import { useState } from "react";
 
-const CATEGORIAS_SIMPLIFICADAS = [
-  { value: "todas", label: "Todas las categorías" },
-  { value: "interior", label: "Plantas de Interior" },
-  { value: "exterior", label: "Plantas de Exterior" },
-  { value: "suculentas", label: "Suculentas" },
-  { value: "macetas", label: "Macetas" },
-];
+const variantesPlanas: SelectOption[] = Array.isArray(VARIANTE_OPTIONS)
+  ? VARIANTE_OPTIONS
+  : [
+      { value: "todos", label: "Variantes" },
+      ...Array.from(
+        new Map(
+          Object.values(VARIANTE_OPTIONS)
+            .flat()
+            .filter((v) => v.value !== "todos")
+            .map((item) => [item.value, item]),
+        ).values(),
+      ),
+    ];
 
 interface FilterToolbarProps {
   searchQuery: string;
   onSearchChange: (value: string) => void;
   searchPlaceholder?: string;
-  cuidados: string;
-  onCuidadosChange: (value: string) => void;
+
   tipo: string;
   onTipoChange: (value: string) => void;
+
+  cuidados: string;
+  onCuidadosChange: (value: string) => void;
+
   variante: string;
   onVarianteChange: (value: string) => void;
+
   orden: string;
   onOrdenChange: (value: string) => void;
   ordenOptions: SelectOption[];
+
   onLimpiar: () => void;
   hayFiltrosActivos: boolean;
   actionButtons?: React.ReactNode;
@@ -58,13 +73,13 @@ export function FilterToolbar({
   searchQuery,
   onSearchChange,
   searchPlaceholder = "Buscar...",
-  cuidados,
-  onCuidadosChange,
-  orden,
   tipo,
   onTipoChange,
+  cuidados,
+  onCuidadosChange,
   variante,
   onVarianteChange,
+  orden,
   onOrdenChange,
   ordenOptions,
   onLimpiar,
@@ -79,7 +94,6 @@ export function FilterToolbar({
       {/* MOBILE TOOLBAR */}
       {/* ========================================= */}
       <div className="flex flex-col sm:hidden w-full border border-border bg-white shadow-sm overflow-hidden rounded-md">
-        {/* Fila 1: Buscador + Botón Nuevo Producto (Inyectado) */}
         <div className="flex items-center border-b border-border bg-white">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -90,7 +104,6 @@ export function FilterToolbar({
               className="h-12 w-full pl-10 rounded-none border-0 focus-visible:ring-0 shadow-none text-sm bg-transparent"
             />
           </div>
-          {/* El botón de "+" y otros botones se inyectan acá en mobile */}
           {actionButtons && (
             <div className="flex items-center justify-center px-2 py-1 border-l border-border bg-[#f5f4f4] h-12 shrink-0">
               {actionButtons}
@@ -98,7 +111,6 @@ export function FilterToolbar({
           )}
         </div>
 
-        {/* Fila 2: Dos botones Flat (Filtros y Ordenar) */}
         <div className="grid grid-cols-2 divide-x divide-border">
           <Dialog
             open={isMobileFiltersOpen}
@@ -117,7 +129,7 @@ export function FilterToolbar({
               </Button>
             </DialogTrigger>
 
-            <DialogContent className="fixed inset-0 z-50 w-screen h-dvh max-w-none translate-x-0 translate-y-0 top-0 left-0 m-0 p-0 rounded-none border-none bg-white flex flex-col overflow-hidden [&>button]:hidden">
+            <DialogContent className="fixed inset-0 z-50 w-screen h-screen max-w-none translate-x-0! translate-y-0! top-0! left-0! m-0 p-0 rounded-none border-none bg-white flex flex-col overflow-hidden [&>button]:hidden">
               <DialogHeader className="p-4 border-b border-border flex flex-row items-center justify-between shadow-none space-y-0">
                 <DialogTitle className="uppercase tracking-widest text-sm font-bold m-0">
                   Filtros de Búsqueda
@@ -137,36 +149,9 @@ export function FilterToolbar({
                   <Label className="uppercase tracking-widest text-[10px] text-muted-foreground font-bold">
                     Categoría
                   </Label>
-                  <Select
-                    value={cuidados === "" ? "todas" : cuidados}
-                    onValueChange={(val) =>
-                      onCuidadosChange(val === "todas" ? "" : val)
-                    }
-                  >
-                    <SelectTrigger className="w-full h-12 rounded-none bg-[#f5f4f4] border-0 shadow-none uppercase tracking-widest text-xs font-bold focus:ring-0">
-                      <SelectValue placeholder="Categoría" />
-                    </SelectTrigger>
-                    <SelectContent className="rounded-none border-border shadow-xl">
-                      {CATEGORIAS_SIMPLIFICADAS.map((opt) => (
-                        <SelectItem
-                          key={opt.value}
-                          value={opt.value}
-                          className="rounded-none uppercase tracking-widest text-xs py-3"
-                        >
-                          {opt.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-3">
-                  <Label className="uppercase tracking-widest text-[10px] text-muted-foreground font-bold">
-                    Tipo
-                  </Label>
                   <Select value={tipo} onValueChange={onTipoChange}>
                     <SelectTrigger className="w-full h-12 rounded-none bg-[#f5f4f4] border-0 shadow-none uppercase tracking-widest text-xs font-bold focus:ring-0">
-                      <SelectValue placeholder="Tipo" />
+                      <SelectValue placeholder="Categoría" />
                     </SelectTrigger>
                     <SelectContent className="rounded-none border-border shadow-xl">
                       {TIPO_OPTIONS.map((opt) => (
@@ -175,7 +160,29 @@ export function FilterToolbar({
                           value={opt.value}
                           className="rounded-none uppercase tracking-widest text-xs py-3"
                         >
-                          {opt.label}
+                          {opt.value === "todos" ? "Todas" : opt.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-3">
+                  <Label className="uppercase tracking-widest text-[10px] text-muted-foreground font-bold">
+                    Cuidados
+                  </Label>
+                  <Select value={cuidados} onValueChange={onCuidadosChange}>
+                    <SelectTrigger className="w-full h-12 rounded-none bg-[#f5f4f4] border-0 shadow-none uppercase tracking-widest text-xs font-bold focus:ring-0">
+                      <SelectValue placeholder="Cuidados" />
+                    </SelectTrigger>
+                    <SelectContent className="rounded-none border-border shadow-xl">
+                      {CUIDADOS_OPTIONS.map((opt) => (
+                        <SelectItem
+                          key={opt.value}
+                          value={opt.value}
+                          className="rounded-none uppercase tracking-widest text-xs py-3"
+                        >
+                          {opt.value === "todos" ? "Todos" : opt.label}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -191,13 +198,13 @@ export function FilterToolbar({
                       <SelectValue placeholder="Variante" />
                     </SelectTrigger>
                     <SelectContent className="rounded-none border-border shadow-xl">
-                      {VARIANTE_OPTIONS.map((opt) => (
+                      {variantesPlanas.map((opt) => (
                         <SelectItem
                           key={opt.value}
                           value={opt.value}
                           className="rounded-none uppercase tracking-widest text-xs py-3"
                         >
-                          {opt.label}
+                          {opt.value === "todos" ? "Todas" : opt.label}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -253,7 +260,7 @@ export function FilterToolbar({
       </div>
 
       {/* ========================================= */}
-      {/* DESKTOP TOOLBAR (Mantenemos el formato clásico y amplio) */}
+      {/* DESKTOP TOOLBAR */}
       {/* ========================================= */}
       <div className="hidden sm:flex flex-wrap items-center gap-3 p-2 bg-[#f5f4f4] border border-border/60 rounded-md">
         <div className="relative flex-1 min-w-[200px] w-full sm:w-auto">
@@ -266,29 +273,10 @@ export function FilterToolbar({
           />
         </div>
 
-        <Select
-          value={cuidados === "" ? "todas" : cuidados}
-          onValueChange={(val) => onCuidadosChange(val === "todas" ? "" : val)}
-        >
-          <SelectTrigger className="w-full sm:w-[150px] rounded-none shadow-none cursor-pointer border-border/60 hover:border-foreground/40 bg-white focus:ring-0 transition-colors text-xs font-medium h-10">
-            <SelectValue placeholder="Categoría" />
-          </SelectTrigger>
-          <SelectContent className="rounded-none shadow-md">
-            {CATEGORIAS_SIMPLIFICADAS.map((opt) => (
-              <SelectItem
-                key={opt.value}
-                value={opt.value}
-                className="cursor-pointer rounded-none text-xs"
-              >
-                {opt.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
+        {/* 💡 MAGIC TRICK: Hacemos un override del nombre de la opción "todos" */}
         <Select value={tipo} onValueChange={onTipoChange}>
-          <SelectTrigger className="w-full sm:w-[130px] rounded-none shadow-none cursor-pointer border-border/60 hover:border-foreground/40 bg-white focus:ring-0 transition-colors text-xs font-medium h-10">
-            <SelectValue placeholder="Tipo" />
+          <SelectTrigger className="w-[140px] rounded-none shadow-none cursor-pointer border-border/60 hover:border-foreground/40 bg-white focus:ring-0 transition-colors text-xs font-medium h-10">
+            <SelectValue placeholder="Categoría" />
           </SelectTrigger>
           <SelectContent className="rounded-none shadow-md">
             {TIPO_OPTIONS.map((opt) => (
@@ -297,31 +285,48 @@ export function FilterToolbar({
                 value={opt.value}
                 className="cursor-pointer rounded-none text-xs"
               >
-                {opt.label}
+                {opt.value === "todos" ? "Categoría" : opt.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        <Select value={cuidados} onValueChange={onCuidadosChange}>
+          <SelectTrigger className="w-[140px] rounded-none shadow-none cursor-pointer border-border/60 hover:border-foreground/40 bg-white focus:ring-0 transition-colors text-xs font-medium h-10">
+            <SelectValue placeholder="Cuidados" />
+          </SelectTrigger>
+          <SelectContent className="rounded-none shadow-md">
+            {CUIDADOS_OPTIONS.map((opt) => (
+              <SelectItem
+                key={opt.value}
+                value={opt.value}
+                className="cursor-pointer rounded-none text-xs"
+              >
+                {opt.value === "todos" ? "Cuidados" : opt.label}
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
 
         <Select value={variante} onValueChange={onVarianteChange}>
-          <SelectTrigger className="w-full sm:w-[120px] rounded-none shadow-none cursor-pointer border-border/60 hover:border-foreground/40 bg-white focus:ring-0 transition-colors text-xs font-medium h-10">
-            <SelectValue placeholder="Variante" />
+          <SelectTrigger className="w-[130px] rounded-none shadow-none cursor-pointer border-border/60 hover:border-foreground/40 bg-white focus:ring-0 transition-colors text-xs font-medium h-10">
+            <SelectValue placeholder="Variantes" />
           </SelectTrigger>
           <SelectContent className="rounded-none shadow-md">
-            {VARIANTE_OPTIONS.map((opt) => (
+            {variantesPlanas.map((opt) => (
               <SelectItem
                 key={opt.value}
                 value={opt.value}
                 className="cursor-pointer rounded-none uppercase text-xs"
               >
-                {opt.label}
+                {opt.value === "todos" ? "Variantes" : opt.label}
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
 
         <Select value={orden} onValueChange={onOrdenChange}>
-          <SelectTrigger className="w-full sm:w-[220px] rounded-none shadow-none cursor-pointer border-border/60 hover:border-foreground/40 bg-white focus:ring-0 transition-colors text-xs font-medium h-10">
+          <SelectTrigger className="w-[200px] rounded-none shadow-none cursor-pointer border-border/60 hover:border-foreground/40 bg-white focus:ring-0 transition-colors text-xs font-medium h-10">
             <div className="flex items-center gap-2">
               <ArrowUpDown className="h-3 w-3 opacity-50" />
               <SelectValue placeholder="Ordenar por" />

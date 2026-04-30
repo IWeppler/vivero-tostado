@@ -1,7 +1,7 @@
-import { getVentasAction } from "@/features/sells/actions/get-venta";
-import { getStockAction } from "@/features/stock/actions/get-producto";
-import { RegistrarVentaModal } from "@/features/sells/ui/venta-modal";
-import { CrearProductoModal } from "@/features/stock/ui/add-modal";
+import { getVentasAction } from "@/features/sales/actions/get-sales";
+import { getStockAction } from "@/features/stock/actions/get-product";
+import { RegistrarVentaModal } from "@/features/sales/ui/create-sale-modal";
+import { CrearProductoModal } from "@/features/stock/ui/create-modal";
 import {
   getDashboardMetrics,
   PeriodoDashboard,

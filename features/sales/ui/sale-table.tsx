@@ -13,9 +13,9 @@ import {
 } from "@/shared/ui/table";
 import { Badge } from "@/shared/ui/badge";
 import { Image as ImageIcon, Receipt, Download } from "lucide-react";
-import { AnularVentaModal } from "./anular-modal";
+import { AnularVentaModal } from "./cancel-sale-modal";
 import { FilterToolbar } from "@/shared/ui/filter-toolbar";
-import { RegistrarVentaModal } from "./venta-modal";
+import { RegistrarVentaModal } from "./create-sale-modal";
 import { Button } from "@/shared/ui/button";
 
 interface VentasTableProps {
@@ -48,7 +48,7 @@ export function VentasTable({
   const [filtroNombre, setFiltroNombre] = useState("");
   const [filtroCuidados, setFiltroCuidados] = useState("");
   const [filtroTipo, setFiltroTipo] = useState("todos");
-  const [filtroVariante, setFiltroVariante] = useState("todos");
+  const [filtroVariante, setFiltroVariante] = useState("");
   const [orden, setOrden] = useState("recientes");
 
   const ordenOptions = [

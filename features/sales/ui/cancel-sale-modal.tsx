@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { anularVentaAction } from "../actions/anular-venta";
+import { anularVentaAction } from "../actions/cancel-sale";
 import { toast } from "sonner";
 
 import {

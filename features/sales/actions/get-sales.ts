@@ -17,7 +17,7 @@ export async function getVentasAction(): Promise<{
       .select(
         `
         *,
-        producto:productos(nombre, cuidados, imagen_url)
+        producto:productos(nombre, tipo, imagen_url)
       `,
       )
       .order("fecha_venta", { ascending: false });
