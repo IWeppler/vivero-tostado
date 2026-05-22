@@ -1,5 +1,5 @@
 import { Navbar } from "@/shared/components/navbar";
-import { CartSidebar } from "@/features/store/components/cart-sidebar";
+import { CartSidebar } from "@/shared/components/cart-sidebar";
 
 export const metadata = {
   title: "Tienda Oficial | Vivero Tostado",
@@ -11,7 +11,7 @@ export default function PublicLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const NUMERO_WHATSAPP = "5491137920744";
+  const NUMERO_WHATSAPP = process.env.NUMERO_WHATSAPP;
 
   return (
     <div className="min-h-screen bg-[#fffefe] flex flex-col">

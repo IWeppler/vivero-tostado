@@ -11,8 +11,8 @@ export async function crearProductoAction(
   formData: FormData,
 ) {
   const nombre = formData.get("nombre") as string;
-  const cuidados = formData.get("cuidados") as string;
-  const categoria = formData.get("categoria") as string;
+  const tipo = formData.get("tipo") as string;
+  const descripcion = formData.get("descripcion") as string;
   const precio = Number.parseFloat(formData.get("precio") as string);
   const precio_costo = Number.parseFloat(
     formData.get("precio_costo") as string,
@@ -20,13 +20,7 @@ export async function crearProductoAction(
 
   const archivos = formData.getAll("imagenes") as File[];
 
-  if (
-    !nombre ||
-    !cuidados ||
-    !categoria ||
-    Number.isNaN(precio) ||
-    Number.isNaN(precio_costo)
-  ) {
+  if (!nombre || !tipo || Number.isNaN(precio) || Number.isNaN(precio_costo)) {
     return {
       error: "Por favor completa todos los campos obligatorios.",
       success: false,
@@ -38,12 +32,10 @@ export async function crearProductoAction(
 
   let imagen_url = null;
 
-  // Las imágenes ya vienen optimizadas y en formato .webp gracias al cliente
   const validFiles = archivos.filter((f) => f.size > 0);
   if (validFiles.length > 0) {
     const urls = [];
     for (const file of validFiles) {
-      // Como ya vienen en WebP, esta extensión suele ser siempre "webp"
       const fileExt = file.name.split(".").pop();
       const fileName = `${crypto.randomUUID()}.${fileExt}`;
 
@@ -66,18 +58,16 @@ export async function crearProductoAction(
     }
   }
 
-  // Generamos el Slug amigable para la URL de la tienda
-  let slug = slugify(`${nombre}-${categoria}-${cuidados}`);
+  let slug = slugify(`${nombre}-${tipo}`);
   const sufijo = Math.random().toString(36).substring(2, 6);
   slug = `${slug}-${sufijo}`;
 
-  // Insertamos el producto en la tabla principal
   const { data: nuevoProducto, error: errorProducto } = await supabase
     .from("productos")
     .insert({
       nombre,
-      cuidados,
-      categoria,
+      tipo,
+      descripcion,
       precio,
       precio_costo,
       imagen_url,

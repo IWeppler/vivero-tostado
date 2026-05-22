@@ -21,7 +21,6 @@ export function StockView({ productos }: Readonly<StockViewProps>) {
   const [paginaActual, setPaginaActual] = useState(1);
 
   const [filtroNombre, setFiltroNombre] = useState("");
-  const [filtroCuidados, setFiltroCuidados] = useState("");
   const [filtroTipo, setFiltroTipo] = useState("todos");
   const [filtroVariante, setFiltroVariante] = useState("todos");
   const [orden, setOrden] = useState("recientes");
@@ -36,7 +35,6 @@ export function StockView({ productos }: Readonly<StockViewProps>) {
   const productosFiltradosYOrdenados = useMemo(() => {
     const resultado = productos.filter((producto) => {
       const nombre = producto.nombre?.toLowerCase() || "";
-      const cuidados = producto.cuidados?.toLowerCase() || "";
       const tipo = producto.tipo?.toLowerCase() || "";
 
       let tieneVariante = false;
@@ -51,11 +49,10 @@ export function StockView({ productos }: Readonly<StockViewProps>) {
       }
 
       const matchNombre = nombre.includes(filtroNombre.toLowerCase());
-      const matchCuidados = cuidados.includes(filtroCuidados.toLowerCase());
       const matchTipo =
         filtroTipo === "todos" || tipo === filtroTipo.toLowerCase();
 
-      return matchNombre && matchCuidados && matchTipo && tieneVariante;
+      return matchNombre && matchTipo && tieneVariante;
     });
 
     resultado.sort((a, b) => {
@@ -81,7 +78,6 @@ export function StockView({ productos }: Readonly<StockViewProps>) {
   }, [
     productos,
     filtroNombre,
-    filtroCuidados,
     filtroTipo,
     filtroVariante,
     orden,
@@ -97,7 +93,6 @@ export function StockView({ productos }: Readonly<StockViewProps>) {
 
   const limpiarFiltros = () => {
     setFiltroNombre("");
-    setFiltroCuidados("");
     setFiltroTipo("todos");
     setFiltroVariante("todos");
     setOrden("recientes");
@@ -108,10 +103,7 @@ export function StockView({ productos }: Readonly<StockViewProps>) {
     setFiltroNombre(v);
     setPaginaActual(1);
   };
-  const handleFiltroCuidados = (v: string) => {
-    setFiltroCuidados(v);
-    setPaginaActual(1);
-  };
+
   const handleFiltroTipo = (v: string) => {
     setFiltroTipo(v);
     setPaginaActual(1);
@@ -127,12 +119,10 @@ export function StockView({ productos }: Readonly<StockViewProps>) {
 
   const hayFiltrosActivos =
     filtroNombre !== "" ||
-    filtroCuidados !== "" ||
     filtroTipo !== "todos" ||
     filtroVariante !== "todos" ||
     orden !== "recientes";
 
-  // 💡 Dejamos SOLO el selector de vista (Tabla/Grilla) en la Toolbar
   const viewToggleButtons = (
     <div className="hidden sm:flex items-center gap-1 bg-muted p-1 rounded-md justify-center">
       <Button
@@ -162,7 +152,6 @@ export function StockView({ productos }: Readonly<StockViewProps>) {
 
   return (
     <div className="space-y-4">
-      {/* 💡 Acciones Superiores: Las extraemos de la barra de filtros y las ponemos en su propio contenedor */}
       <div className="flex flex-wrap items-center justify-end gap-3 w-full -mt-4 mb-2">
         <ImportarPedidoModal />
         <CrearProductoModal />
@@ -172,8 +161,6 @@ export function StockView({ productos }: Readonly<StockViewProps>) {
         searchQuery={filtroNombre}
         onSearchChange={handleFiltroNombre}
         searchPlaceholder="Buscar por nombre..."
-        cuidados={filtroCuidados}
-        onCuidadosChange={handleFiltroCuidados}
         tipo={filtroTipo}
         onTipoChange={handleFiltroTipo}
         variante={filtroVariante}

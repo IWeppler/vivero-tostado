@@ -123,7 +123,7 @@ export function ImportarPedidoModal() {
       <DialogTrigger asChild>
         <Button
           variant="outline"
-          className="hidden sm:flex h-10 border-border/60 bg-white shadow-sm hover:bg-muted transition-colors font-medium cursor-pointer"
+          className="hidden sm:flex h-10 border-border/60 bg-white hover:bg-muted transition-colors font-medium cursor-pointer"
         >
           <FileSpreadsheet className="w-4 h-4 mr-2 text-green-600" />
           Importar Pedido

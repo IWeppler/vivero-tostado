@@ -27,14 +27,13 @@ import { ScrollArea } from "@/shared/ui/scroll-area";
 import {
   TIPO_OPTIONS,
   VARIANTE_OPTIONS,
-  CUIDADOS_OPTIONS,
   getCategoriaPrincipal,
 } from "@/entities/productos/constants";
 
 export function CrearProductoModal() {
   const [isOpen, setIsOpen] = useState(false);
   const [archivos, setArchivos] = useState<File[]>([]);
-  const [categoriaSeleccionada, setCategoriaSeleccionada] = useState(
+  const [tipoSeleccionada, setTipoSeleccionada] = useState(
     getCategoriaPrincipal(),
   );
 
@@ -50,7 +49,7 @@ export function CrearProductoModal() {
     setIsOpen(open);
     if (!open) {
       setArchivos([]);
-      setCategoriaSeleccionada(getCategoriaPrincipal());
+      setTipoSeleccionada(getCategoriaPrincipal());
     }
   };
 
@@ -64,7 +63,7 @@ export function CrearProductoModal() {
       if (result.success) {
         setIsOpen(false);
         setArchivos([]);
-        setCategoriaSeleccionada(getCategoriaPrincipal());
+        setTipoSeleccionada(getCategoriaPrincipal());
         toast.success("Producto añadido al inventario con éxito 🌿");
       } else if (result.error) {
         toast.error(result.error);
@@ -101,14 +100,14 @@ export function CrearProductoModal() {
   };
 
   const variantesAMostrar =
-    VARIANTE_OPTIONS[categoriaSeleccionada] || VARIANTE_OPTIONS["interior"];
+    VARIANTE_OPTIONS[tipoSeleccionada] || VARIANTE_OPTIONS["interior"];
 
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-        <Button className="w-14 h-14 rounded-full shadow-2xl sm:w-auto sm:h-10 sm:px-4 sm:rounded-md sm:shadow-sm bg-emerald-700 text-white hover:bg-emerald-800 cursor-pointer transition-transform active:scale-95">
+        <Button className="w-12 h-12 rounded-xl shadow-2xl sm:w-auto sm:h-10 sm:px-4 sm:rounded-md sm:shadow-sm bg-emerald-700 text-white hover:bg-emerald-800 cursor-pointer transition-transform active:scale-95">
           <Plus className="h-6 w-6 sm:h-4 sm:w-4 sm:mr-2" strokeWidth={2.5} />
-          <span className="hidden sm:inline text-xs tracking-wide uppercase font-semibold">
+          <span className="hidden sm:inline">
             Nuevo Producto
           </span>
         </Button>
@@ -137,11 +136,11 @@ export function CrearProductoModal() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="categoria">Categoría</Label>
+                <Label htmlFor="tipo">Tipo</Label>
                 <Select
-                  name="categoria"
-                  value={categoriaSeleccionada}
-                  onValueChange={setCategoriaSeleccionada}
+                  name="tipo"
+                  value={tipoSeleccionada}
+                  onValueChange={setTipoSeleccionada}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Selecciona..." />
@@ -154,24 +153,6 @@ export function CrearProductoModal() {
                         </SelectItem>
                       ),
                     )}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="cuidados">Nivel de Cuidados</Label>
-                <Select name="cuidados" defaultValue="facil">
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecciona..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {CUIDADOS_OPTIONS.filter(
-                      (opt) => opt.value !== "todos",
-                    ).map((opt) => (
-                      <SelectItem key={opt.value} value={opt.value}>
-                        {opt.label}
-                      </SelectItem>
-                    ))}
                   </SelectContent>
                 </Select>
               </div>

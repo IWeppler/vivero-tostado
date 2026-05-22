@@ -17,6 +17,7 @@ import { AnularVentaModal } from "./cancel-sale-modal";
 import { FilterToolbar } from "@/shared/ui/filter-toolbar";
 import { RegistrarVentaModal } from "./create-sale-modal";
 import { Button } from "@/shared/ui/button";
+import Image from "next/image";
 
 interface VentasTableProps {
   ventas: Venta[];
@@ -46,7 +47,6 @@ export function VentasTable({
   productos = [],
 }: Readonly<VentasTableProps>) {
   const [filtroNombre, setFiltroNombre] = useState("");
-  const [filtroCuidados, setFiltroCuidados] = useState("");
   const [filtroTipo, setFiltroTipo] = useState("todos");
   const [filtroVariante, setFiltroVariante] = useState("");
   const [orden, setOrden] = useState("recientes");
@@ -64,18 +64,16 @@ export function VentasTable({
     // 1. Filtrar
     const resultado = ventas.filter((venta) => {
       const nombre = venta.producto?.nombre?.toLowerCase() || "";
-      const cuidados = venta.producto?.cuidados?.toLowerCase() || "";
       const tipo = venta.producto?.tipo?.toLowerCase() || "";
       const variante = venta.variante?.toLowerCase() || "";
 
       const matchNombre = nombre.includes(filtroNombre.toLowerCase());
-      const matchCuidados = cuidados.includes(filtroCuidados.toLowerCase());
       const matchTipo =
         filtroTipo === "todos" || tipo === filtroTipo.toLowerCase();
       const matchVariante =
         filtroVariante === "todos" || variante === filtroVariante.toLowerCase();
 
-      return matchNombre && matchCuidados && matchTipo && matchVariante;
+      return matchNombre && matchTipo && matchVariante;
     });
 
     // 2. Ordenar
@@ -111,11 +109,10 @@ export function VentasTable({
     });
 
     return resultado;
-  }, [ventas, filtroNombre, filtroCuidados, filtroTipo, filtroVariante, orden]);
+  }, [ventas, filtroNombre, filtroTipo, filtroVariante, orden]);
 
   const limpiarFiltros = () => {
     setFiltroNombre("");
-    setFiltroCuidados("");
     setFiltroTipo("todos");
     setFiltroVariante("todos");
     setOrden("recientes");
@@ -123,7 +120,6 @@ export function VentasTable({
 
   const hayFiltrosActivos =
     filtroNombre !== "" ||
-    filtroCuidados !== "" ||
     filtroTipo !== "todos" ||
     filtroVariante !== "todos" ||
     orden !== "recientes";
@@ -147,8 +143,6 @@ export function VentasTable({
           searchQuery={filtroNombre}
           onSearchChange={setFiltroNombre}
           searchPlaceholder="Buscar por equipo..."
-          cuidados={filtroCuidados}
-          onCuidadosChange={setFiltroCuidados}
           tipo={filtroTipo}
           onTipoChange={setFiltroTipo}
           variante={filtroVariante}
@@ -179,8 +173,6 @@ export function VentasTable({
         searchQuery={filtroNombre}
         onSearchChange={setFiltroNombre}
         searchPlaceholder="Buscar por equipo..."
-        cuidados={filtroCuidados}
-        onCuidadosChange={setFiltroCuidados}
         tipo={filtroTipo}
         onTipoChange={setFiltroTipo}
         variante={filtroVariante}
@@ -235,7 +227,7 @@ export function VentasTable({
                 const isEliminado = !venta.producto;
                 const nombreProducto = isEliminado
                   ? "Producto eliminado"
-                  : `${venta.producto?.nombre} (${venta.producto?.cuidados})`;
+                  : `${venta.producto?.nombre}`;
 
                 // Cálculo de ganancia
                 const costoUnitario = venta.precio_costo || 0;
@@ -247,8 +239,7 @@ export function VentasTable({
                     <TableCell>
                       <div className="w-10 h-10 rounded-md bg-muted flex items-center justify-center overflow-hidden">
                         {primeraImagen ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img
+                          <Image
                             src={primeraImagen}
                             alt="Producto"
                             className="object-cover w-full h-full"
@@ -267,9 +258,6 @@ export function VentasTable({
                       ) : (
                         <>
                           <div>{venta.producto?.nombre}</div>
-                          <div className="text-xs text-muted-foreground font-normal">
-                            {venta.producto?.cuidados}
-                          </div>
                         </>
                       )}
                     </TableCell>

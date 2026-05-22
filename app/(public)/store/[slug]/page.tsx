@@ -1,4 +1,4 @@
-import { getProductoBySlugAction } from "@/features/store/actions/store-actions";
+import { getProductoBySlugAction } from "@/shared/actions/store-actions";
 import { ProductDetail } from "@/features/store/components/product-detail";
 import { notFound } from "next/navigation";
 

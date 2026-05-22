@@ -4,7 +4,7 @@ import { StockView } from "@/features/stock/ui/stock-view";
 export const dynamic = "force-dynamic";
 
 export default async function StockPage() {
-  const { data: productos } = await getStockAction();
+  const { data: productos, error } = await getStockAction();
 
   return (
     <div className="space-y-6">
@@ -18,7 +18,14 @@ export default async function StockPage() {
           </p>
         </div>
       </div>
-      <StockView productos={productos || []} />
+      {error ? (
+        <div className="p-4 bg-destructive/10 text-destructive rounded-lg text-center font-medium">
+          Ocurrió un error al cargar el inventario. Por favor, intenta
+          nuevamente más tarde.
+        </div>
+      ) : (
+        <StockView productos={productos || []} />
+      )}
     </div>
   );
 }

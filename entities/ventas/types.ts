@@ -10,7 +10,6 @@ export interface Venta {
 
   producto?: {
     nombre: string;
-    cuidados?: string;
     imagen_url: string | null;
     tipo?: string;
   } | null;

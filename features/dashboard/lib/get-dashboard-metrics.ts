@@ -94,9 +94,7 @@ export function getDashboardMetrics(
 
       if (!acc[id]) {
         acc[id] = {
-          nombre: v.producto
-            ? `${v.producto.nombre} (${v.producto.cuidados})`
-            : "Producto Eliminado",
+          nombre: v.producto ? `${v.producto.nombre}` : "Producto Eliminado",
           ingresos: 0,
           unidades: 0,
           ganancia: 0,

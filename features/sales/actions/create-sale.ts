@@ -43,19 +43,18 @@ export async function registrarVentaAction(
 
     if (stockError || !stockActual) {
       return {
-        error: `No se encontró stock registrado para el talle ${item.variante}.`,
+        error: `No se encontró stock registrado para la variante ${item.variante}.`,
         success: false,
       };
     }
 
     if (stockActual.cantidad < item.cantidad) {
       return {
-        error: `Stock insuficiente en talle ${item.variante}. Solo quedan ${stockActual.cantidad} unidades.`,
+        error: `Stock insuficiente en variante ${item.variante}. Solo quedan ${stockActual.cantidad} unidades.`,
         success: false,
       };
     }
 
-    // Extraemos el costo de forma segura
     const precioCostoReal = (stockActual.producto as any)?.precio_costo || 0;
 
     itemsProcesados.push({
@@ -68,7 +67,6 @@ export async function registrarVentaAction(
 
   // 2. Si el stock está OK, procesamos todas las ventas y descontamos el stock
   for (const item of itemsProcesados) {
-    // A) Registramos la venta en el historial congelando AMBOS precios (venta y costo)
     const { error: ventaError } = await supabase.from("ventas").insert({
       producto_id: item.productoId,
       variante: item.variante,
@@ -99,8 +97,7 @@ export async function registrarVentaAction(
     }
   }
 
-  revalidatePath("/ventas");
-  revalidatePath("/stock");
+  revalidatePath("/", "layout");
 
   return { error: null, success: true };
 }

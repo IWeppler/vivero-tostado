@@ -28,7 +28,7 @@ export function PeriodSelector({
 
   return (
     <Select value={defaultPeriod} onValueChange={handlePeriodChange}>
-      <SelectTrigger className="w-[180px] bg-white border-gray-200 cursor-pointer">
+      <SelectTrigger className="w-4/5 md:w-45 bg-white border-gray-200 cursor-pointer">
         <SelectValue placeholder="Seleccionar período" />
       </SelectTrigger>
       <SelectContent>

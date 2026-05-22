@@ -33,14 +33,7 @@ import {
   TIPO_OPTIONS,
   TODAS_LAS_VARIANTES,
 } from "@/entities/productos/constants";
-
-const CATEGORIAS_SIMPLIFICADAS = [
-  { value: "todas", label: "Todas las categorías" },
-  { value: "interior", label: "Plantas de Interior" },
-  { value: "exterior", label: "Plantas de Exterior" },
-  { value: "suculentas", label: "Suculentas" },
-  { value: "macetas", label: "Macetas" },
-];
+import Image from "next/image";
 
 interface StoreCatalogProps {
   productos: Producto[];
@@ -48,14 +41,12 @@ interface StoreCatalogProps {
 
 const ITEMS_POR_PAGINA = 12;
 
-// 💡 1. FIX: Marcamos las props como Readonly para satisfacer a TypeScript/ESLint
 function CatalogContent({ productos }: Readonly<{ productos: Producto[] }>) {
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
   const searchQuery = searchParams.get("q") || "";
 
-  const [cuidados, setCuidados] = useState("");
   const [tipo, setTipo] = useState("todos");
   const [variante, setVariante] = useState("todos");
   const [orden, setOrden] = useState("recientes");
@@ -77,12 +68,9 @@ function CatalogContent({ productos }: Readonly<{ productos: Producto[] }>) {
       const matchSearch = nombreStr
         .toLowerCase()
         .includes(searchQuery.toLowerCase());
-      const matchCuidados = cuidados === "" || c.cuidados === cuidados;
       const matchTipo =
         tipo === "todos" || tipoStr.toLowerCase() === tipo.toLowerCase();
 
-      // 💡 2. FIX: Usamos Optional Chaining (?.) en lugar del && anidado
-      // Le agregamos '?? false' al final para asegurarnos de que la expresión siempre devuelva un booleano estricto.
       const matchVariante =
         variante === "todos" ||
         (c.stock?.some(
@@ -92,7 +80,7 @@ function CatalogContent({ productos }: Readonly<{ productos: Producto[] }>) {
         ) ??
           false);
 
-      return matchSearch && matchCuidados && matchTipo && matchVariante;
+      return matchSearch && matchTipo && matchVariante;
     });
 
     resultado.sort((a, b) => {
@@ -108,7 +96,7 @@ function CatalogContent({ productos }: Readonly<{ productos: Producto[] }>) {
     });
 
     return resultado;
-  }, [productos, searchQuery, cuidados, tipo, variante, orden]);
+  }, [productos, searchQuery, tipo, variante, orden]);
 
   const productosVisibles = productosFiltradas.slice(0, visibleCount);
   const hayMasProductos = visibleCount < productosFiltradas.length;
@@ -120,7 +108,6 @@ function CatalogContent({ productos }: Readonly<{ productos: Producto[] }>) {
     };
 
   const limpiarFiltros = () => {
-    setCuidados("");
     setTipo("todos");
     setVariante("todos");
     setOrden("recientes");
@@ -133,7 +120,6 @@ function CatalogContent({ productos }: Readonly<{ productos: Producto[] }>) {
   };
 
   const hayFiltrosActivos =
-    cuidados !== "" ||
     tipo !== "todos" ||
     variante !== "todos" ||
     orden !== "recientes" ||
@@ -190,34 +176,6 @@ function CatalogContent({ productos }: Readonly<{ productos: Producto[] }>) {
             </DialogHeader>
 
             <div className="flex-1 overflow-y-auto p-6 space-y-8">
-              <div className="space-y-4">
-                <Label className="uppercase tracking-widest text-[10px] text-muted-foreground font-bold">
-                  Categoría
-                </Label>
-                <Select
-                  value={cuidados === "" ? "todas" : cuidados}
-                  onValueChange={(val) => {
-                    setCuidados(val === "todas" ? "" : val);
-                    setVisibleCount(ITEMS_POR_PAGINA);
-                  }}
-                >
-                  <SelectTrigger className="w-full h-12 rounded-none bg-[#f5f4f4] border-0 shadow-none uppercase tracking-widest text-xs font-bold focus:ring-0">
-                    <SelectValue placeholder="Categoría" />
-                  </SelectTrigger>
-                  <SelectContent className="rounded-none border-border shadow-xl">
-                    {CATEGORIAS_SIMPLIFICADAS.map((opt) => (
-                      <SelectItem
-                        key={opt.value}
-                        value={opt.value}
-                        className="rounded-none uppercase tracking-widest text-xs py-3"
-                      >
-                        {opt.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
               <div className="space-y-4">
                 <Label className="uppercase tracking-widest text-[10px] text-muted-foreground font-bold">
                   Tipo
@@ -295,7 +253,7 @@ function CatalogContent({ productos }: Readonly<{ productos: Producto[] }>) {
           <SelectContent
             position="popper"
             sideOffset={4}
-            className="w-[200px] rounded-none border-border shadow-xl"
+            className="w-50 rounded-none border-border shadow-xl"
           >
             {ordenOptions.map((opt) => (
               <SelectItem
@@ -317,30 +275,8 @@ function CatalogContent({ productos }: Readonly<{ productos: Producto[] }>) {
             Filtros:
           </span>
 
-          <Select
-            value={cuidados === "" ? "todas" : cuidados}
-            onValueChange={(val) =>
-              handleFiltrar(setCuidados)(val === "todas" ? "" : val)
-            }
-          >
-            <SelectTrigger className="w-[200px] h-10 rounded-none border-0 bg-[#f5f4f4] shadow-none uppercase tracking-widest text-[10px] font-bold focus:ring-0 px-3">
-              <SelectValue placeholder="Categoría" />
-            </SelectTrigger>
-            <SelectContent className="rounded-none border-border shadow-xl">
-              {CATEGORIAS_SIMPLIFICADAS.map((opt) => (
-                <SelectItem
-                  key={opt.value}
-                  value={opt.value}
-                  className="rounded-none uppercase tracking-widest text-[11px] py-2.5"
-                >
-                  {opt.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
           <Select value={tipo} onValueChange={handleFiltrar(setTipo)}>
-            <SelectTrigger className="w-[160px] h-10 rounded-none border-0 bg-[#f5f4f4] shadow-none uppercase tracking-widest text-[10px] font-bold focus:ring-0 px-3">
+            <SelectTrigger className="w-40 h-10 rounded-none border-0 bg-[#f5f4f4] shadow-none uppercase tracking-widest text-[10px] font-bold focus:ring-0 px-3">
               <SelectValue placeholder="Tipo" />
             </SelectTrigger>
             <SelectContent className="rounded-none border-border shadow-xl">
@@ -357,7 +293,7 @@ function CatalogContent({ productos }: Readonly<{ productos: Producto[] }>) {
           </Select>
 
           <Select value={variante} onValueChange={handleFiltrar(setVariante)}>
-            <SelectTrigger className="w-[170px] h-10 rounded-none border-0 bg-[#f5f4f4] shadow-none uppercase tracking-widest text-[10px] font-bold focus:ring-0 px-3">
+            <SelectTrigger className="w-40 h-10 rounded-none border-0 bg-[#f5f4f4] shadow-none uppercase tracking-widest text-[10px] font-bold focus:ring-0 px-3">
               <SelectValue placeholder="Variante" />
             </SelectTrigger>
             <SelectContent className="rounded-none border-border shadow-xl">
@@ -389,7 +325,7 @@ function CatalogContent({ productos }: Readonly<{ productos: Producto[] }>) {
             Ordenar:
           </span>
           <Select value={orden} onValueChange={handleFiltrar(setOrden)}>
-            <SelectTrigger className="w-[200px] h-10 rounded-none border-0 bg-[#f5f4f4] shadow-none uppercase tracking-widest text-[10px] font-bold focus:ring-0 px-3">
+            <SelectTrigger className="w-50 h-10 rounded-none border-0 bg-[#f5f4f4] shadow-none uppercase tracking-widest text-[10px] font-bold focus:ring-0 px-3">
               <SelectValue placeholder="Ordenar por" />
             </SelectTrigger>
             <SelectContent className="rounded-none border-border shadow-xl">
@@ -458,8 +394,7 @@ function CatalogContent({ productos }: Readonly<{ productos: Producto[] }>) {
                     className="aspect-4/5 bg-[#f7f7f7] relative overflow-hidden flex items-center justify-center w-full shadow-none border border-border/40"
                   >
                     {primeraImagen ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
+                      <Image
                         src={primeraImagen}
                         alt={producto.nombre || "Producto"}
                         className="object-cover w-full h-full"
@@ -492,9 +427,6 @@ function CatalogContent({ productos }: Readonly<{ productos: Producto[] }>) {
                         {producto.nombre || "Sin nombre"}
                       </h3>
                     </Link>
-                    <p className="text-[10px] text-muted-foreground mt-1 uppercase tracking-widest font-bold">
-                      {producto.cuidados}
-                    </p>
                     <div className="mt-2">
                       <span className="text-sm font-bold text-foreground">
                         ${(producto.precio || 0).toLocaleString("es-AR")}

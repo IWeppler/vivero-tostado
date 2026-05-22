@@ -27,7 +27,7 @@ export function Sidebar() {
   return (
     <>
       {/* MOBILE TOP NAVBAR (Solo visible en celular) */}
-      <div className="md:hidden flex items-center justify-between p-4 bg-white border-b border-gray-200 sticky top-0 z-50">
+      <div className="md:hidden flex w-full shrink-0 items-center justify-between p-4 bg-white border-b border-gray-200 sticky top-0 z-50">
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 flex items-center justify-center rounded-lg overflow-hidden shadow-sm border border-gray-100 bg-white shrink-0">
             <Image
@@ -62,7 +62,7 @@ export function Sidebar() {
       {/* SIDEBAR */}
       <aside
         className={`
-        fixed md:sticky top-[69px] md:top-0 left-0 h-[calc(100vh-69px)] md:h-screen w-64 bg-white border-r border-gray-200 flex flex-col shrink-0 z-50 transition-transform duration-300 ease-in-out
+        fixed md:sticky top-[69px] md:top-0 left-0 h-[calc(100vh-69px)] md:h-screen w-full md:w-64 bg-white border-r border-gray-200 flex flex-col shrink-0 z-50 transition-transform duration-300 ease-in-out
         ${isOpen ? "translate-x-0" : "-translate-x-full"} md:translate-x-0
       `}
       >

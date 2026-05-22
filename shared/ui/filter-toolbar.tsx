@@ -27,7 +27,6 @@ import {
 import {
   VARIANTE_OPTIONS,
   TIPO_OPTIONS,
-  CUIDADOS_OPTIONS,
 } from "@/entities/productos/constants";
 import { SelectOption } from "@/shared/types/select";
 import { useState } from "react";
@@ -54,9 +53,6 @@ interface FilterToolbarProps {
   tipo: string;
   onTipoChange: (value: string) => void;
 
-  cuidados: string;
-  onCuidadosChange: (value: string) => void;
-
   variante: string;
   onVarianteChange: (value: string) => void;
 
@@ -75,8 +71,6 @@ export function FilterToolbar({
   searchPlaceholder = "Buscar...",
   tipo,
   onTipoChange,
-  cuidados,
-  onCuidadosChange,
   variante,
   onVarianteChange,
   orden,
@@ -169,28 +163,6 @@ export function FilterToolbar({
 
                 <div className="space-y-3">
                   <Label className="uppercase tracking-widest text-[10px] text-muted-foreground font-bold">
-                    Cuidados
-                  </Label>
-                  <Select value={cuidados} onValueChange={onCuidadosChange}>
-                    <SelectTrigger className="w-full h-12 rounded-none bg-[#f5f4f4] border-0 shadow-none uppercase tracking-widest text-xs font-bold focus:ring-0">
-                      <SelectValue placeholder="Cuidados" />
-                    </SelectTrigger>
-                    <SelectContent className="rounded-none border-border shadow-xl">
-                      {CUIDADOS_OPTIONS.map((opt) => (
-                        <SelectItem
-                          key={opt.value}
-                          value={opt.value}
-                          className="rounded-none uppercase tracking-widest text-xs py-3"
-                        >
-                          {opt.value === "todos" ? "Todos" : opt.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-3">
-                  <Label className="uppercase tracking-widest text-[10px] text-muted-foreground font-bold">
                     Variante
                   </Label>
                   <Select value={variante} onValueChange={onVarianteChange}>
@@ -243,7 +215,7 @@ export function FilterToolbar({
             <SelectContent
               position="popper"
               sideOffset={4}
-              className="w-[200px] rounded-none border-border shadow-xl"
+              className="w-50 rounded-none border-border shadow-xl"
             >
               {ordenOptions.map((opt) => (
                 <SelectItem
@@ -259,11 +231,9 @@ export function FilterToolbar({
         </div>
       </div>
 
-      {/* ========================================= */}
       {/* DESKTOP TOOLBAR */}
-      {/* ========================================= */}
       <div className="hidden sm:flex flex-wrap items-center gap-3 p-2 bg-[#f5f4f4] border border-border/60 rounded-md">
-        <div className="relative flex-1 min-w-[200px] w-full sm:w-auto">
+        <div className="relative flex-1 min-w-50 w-full sm:w-auto">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder={searchPlaceholder}
@@ -273,9 +243,8 @@ export function FilterToolbar({
           />
         </div>
 
-        {/* 💡 MAGIC TRICK: Hacemos un override del nombre de la opción "todos" */}
         <Select value={tipo} onValueChange={onTipoChange}>
-          <SelectTrigger className="w-[140px] rounded-none shadow-none cursor-pointer border-border/60 hover:border-foreground/40 bg-white focus:ring-0 transition-colors text-xs font-medium h-10">
+          <SelectTrigger className="w-35 rounded-none shadow-none cursor-pointer border-border/60 hover:border-foreground/40 bg-white focus:ring-0 transition-colors text-xs font-medium h-10">
             <SelectValue placeholder="Categoría" />
           </SelectTrigger>
           <SelectContent className="rounded-none shadow-md">
@@ -291,25 +260,8 @@ export function FilterToolbar({
           </SelectContent>
         </Select>
 
-        <Select value={cuidados} onValueChange={onCuidadosChange}>
-          <SelectTrigger className="w-[140px] rounded-none shadow-none cursor-pointer border-border/60 hover:border-foreground/40 bg-white focus:ring-0 transition-colors text-xs font-medium h-10">
-            <SelectValue placeholder="Cuidados" />
-          </SelectTrigger>
-          <SelectContent className="rounded-none shadow-md">
-            {CUIDADOS_OPTIONS.map((opt) => (
-              <SelectItem
-                key={opt.value}
-                value={opt.value}
-                className="cursor-pointer rounded-none text-xs"
-              >
-                {opt.value === "todos" ? "Cuidados" : opt.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
         <Select value={variante} onValueChange={onVarianteChange}>
-          <SelectTrigger className="w-[130px] rounded-none shadow-none cursor-pointer border-border/60 hover:border-foreground/40 bg-white focus:ring-0 transition-colors text-xs font-medium h-10">
+          <SelectTrigger className="w-35 rounded-none shadow-none cursor-pointer border-border/60 hover:border-foreground/40 bg-white focus:ring-0 transition-colors text-xs font-medium h-10">
             <SelectValue placeholder="Variantes" />
           </SelectTrigger>
           <SelectContent className="rounded-none shadow-md">
@@ -326,7 +278,7 @@ export function FilterToolbar({
         </Select>
 
         <Select value={orden} onValueChange={onOrdenChange}>
-          <SelectTrigger className="w-[200px] rounded-none shadow-none cursor-pointer border-border/60 hover:border-foreground/40 bg-white focus:ring-0 transition-colors text-xs font-medium h-10">
+          <SelectTrigger className="w-50 rounded-none shadow-none cursor-pointer border-border/60 hover:border-foreground/40 bg-white focus:ring-0 transition-colors text-xs font-medium h-10">
             <div className="flex items-center gap-2">
               <ArrowUpDown className="h-3 w-3 opacity-50" />
               <SelectValue placeholder="Ordenar por" />

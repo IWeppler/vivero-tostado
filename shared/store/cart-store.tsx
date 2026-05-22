@@ -103,7 +103,7 @@ export const useCartStore = create<CartState>()(
       },
     }),
     {
-      name: "ninja-cart-storage",
+      name: "vivero-tostado-storage",
       partialize: (state) => ({ items: state.items }),
     },
   ),

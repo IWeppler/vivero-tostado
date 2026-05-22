@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { CartButton } from "@/features/store/ui/cart-button";
+import { CartButton } from "@/shared/ui/cart-button";
 import { Search, X } from "lucide-react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { useState, useEffect, Suspense, useRef } from "react";

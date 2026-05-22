@@ -64,14 +64,14 @@ export default async function DashboardPage({
   return (
     <div className="space-y-8 pb-8">
       {/* HEADER & ACCIONES RÁPIDAS */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-4 md:p-6 rounded-2xl border border-gray-200">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Panel de Control</h1>
           <p className="text-gray-500 mt-1">
             Resumen de inteligencia de negocio {periodoLabel}.
           </p>
         </div>
-        <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
+        <div className="flex flex-wrap items-center gap-1 w-full sm:w-auto">
           {/* Aquí inyectamos el nuevo componente selector */}
           <PeriodSelector defaultPeriod={periodoParam} />
 
@@ -90,7 +90,7 @@ export default async function DashboardPage({
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {/* KPI 1: Ingresos */}
-          <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm flex flex-col justify-between">
+          <div className="bg-white p-6 rounded-2xl border border-gray-200 flex flex-col justify-between">
             <div className="flex justify-between items-start mb-4">
               <div className="text-sm font-medium text-gray-500">
                 Ingresos Totales
@@ -110,7 +110,7 @@ export default async function DashboardPage({
           </div>
 
           {/* KPI 2: Margen */}
-          <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm flex flex-col justify-between">
+          <div className="bg-white p-6 rounded-2xl border border-gray-200 flex flex-col justify-between">
             <div className="flex justify-between items-start mb-4">
               <div className="text-sm font-medium text-gray-500">
                 Margen Bruto (%)
@@ -130,7 +130,7 @@ export default async function DashboardPage({
           </div>
 
           {/* KPI 3: Volumen de Ventas */}
-          <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm flex flex-col justify-between">
+          <div className="bg-white p-6 rounded-2xl border border-gray-200 flex flex-col justify-between">
             <div className="flex justify-between items-start mb-4">
               <div className="text-sm font-medium text-gray-500">
                 Unidades Vendidas
@@ -150,7 +150,7 @@ export default async function DashboardPage({
           </div>
 
           {/* KPI 4: Ticket Promedio */}
-          <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm flex flex-col justify-between">
+          <div className="bg-white p-6 rounded-2xl border border-gray-200 flex flex-col justify-between">
             <div className="flex justify-between items-start mb-4">
               <div className="text-sm font-medium text-gray-500">
                 Ticket Promedio
@@ -180,7 +180,7 @@ export default async function DashboardPage({
             Inventario
           </h2>
 
-          <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm flex-1">
+          <div className="bg-white p-6 rounded-2xl border border-gray-200 flex-1">
             <div>
               <div className="text-sm font-medium text-gray-500 mb-1">
                 Stock Valorizado (Costo)
@@ -225,7 +225,7 @@ export default async function DashboardPage({
             <Flame className="w-5 h-5 text-rose-500" /> Mayor Rotación
           </h2>
 
-          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden flex-1">
+          <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden flex-1">
             {metrics.topProductos.length > 0 ? (
               <div className="divide-y divide-gray-100">
                 {metrics.topProductos.map((producto, idx) => (
@@ -271,7 +271,7 @@ export default async function DashboardPage({
             <Trophy className="w-5 h-5 text-emerald-500" /> Mayor Rentabilidad
           </h2>
 
-          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden flex-1">
+          <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden flex-1">
             {metrics.topProductosRentables.length > 0 ? (
               <div className="divide-y divide-gray-100">
                 {metrics.topProductosRentables.map((producto, idx) => (

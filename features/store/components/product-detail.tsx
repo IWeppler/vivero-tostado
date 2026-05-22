@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { TODAS_LAS_VARIANTES } from "@/entities/productos/constants";
-import { useCartStore } from "@/features/store/store/cart-store";
+import { useCartStore } from "@/shared/store/cart-store";
 import { toast } from "sonner";
 
 interface ProductDetailProps {
@@ -88,7 +88,6 @@ export function ProductDetail({ producto }: Readonly<ProductDetailProps>) {
     addItem({
       productoId: producto.id,
       nombre: producto.nombre || "Sin nombre",
-      cuidados: producto.cuidados || "",
       tipo: producto.tipo || "",
       variante: varianteSeleccionada,
       precio: producto.precio,
@@ -186,9 +185,6 @@ export function ProductDetail({ producto }: Readonly<ProductDetailProps>) {
         <div className="w-full md:w-2/5 lg:w-1/3 flex flex-col sticky top-24">
           <div className="mb-6">
             <div className="flex items-center gap-2 mb-2">
-              <span className="text-xs font-bold tracking-widest text-muted-foreground uppercase">
-                {producto.cuidados}
-              </span>
               {producto.tipo && (
                 <>
                   <span className="text-muted-foreground/30">•</span>
@@ -206,6 +202,14 @@ export function ProductDetail({ producto }: Readonly<ProductDetailProps>) {
             <div className="text-xl font-medium text-foreground">
               ${(producto.precio || 0).toLocaleString("es-AR")}
             </div>
+            {producto.descripcion && (
+              <div className="mb-6 bg-muted/30 p-4 border-l-2 border-primary/50 text-sm text-muted-foreground leading-relaxed">
+                <h3 className="font-bold text-foreground uppercase tracking-widest text-xs mb-2">
+                  Ficha Botánica
+                </h3>
+                <p className="whitespace-pre-wrap">{producto.descripcion}</p>
+              </div>
+            )}
           </div>
 
           <div className="w-full h-px bg-border/60 mb-8"></div>

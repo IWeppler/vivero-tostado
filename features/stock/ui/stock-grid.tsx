@@ -5,6 +5,7 @@ import { Badge } from "@/shared/ui/badge";
 import { Image as ImageIcon } from "lucide-react";
 import { EditarProductoModal } from "./edit-modal";
 import { EliminarProductoModal } from "./delete-modal";
+import Image from "next/image";
 
 interface StockGridProps {
   productos: Producto[];
@@ -55,8 +56,7 @@ export function StockGrid({ productos }: Readonly<StockGridProps>) {
             {/* Contenedor de Imagen */}
             <div className="aspect-square bg-muted flex items-center justify-center relative border-b border-border">
               {primeraImagen ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
+                <Image
                   src={primeraImagen}
                   alt={producto.nombre}
                   className="object-cover w-full h-full"
@@ -83,9 +83,6 @@ export function StockGrid({ productos }: Readonly<StockGridProps>) {
               >
                 {producto.nombre}
               </h3>
-              <p className="text-sm text-muted-foreground mt-1 mb-4">
-                {producto.cuidados}
-              </p>
 
               <div className="mb-4">
                 <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wider">

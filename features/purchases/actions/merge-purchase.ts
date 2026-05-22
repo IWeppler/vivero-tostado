@@ -17,7 +17,7 @@ export async function getOrdenParaMergeAction(ordenId: string) {
     supabase.from("ordenes_items").select("*").eq("orden_id", ordenId),
     supabase
       .from("productos")
-      .select("id, nombre, precio, precio_costo, tipo, cuidados")
+      .select("id, nombre, precio, precio_costo, tipo")
       .eq("publicado", true),
   ]);
 

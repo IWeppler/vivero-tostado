@@ -3,18 +3,7 @@
 import { createClient } from "@/shared/config/supabase/server";
 import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
-import { TODAS_LAS_VARIANTES } from "@/entities/productos/constants";
 import { slugify } from "@/shared/utils/slugify";
-
-type UpdateProductoData = {
-  nombre: string;
-  categoria: string;
-  cuidados: string;
-  precio: number;
-  precio_costo: number;
-  slug: string;
-  imagen_url?: string;
-};
 
 export async function editarProductoAction(
   prevState: { error: string | null; success: boolean },
@@ -22,20 +11,21 @@ export async function editarProductoAction(
 ) {
   const id = formData.get("id") as string;
   const nombre = formData.get("nombre") as string;
-  const categoria = formData.get("categoria") as string;
-  const cuidados = formData.get("cuidados") as string;
+
+  const categoriaForm = formData.get("categoria") as string;
+
   const precio = Number.parseFloat(formData.get("precio") as string);
   const precio_costo = Number.parseFloat(
     formData.get("precio_costo") as string,
   );
+  const descripcion = formData.get("descripcion") as string;
 
   const archivos = formData.getAll("imagenes") as File[];
 
   if (
     !id ||
     !nombre ||
-    !categoria ||
-    !cuidados ||
+    !categoriaForm ||
     Number.isNaN(precio) ||
     Number.isNaN(precio_costo)
   ) {
@@ -50,7 +40,6 @@ export async function editarProductoAction(
 
   let imagen_url: string | undefined = undefined;
 
-  // Las imágenes ya vienen livianas (optimizadas a WebP) desde el cliente
   const validFiles = archivos.filter((f) => f.size > 0);
   if (validFiles.length > 0) {
     const urls = [];
@@ -75,60 +64,48 @@ export async function editarProductoAction(
     }
   }
 
-  // 1. Generamos el nuevo Slug
-  let slug = slugify(`${nombre}-${categoria}-${cuidados}`);
+  let slug = slugify(`${nombre}-${categoriaForm}`);
   const sufijo = Math.random().toString(36).substring(2, 6);
   slug = `${slug}-${sufijo}`;
 
-  // 2. Preparamos los datos a actualizar
-  const updateData: UpdateProductoData = {
+  const updateData: any = {
     nombre,
-    categoria,
-    cuidados,
+    tipo: categoriaForm,
     precio,
     precio_costo,
     slug,
   };
 
-  if (imagen_url !== undefined) {
-    updateData.imagen_url = imagen_url;
-  }
+  if (descripcion) updateData.descripcion = descripcion;
+  if (imagen_url !== undefined) updateData.imagen_url = imagen_url;
 
-  // 3. Actualizamos el producto base
   const { error: errorProducto } = await supabase
     .from("productos")
     .update(updateData)
     .eq("id", id);
 
   if (errorProducto) {
-    console.error(errorProducto);
+    console.error("Error BD:", errorProducto);
     return {
-      error: "Hubo un error al actualizar el producto.",
+      error: "Hubo un error al actualizar el producto en la base de datos.",
       success: false,
     };
   }
 
-  // 4. Actualizamos el stock (Usando el array seguro anti-crasheos)
-  const stockParaUpsert: {
-    producto_id: string;
-    variante: string;
-    cantidad: number;
-  }[] = [];
+  const stockParaUpsert: any[] = [];
 
-  TODAS_LAS_VARIANTES.forEach((varianteValor) => {
-    const cantidadStr = formData.get(`stock_${varianteValor}`) as string;
+  for (const [key, value] of formData.entries()) {
+    if (key.startsWith("stock_")) {
+      const variante = key.replace("stock_", "");
+      const cantidad = Number.parseInt(value as string, 10);
 
-    if (cantidadStr) {
-      const cantidad = Number.parseInt(cantidadStr, 10);
-      if (!Number.isNaN(cantidad)) {
-        stockParaUpsert.push({
-          producto_id: id,
-          variante: varianteValor,
-          cantidad,
-        });
-      }
+      stockParaUpsert.push({
+        producto_id: id,
+        variante: variante,
+        cantidad: Number.isNaN(cantidad) ? 0 : cantidad,
+      });
     }
-  });
+  }
 
   if (stockParaUpsert.length > 0) {
     const { error: errorStock } = await supabase
@@ -136,7 +113,7 @@ export async function editarProductoAction(
       .upsert(stockParaUpsert, { onConflict: "producto_id, variante" });
 
     if (errorStock) {
-      console.error(errorStock);
+      console.error("Error Stock BD:", errorStock);
       return {
         error: "Producto actualizado, pero hubo un error con el stock.",
         success: false,

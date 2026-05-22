@@ -64,12 +64,12 @@ export const TODAS_LAS_VARIANTES = Array.from(
 );
 
 // 3. Nivel de Cuidados
-export const CUIDADOS_OPTIONS: SelectOption[] = [
-  { value: "todos", label: "Cualquier cuidado" },
-  { value: "facil", label: "Fácil cuidado (Ideal principiantes)" },
-  { value: "poca_luz", label: "Tolera poca luz" },
-  { value: "sol_directo", label: "Sol directo pleno" },
-  { value: "pet_friendly", label: "Pet Friendly (No tóxica)" },
-];
+// export const CUIDADOS_OPTIONS: SelectOption[] = [
+//   { value: "todos", label: "Cualquier cuidado" },
+//   { value: "facil", label: "Fácil cuidado (Ideal principiantes)" },
+//   { value: "poca_luz", label: "Tolera poca luz" },
+//   { value: "sol_directo", label: "Sol directo pleno" },
+//   { value: "pet_friendly", label: "Pet Friendly (No tóxica)" },
+// ];
 
 export const getCategoriaPrincipal = () => "interior";

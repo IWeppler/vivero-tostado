@@ -28,7 +28,6 @@ import { ScrollArea } from "@/shared/ui/scroll-area";
 import {
   TIPO_OPTIONS,
   VARIANTE_OPTIONS,
-  CUIDADOS_OPTIONS,
   getCategoriaPrincipal,
 } from "@/entities/productos/constants";
 
@@ -118,7 +117,7 @@ export function EditarProductoModal({
         </Button>
       </DialogTrigger>
 
-      <DialogContent className="sm:max-w-[550px]">
+      <DialogContent className="sm:max-w-140">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Leaf className="w-5 h-5 text-emerald-600" />
@@ -156,34 +155,13 @@ export function EditarProductoModal({
                     <SelectValue placeholder="Selecciona..." />
                   </SelectTrigger>
                   <SelectContent>
-                    {TIPO_OPTIONS.filter(
-                      (opt) => opt.value !== "todos",
-                    ).map((opt) => (
-                      <SelectItem key={opt.value} value={opt.value}>
-                        {opt.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="cuidados">Cuidados</Label>
-                <Select
-                  name="cuidados"
-                  defaultValue={producto.cuidados?.toLowerCase() || "facil"}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecciona..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {CUIDADOS_OPTIONS.filter(
-                      (opt) => opt.value !== "todos",
-                    ).map((opt) => (
-                      <SelectItem key={opt.value} value={opt.value}>
-                        {opt.label}
-                      </SelectItem>
-                    ))}
+                    {TIPO_OPTIONS.filter((opt) => opt.value !== "todos").map(
+                      (opt) => (
+                        <SelectItem key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </SelectItem>
+                      ),
+                    )}
                   </SelectContent>
                 </Select>
               </div>
@@ -292,7 +270,7 @@ export function EditarProductoModal({
 
             <div className="border-t border-border pt-4">
               <h3 className="text-sm font-medium mb-3 text-emerald-800">
-                Actualizar Stock (Variantes de Categoría)
+                Actualizar Stock
               </h3>
               <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
                 {variantesAMostrar.map((opt) => (

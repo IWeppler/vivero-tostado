@@ -1,4 +1,4 @@
-import { getProductosAction } from "@/features/store/actions/store-actions";
+import { getProductosAction } from "@/shared/actions/store-actions";
 import { StoreCatalog } from "@/features/store/components/store-catalog";
 import { FaFacebook, FaInstagram } from "react-icons/fa";
 
@@ -32,7 +32,6 @@ export default async function StorePage() {
               <span className="sr-only">Instagram</span>
             </a>
 
-            {/* Ejemplo: Descomentar para agregar más redes en el futuro */}
             <a
               href="https://facebook.com"
               target="_blank"
@@ -43,7 +42,6 @@ export default async function StorePage() {
               <FaFacebook className="w-5 h-5" />
               <span className="sr-only">Facebook</span>
             </a>
-           
           </div>
         </div>
 
