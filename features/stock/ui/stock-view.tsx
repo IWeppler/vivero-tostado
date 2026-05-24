@@ -5,16 +5,24 @@ import { Producto } from "@/entities/productos/types";
 import { StockTable } from "./stock-table";
 import { StockGrid } from "./stock-grid";
 import { Button } from "@/shared/ui/button";
-import { LayoutGrid, List, ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  LayoutGrid,
+  List,
+  ChevronLeft,
+  ChevronRight,
+  ClipboardList,
+} from "lucide-react";
 import { CrearProductoModal } from "@/features/stock/ui/create-modal";
 import { ImportarPedidoModal } from "@/features/purchases/ui/create-purchase-modal";
 import { FilterToolbar } from "@/shared/ui/filter-toolbar";
+import Link from "next/link";
 
 interface StockViewProps {
   productos: Producto[];
+  userRole: string;
 }
 
-export function StockView({ productos }: Readonly<StockViewProps>) {
+export function StockView({ productos, userRole }: Readonly<StockViewProps>) {
   const [view, setView] = useState<"table" | "grid">("table");
 
   const ITEMS_POR_PAGINA = 10;
@@ -75,13 +83,7 @@ export function StockView({ productos }: Readonly<StockViewProps>) {
     });
 
     return resultado;
-  }, [
-    productos,
-    filtroNombre,
-    filtroTipo,
-    filtroVariante,
-    orden,
-  ]);
+  }, [productos, filtroNombre, filtroTipo, filtroVariante, orden]);
 
   const totalPaginas = Math.ceil(
     productosFiltradosYOrdenados.length / ITEMS_POR_PAGINA,
@@ -129,7 +131,7 @@ export function StockView({ productos }: Readonly<StockViewProps>) {
         variant={view === "table" ? "default" : "ghost"}
         className={`font-medium transition-all h-8 ${
           view === "table"
-            ? "shadow-sm bg-neutral-900 text-white"
+            ? "bg-neutral-900 text-white"
             : "text-muted-foreground cursor-pointer"
         }`}
         onClick={() => setView("table")}
@@ -140,7 +142,7 @@ export function StockView({ productos }: Readonly<StockViewProps>) {
         variant={view === "grid" ? "default" : "ghost"}
         className={`font-medium transition-all h-8 ${
           view === "grid"
-            ? "shadow-sm bg-neutral-900 text-white"
+            ? "bg-neutral-900 text-white"
             : "text-muted-foreground cursor-pointer"
         }`}
         onClick={() => setView("grid")}
@@ -152,10 +154,22 @@ export function StockView({ productos }: Readonly<StockViewProps>) {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-end gap-3 w-full -mt-4 mb-2">
-        <ImportarPedidoModal />
-        <CrearProductoModal />
-      </div>
+      {/* Botones superiores: Solo visibles para el ADMIN */}
+      {userRole === "ADMIN" && (
+        <div className="flex flex-wrap items-center justify-end gap-3 w-full -mt-4 mb-2">
+          <Link href="/stock/mermas">
+            <Button
+              variant="outline"
+              className="hover:bg-amber-100 hover:text-amber-800"
+            >
+              <ClipboardList className="w-4 h-4 text-amber-600" />
+              Revisar Bajas Pendientes
+            </Button>
+          </Link>
+          <ImportarPedidoModal />
+          <CrearProductoModal />
+        </div>
+      )}
 
       <FilterToolbar
         searchQuery={filtroNombre}
@@ -173,12 +187,14 @@ export function StockView({ productos }: Readonly<StockViewProps>) {
         actionButtons={viewToggleButtons}
       />
 
+      {/* Renderizado de vistas */}
       {view === "table" ? (
-        <StockTable productos={productosPaginados} />
+        <StockTable productos={productosPaginados} userRole={userRole} />
       ) : (
         <StockGrid productos={productosPaginados} />
       )}
 
+      {/* Paginación */}
       {totalPaginas > 1 && (
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-2 py-4 border-t border-border mt-4">
           <span className="text-sm text-muted-foreground">

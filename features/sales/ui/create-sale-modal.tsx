@@ -397,7 +397,7 @@ export function CreateSaleModal({ productos = [] }: Readonly<Props>) {
                   {items.map((item, dtl) => (
                     <div
                       key={dtl}
-                      className="flex justify-between items-center bg-background border border-border p-3 rounded-md shadow-sm"
+                      className="flex justify-between items-center bg-background border border-border p-3 rounded-md"
                     >
                       <div>
                         <p className="font-semibold text-sm leading-none">

@@ -43,7 +43,7 @@ export function TogglePublicado({
       }`}
     >
       <span
-        className={`pointer-events-none block h-5 w-5 rounded-full bg-white shadow-lg ring-0 transition-transform ${
+        className={`pointer-events-none block h-5 w-5 rounded-full bg-white ring-0 transition-transform ${
           publicadoInicial ? "translate-x-5" : "translate-x-0"
         }`}
       />

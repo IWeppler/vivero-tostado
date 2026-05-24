@@ -4,6 +4,7 @@ import { createClient } from "@/shared/config/supabase/server";
 import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { ItemResuelto } from "@/entities/compras/types";
+import { slugify } from "@/shared/utils/slugify";
 
 type SupabaseDb = ReturnType<typeof createClient>;
 
@@ -21,15 +22,56 @@ export async function getOrdenParaMergeAction(ordenId: string) {
       .eq("publicado", true),
   ]);
 
+  // Si hay error, devolvemos la misma estructura pero con datos nulos/vacíos
   if (ordenRes.error || !ordenRes.data) {
-    return { error: "Orden no encontrada." };
+    return {
+      error: "Orden no encontrada.",
+      orden: null,
+      items: [],
+      productos: [],
+    };
   }
 
+  // Si todo está bien, devolvemos los datos y error en null
   return {
+    error: null,
     orden: ordenRes.data,
     items: itemsRes.data || [],
     productos: productosRes.data || [],
   };
+}
+
+export async function crearProductoAlVueloAction(
+  nombre: string,
+  precio_costo: number,
+  precio_venta: number,
+) {
+  const cookieStore = await cookies();
+  const supabase = createClient(cookieStore);
+
+  let slug = slugify(`${nombre}-Interior`);
+  const sufijo = Math.random().toString(36).substring(2, 6);
+  slug = `${slug}-${sufijo}`;
+
+  const { data: nuevoProducto, error } = await supabase
+    .from("productos")
+    .insert({
+      nombre,
+      tipo: "Interior", // Asignamos un tipo por defecto
+      precio_costo,
+      precio: precio_venta,
+      slug,
+      publicado: true,
+    })
+    .select("id, nombre, precio, precio_costo, tipo")
+    .single();
+
+  if (error || !nuevoProducto) {
+    console.error("Error creando producto al vuelo:", error);
+    return { error: "Hubo un error al crear el producto al vuelo." };
+  }
+
+  return { success: true, producto: nuevoProducto };
 }
 
 async function actualizarPrecios(item: ItemResuelto, supabase: SupabaseDb) {
@@ -89,13 +131,11 @@ async function registrarAliasDiccionario(
   }
 }
 
-// --------------------------------------------------------------------------
-
 // 2. Aprobar e Impactar la Orden en la BD (Completamente Tipado)
 export async function aprobarOrdenAction(
   ordenId: string,
   proveedor: string,
-  itemsResueltos: ItemResuelto[], // 💡 Eliminamos el `any[]`
+  itemsResueltos: ItemResuelto[],
 ) {
   const cookieStore = await cookies();
   const supabase = createClient(cookieStore);

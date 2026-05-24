@@ -2,7 +2,6 @@
 
 import { createClient } from "@/shared/config/supabase/server";
 import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
 
 export async function loginAction(
   prevState: { error: string },
@@ -27,5 +26,5 @@ export async function loginAction(
     return { error: "Credenciales inválidas. Intenta de nuevo." };
   }
 
-  redirect("/");
+  return { error: "", success: true };
 }

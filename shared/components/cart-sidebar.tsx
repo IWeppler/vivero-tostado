@@ -96,7 +96,7 @@ export function CartSidebar({
   const generarLinkWhatsApp = () => {
     if (!numeroWhatsApp) return "#";
     let mensaje =
-      "¡Hola Ninja Camisetas! 🥷\nQuiero realizar el siguiente pedido:\n\n";
+      "¡Hola Vivero Tostado! 🥷\nQuiero realizar el siguiente pedido:\n\n";
 
     items.forEach((item) => {
       mensaje += `${item.cantidad}x ${item.nombre} (${item.tipo})\n`;
@@ -170,7 +170,7 @@ export function CartSidebar({
 
       {/* Panel Lateral (Flat Design) */}
       <div
-        className={`fixed top-0 right-0 h-full w-full sm:w-100 bg-white z-50 shadow-2xl transform transition-transform duration-300 ease-in-out flex flex-col border-l border-border ${
+        className={`fixed top-0 right-0 h-full w-full sm:w-100 bg-white z-50 transform transition-transform duration-300 ease-in-out flex flex-col border-l border-border ${
           isOpen ? "translate-x-0" : "translate-x-full"
         }`}
       >

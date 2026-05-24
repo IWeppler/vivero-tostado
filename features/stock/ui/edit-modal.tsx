@@ -16,6 +16,7 @@ import {
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
+import { Textarea } from "@/shared/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -167,6 +168,18 @@ export function EditarProductoModal({
               </div>
             </div>
 
+            {/* --- NUEVO CAMPO DE DESCRIPCIÓN --- */}
+            <div className="space-y-2">
+              <Label htmlFor="descripcion">Descripción (Opcional)</Label>
+              <Textarea
+                id="descripcion"
+                name="descripcion"
+                defaultValue={producto.descripcion || ""}
+                placeholder="Añade detalles, tamaño de la maceta, requerimientos de luz..."
+                className="resize-none min-h-[100px]"
+              />
+            </div>
+
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="precio_costo">Precio de Costo (ARS)</Label>
@@ -175,7 +188,7 @@ export function EditarProductoModal({
                   name="precio_costo"
                   type="number"
                   min="0"
-                  step="100"
+                  step="any"
                   defaultValue={producto.precio_costo || 0}
                   required
                 />
@@ -187,7 +200,7 @@ export function EditarProductoModal({
                   name="precio"
                   type="number"
                   min="0"
-                  step="100"
+                  step="any"
                   defaultValue={producto.precio}
                   required
                 />

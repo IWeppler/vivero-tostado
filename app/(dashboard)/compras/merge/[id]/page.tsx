@@ -31,7 +31,7 @@ export default async function MergePage({ params }: Readonly<PageProps>) {
   }
 
   return (
-    <div className="w-full max-w-7xl mx-auto pb-12">
+    <div className="w-full mx-auto pb-12">
       <MergeTable
         orden={orden}
         itemsOriginales={items as ItemResuelto[]}

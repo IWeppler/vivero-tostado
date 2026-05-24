@@ -74,6 +74,7 @@ export async function editarProductoAction(
     precio,
     precio_costo,
     slug,
+    descripcion,
   };
 
   if (descripcion) updateData.descripcion = descripcion;

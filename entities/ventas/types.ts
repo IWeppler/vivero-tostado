@@ -7,6 +7,9 @@ export interface Venta {
   precio_costo: number;
   total: number;
   fecha_venta: string;
+  perfiles?: {
+    nombre: string;
+  };
 
   producto?: {
     nombre: string;

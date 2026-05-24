@@ -37,28 +37,54 @@ export async function middleware(request: NextRequest) {
   const isAuthRoute = pathname.startsWith("/auth");
   const isPublicRoute = pathname.startsWith("/store");
 
-  if (pathname === "/") {
-    if (!user) {
+  // 1. Obtenemos el Rol del usuario (solo si está logueado)
+  let rol = null;
+  if (user) {
+    const { data: perfil } = await supabase
+      .from("perfiles")
+      .select("rol")
+      .eq("id", user.id)
+      .single();
+
+    // Si por algún motivo falla, asumimos el rol más restrictivo (VENDEDOR)
+    rol = perfil?.rol || "VENDEDOR";
+  }
+
+  // 2. Control de usuarios NO autenticados
+  if (!user) {
+    if (pathname === "/") {
       const url = request.nextUrl.clone();
       url.pathname = "/store";
       return NextResponse.redirect(url);
     }
-    // Si eres tú (admin logueado), te deja pasar al Dashboard ("/")
+    if (!isAuthRoute && !isPublicRoute) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/auth";
+      return NextResponse.redirect(url);
+    }
     return supabaseResponse;
   }
 
-  // 1. Si NO hay usuario, y NO es ruta de Auth, y NO es ruta Pública -> Redirigir al Login
-  if (!user && !isAuthRoute && !isPublicRoute) {
+  // 3. Control de usuarios SI autenticados yendo al Login
+  if (user && isAuthRoute) {
     const url = request.nextUrl.clone();
-    url.pathname = "/auth";
+    // Admin va al dashboard, vendedor va al stock
+    url.pathname = rol === "ADMIN" ? "/" : "/stock";
     return NextResponse.redirect(url);
   }
 
-  // 2. Si SÍ hay usuario y trata de ir al Login -> Redirigir al Dashboard
-  if (user && isAuthRoute) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/";
-    return NextResponse.redirect(url);
+  // 4. Bloqueos específicos para el VENDEDOR
+  if (rol === "VENDEDOR") {
+    const isDashboard = pathname === "/";
+    const isConfig = pathname.startsWith("/configuracion");
+    const isCompras = pathname.startsWith("/compras");
+
+    // Si intenta entrar a una ruta prohibida, lo devolvemos al inventario
+    if (isDashboard || isConfig || isCompras) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/stock";
+      return NextResponse.redirect(url);
+    }
   }
 
   return supabaseResponse;

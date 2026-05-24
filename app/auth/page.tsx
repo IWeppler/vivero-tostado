@@ -23,7 +23,7 @@ export default function AuthPage() {
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-12 h-12 mb-4 overflow-hidden rounded-none bg-black">
             <Image
-              src="/ninja-logo.jpg"
+              src="/icon-192x192.png"
               alt="Logo"
               width={128}
               height={128}

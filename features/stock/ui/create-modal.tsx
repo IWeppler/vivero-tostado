@@ -105,11 +105,9 @@ export function CrearProductoModal() {
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-        <Button className="w-12 h-12 rounded-xl shadow-2xl sm:w-auto sm:h-10 sm:px-4 sm:rounded-md sm:shadow-sm bg-emerald-700 text-white hover:bg-emerald-800 cursor-pointer transition-transform active:scale-95">
+        <Button className="w-12 h-12 rounded-xl sm:w-auto sm:h-10 sm:px-4 sm:rounded-lg bg-emerald-700 text-white hover:bg-emerald-800 cursor-pointer transition-transform active:scale-95">
           <Plus className="h-6 w-6 sm:h-4 sm:w-4 sm:mr-2" strokeWidth={2.5} />
-          <span className="hidden sm:inline">
-            Nuevo Producto
-          </span>
+          <span className="hidden sm:inline">Nuevo Producto</span>
         </Button>
       </DialogTrigger>
 
@@ -166,7 +164,7 @@ export function CrearProductoModal() {
                   name="precio_costo"
                   type="number"
                   min="0"
-                  step="100"
+                  step="any"
                   placeholder="0"
                   required
                 />
@@ -178,7 +176,7 @@ export function CrearProductoModal() {
                   name="precio"
                   type="number"
                   min="0"
-                  step="100"
+                  step="any"
                   placeholder="0"
                   required
                 />

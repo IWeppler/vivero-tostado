@@ -31,6 +31,19 @@ export async function registrarVentaAction(
   const cookieStore = await cookies();
   const supabase = createClient(cookieStore);
 
+  // 1. Obtenemos el usuario autenticado (ADMIN o VENDEDOR)
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+
+  if (authError || !user) {
+    return {
+      error: "Debes iniciar sesión para realizar una venta.",
+      success: false,
+    };
+  }
+
   const itemsProcesados = [];
 
   for (const item of items) {
@@ -43,7 +56,7 @@ export async function registrarVentaAction(
 
     if (stockError || !stockActual) {
       return {
-        error: `No se encontró stock registrado para la variante ${item.variante}.`,
+        error: `Error de stock para ${item.variante}: ${stockError?.message || "No encontrado"}`,
         success: false,
       };
     }
@@ -55,6 +68,7 @@ export async function registrarVentaAction(
       };
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const precioCostoReal = (stockActual.producto as any)?.precio_costo || 0;
 
     itemsProcesados.push({
@@ -73,12 +87,14 @@ export async function registrarVentaAction(
       cantidad: item.cantidad,
       precio_unitario: item.precioUnitario,
       precio_costo: item.precioCosto,
+      vendedor_id: user.id, // Asignamos el ID del vendedor a la venta
     });
 
     if (ventaError) {
-      console.error(ventaError);
+      console.error("Error insertando venta:", ventaError);
       return {
-        error: "Hubo un error al registrar las ventas en la base de datos.",
+        // Mostramos el mensaje exacto de Supabase para depurar si es RLS
+        error: `Error al registrar venta: ${ventaError.message}`,
         success: false,
       };
     }
@@ -89,9 +105,9 @@ export async function registrarVentaAction(
       .eq("id", item.stockId);
 
     if (updateError) {
-      console.error(updateError);
+      console.error("Error actualizando stock:", updateError);
       return {
-        error: "Venta registrada, pero no se pudo actualizar el stock.",
+        error: `Error al actualizar stock: ${updateError.message}`,
         success: false,
       };
     }

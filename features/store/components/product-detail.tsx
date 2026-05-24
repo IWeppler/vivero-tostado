@@ -18,6 +18,7 @@ import { toast } from "sonner";
 interface ProductDetailProps {
   producto: Producto;
   baseUrl?: string;
+  numeroWhatsApp?: string;
 }
 
 export function ProductDetail({ producto }: Readonly<ProductDetailProps>) {
@@ -142,13 +143,13 @@ export function ProductDetail({ producto }: Readonly<ProductDetailProps>) {
               <>
                 <button
                   onClick={handlePrevImage}
-                  className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/90 hover:bg-white text-foreground flex items-center justify-center rounded-none opacity-0 group-hover:opacity-100 transition-all duration-200 shadow-sm border border-border/50 cursor-pointer"
+                  className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/90 hover:bg-white text-foreground flex items-center justify-center rounded-none opacity-0 group-hover:opacity-100 transition-all duration-200 border border-border/50 cursor-pointer"
                 >
                   <ChevronLeft className="w-6 h-6" strokeWidth={1.5} />
                 </button>
                 <button
                   onClick={handleNextImage}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/90 hover:bg-white text-foreground flex items-center justify-center rounded-none opacity-0 group-hover:opacity-100 transition-all duration-200 shadow-sm border border-border/50 cursor-pointer"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/90 hover:bg-white text-foreground flex items-center justify-center rounded-none opacity-0 group-hover:opacity-100 transition-all duration-200 border border-border/50 cursor-pointer"
                 >
                   <ChevronRight className="w-6 h-6" strokeWidth={1.5} />
                 </button>

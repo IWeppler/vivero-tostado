@@ -87,7 +87,7 @@ export function FilterToolbar({
       {/* ========================================= */}
       {/* MOBILE TOOLBAR */}
       {/* ========================================= */}
-      <div className="flex flex-col sm:hidden w-full border border-border bg-white shadow-sm overflow-hidden rounded-md">
+      <div className="flex flex-col sm:hidden w-full border border-border bg-white overflow-hidden rounded-md">
         <div className="flex items-center border-b border-border bg-white">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />

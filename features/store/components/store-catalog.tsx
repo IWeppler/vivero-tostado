@@ -184,7 +184,7 @@ function CatalogContent({ productos }: Readonly<{ productos: Producto[] }>) {
                   <SelectTrigger className="w-full h-12 rounded-none bg-[#f5f4f4] border-0 shadow-none uppercase tracking-widest text-xs font-bold focus:ring-0">
                     <SelectValue placeholder="Tipo" />
                   </SelectTrigger>
-                  <SelectContent className="rounded-none border-border shadow-xl">
+                  <SelectContent className="rounded-none border-border">
                     {TIPO_OPTIONS.map((opt) => (
                       <SelectItem
                         key={opt.value}
@@ -209,7 +209,7 @@ function CatalogContent({ productos }: Readonly<{ productos: Producto[] }>) {
                   <SelectTrigger className="w-full h-12 rounded-none bg-[#f5f4f4] border-0 shadow-none uppercase tracking-widest text-xs font-bold focus:ring-0">
                     <SelectValue placeholder="Variante" />
                   </SelectTrigger>
-                  <SelectContent className="rounded-none border-border shadow-xl">
+                  <SelectContent className="rounded-none border-border">
                     {TODAS_LAS_VARIANTES.map((opt) => (
                       <SelectItem
                         key={opt}
@@ -253,7 +253,7 @@ function CatalogContent({ productos }: Readonly<{ productos: Producto[] }>) {
           <SelectContent
             position="popper"
             sideOffset={4}
-            className="w-50 rounded-none border-border shadow-xl"
+            className="w-50 rounded-none border-border"
           >
             {ordenOptions.map((opt) => (
               <SelectItem
@@ -279,7 +279,7 @@ function CatalogContent({ productos }: Readonly<{ productos: Producto[] }>) {
             <SelectTrigger className="w-40 h-10 rounded-none border-0 bg-[#f5f4f4] shadow-none uppercase tracking-widest text-[10px] font-bold focus:ring-0 px-3">
               <SelectValue placeholder="Tipo" />
             </SelectTrigger>
-            <SelectContent className="rounded-none border-border shadow-xl">
+            <SelectContent className="rounded-none border-border">
               {TIPO_OPTIONS.map((opt) => (
                 <SelectItem
                   key={opt.value}
@@ -296,7 +296,7 @@ function CatalogContent({ productos }: Readonly<{ productos: Producto[] }>) {
             <SelectTrigger className="w-40 h-10 rounded-none border-0 bg-[#f5f4f4] shadow-none uppercase tracking-widest text-[10px] font-bold focus:ring-0 px-3">
               <SelectValue placeholder="Variante" />
             </SelectTrigger>
-            <SelectContent className="rounded-none border-border shadow-xl">
+            <SelectContent className="rounded-none border-border">
               {TODAS_LAS_VARIANTES.map((opt) => (
                 <SelectItem
                   key={opt}
@@ -328,7 +328,7 @@ function CatalogContent({ productos }: Readonly<{ productos: Producto[] }>) {
             <SelectTrigger className="w-50 h-10 rounded-none border-0 bg-[#f5f4f4] shadow-none uppercase tracking-widest text-[10px] font-bold focus:ring-0 px-3">
               <SelectValue placeholder="Ordenar por" />
             </SelectTrigger>
-            <SelectContent className="rounded-none border-border shadow-xl">
+            <SelectContent className="rounded-none border-border">
               {ordenOptions.map((opt) => (
                 <SelectItem
                   key={opt.value}

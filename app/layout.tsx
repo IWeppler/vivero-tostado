@@ -1,19 +1,44 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { Toaster } from "@/shared/ui/sonner";
+import { createClient } from "@/shared/config/supabase/server";
+import { cookies } from "next/headers";
 
-export const metadata: Metadata = {
-  title: "Vivero Tostado | Sistema de Gestión",
-  description: "Aplicación para el control de ventas de plantas",
+export const viewport: Viewport = {
+  themeColor: "#09090b",
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
 };
 
-export default function RootLayout({
+export async function generateMetadata(): Promise<Metadata> {
+  const cookieStore = await cookies();
+  const supabase = createClient(cookieStore);
+  const { data } = await supabase
+    .from("configuracion_pos")
+    .select("posName")
+    .limit(1)
+    .single();
+
+  const posName = data?.posName;
+
+  return {
+    title: `${posName} | Gestión POS`,
+    description: "Sistema de gestión y punto de venta web",
+    appleWebApp: {
+      capable: true,
+      title: posName,
+      statusBarStyle: "black-translucent",
+    },
+  };
+}
+
+export default async function RootLayout({
   children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+}: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="es" className="h-full antialiased">
+    <html lang="es" className={`h-full antialiased`}>
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link

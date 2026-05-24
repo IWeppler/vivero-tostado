@@ -1,18 +1,29 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useEffect } from "react";
 import { loginAction } from "../actions/login";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 import { Button } from "@/shared/ui/button";
+import { useRouter } from "next/dist/client/components/navigation";
 
-const initialState = { error: "" };
+const initialState = { error: "", success: false };
 
 export function LoginForm() {
   const [state, formAction, isPending] = useActionState(
     loginAction,
     initialState,
   );
+  const router = useRouter();
+
+  useEffect(() => {
+    if (state?.success) {
+      router.push("/");
+      router.refresh();
+    }
+  }, [state?.success, router]);
+
+  const isLoading = isPending || state?.success;
 
   return (
     <form action={formAction} className="space-y-6">
@@ -46,8 +57,8 @@ export function LoginForm() {
         </div>
       )}
 
-      <Button type="submit" disabled={isPending} className="w-full">
-        {isPending ? "Ingresando..." : "Ingresar"}
+      <Button type="submit" disabled={isLoading} className="w-full">
+        {isLoading ? "Ingresando..." : "Ingresar"}
       </Button>
     </form>
   );
