@@ -11,6 +11,8 @@ export type PeriodoDashboard =
 export function getDashboardMetrics(
   ventas: Venta[],
   productos: Producto[],
+  egresos: any[] = [],
+  mermas: any[] = [],
   periodo: PeriodoDashboard = "mes",
 ) {
   const now = new Date();
@@ -26,42 +28,67 @@ export function getDashboardMetrics(
     startDate = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
   }
 
-  // 1. Contexto Temporal Consistente
+  // 1. Contextos Temporales
   const ventasFiltradas =
     periodo === "historico"
       ? ventas
       : ventas.filter((v) => new Date(v.fecha_venta) >= startDate);
 
-  // --- CORE KPIs ---
-  let ingresos = 0;
-  let ingresosConCosto = 0;
-  let ganancia = 0;
+  const egresosFiltrados =
+    periodo === "historico"
+      ? egresos
+      : egresos.filter((e) => new Date(e.fecha) >= startDate);
+
+  const mermasFiltradas =
+    periodo === "historico"
+      ? mermas
+      : mermas.filter((m) => new Date(m.creado_en) >= startDate);
+
+  // --- CORE KPIs FINANCIEROS ---
+  let ingresosBrutos = 0;
+  let gananciaBrutaVentas = 0; // Ventas - Costo de Plantas
   let unidadesVendidas = 0;
 
   ventasFiltradas.forEach((v) => {
-    // 6. Refactor limpio: evitamos llamar Number() mil veces
     const total = Number(v.total);
     const cantidad = Number(v.cantidad);
     const precio = Number(v.precio_unitario);
     const costoUnitario = Number(v.precio_costo ?? 0);
 
-    ingresos += total;
+    ingresosBrutos += total;
     unidadesVendidas += cantidad;
 
-    // 2. Cálculo de Margen Seguro y Real
-    // Solo medimos rentabilidad sobre productos que SÍ tienen costo registrado
     if (costoUnitario > 0) {
-      ingresosConCosto += total;
-      ganancia += (precio - costoUnitario) * cantidad;
+      gananciaBrutaVentas += (precio - costoUnitario) * cantidad;
     }
   });
 
   const ordenes = ventasFiltradas.length;
-  const ticketPromedio = ordenes > 0 ? ingresos / ordenes : 0;
+  const ticketPromedio = ordenes > 0 ? ingresosBrutos / ordenes : 0;
 
-  // Porcentaje sobre ingresos que SÍ tienen costo para no inflar falsamente
+  // --- EGRESOS Y MERMAS (Nuevas Fugas de Capital) ---
+  let totalEgresos = 0;
+  egresosFiltrados.forEach((e) => {
+    totalEgresos += Number(e.monto || 0);
+  });
+
+  let costoPerdidoMermas = 0;
+  let unidadesMermadas = 0;
+  mermasFiltradas.forEach((m) => {
+    const productoAfectado = productos.find((p) => p.id === m.producto_id);
+    const costo = Number(productoAfectado?.precio_costo ?? 0);
+    const cantidad = Number(m.cantidad || 0);
+
+    costoPerdidoMermas += cantidad * costo;
+    unidadesMermadas += cantidad;
+  });
+
+  // Ganancia Neta Real = Ganancia Bruta (Ventas - Costos) - Gastos Operativos (Egresos)
+  const gananciaNeta = gananciaBrutaVentas - totalEgresos;
+
+  // Margen de ganancia neta en porcentaje sobre el ingreso
   const margenPorcentaje =
-    ingresosConCosto > 0 ? (ganancia / ingresosConCosto) * 100 : 0;
+    ingresosBrutos > 0 ? (gananciaNeta / ingresosBrutos) * 100 : 0;
 
   // --- OPERATIVO ---
   let stockTotalUnidades = 0;
@@ -71,7 +98,6 @@ export function getDashboardMetrics(
   productos.forEach((pro) => {
     const costo = Number(pro.precio_costo ?? 0);
 
-    // 3. Stock Crítico Evaluado POR TALLE
     pro.stock?.forEach((s) => {
       const cantidadStock = Number(s.cantidad);
       stockTotalUnidades += cantidadStock;
@@ -83,7 +109,7 @@ export function getDashboardMetrics(
     });
   });
 
-  // --- INTELIGENCIA ---
+  // --- INTELIGENCIA DE CATÁLOGO ---
   const ventasPorProducto = ventasFiltradas.reduce(
     (acc, v) => {
       const id = v.producto_id || "eliminado";
@@ -116,7 +142,6 @@ export function getDashboardMetrics(
     >,
   );
 
-  // 4. Rankings Múltiples (Rotación y Rentabilidad)
   const topProductosUnidades = Object.values(ventasPorProducto)
     .sort((a, b) => b.unidades - a.unidades)
     .slice(0, 5);
@@ -126,11 +151,15 @@ export function getDashboardMetrics(
     .slice(0, 5);
 
   return {
-    ingresos,
+    ingresos: ingresosBrutos,
     ordenes,
     unidadesVendidas,
     ticketPromedio,
-    ganancia,
+    gananciaBrutaVentas,
+    gananciaNeta,
+    totalEgresos,
+    costoPerdidoMermas,
+    unidadesMermadas,
     margenPorcentaje,
     stockTotalUnidades,
     stockValorizadoCosto,

@@ -198,7 +198,7 @@ export function CajaDashboard({
         <Card
           className={
             totales.gananciaNeta >= 0
-              ? "bg-neutral-900 text-white"
+              ? "bg-hite text-foreground"
               : "bg-red-900 text-white"
           }
         >

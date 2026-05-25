@@ -5,7 +5,7 @@ export default function manifest(): MetadataRoute.Manifest {
     name: "Vivero Tostado - POS System",
     short_name: "Vivero POS",
     description: "Sistema de gestión y punto de venta web",
-    start_url: "/dashboard",
+    start_url: "/auth",
     display: "standalone",
     background_color: "#09090b",
     theme_color: "#09090b",

@@ -22,10 +22,10 @@ export default async function CajaPage() {
     .single();
 
   if (perfil?.rol !== "ADMIN") {
-    redirect("/stock"); // Bloqueamos a los vendedores
+    redirect("/stock");
   }
 
-  // 2. Traer TODAS las ventas (solo datos necesarios para cálculos)
+  // 2. Traer TODAS las ventas
   const { data: ventas, error: ventasError } = await supabase
     .from("ventas")
     .select(
