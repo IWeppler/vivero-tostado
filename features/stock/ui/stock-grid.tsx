@@ -110,7 +110,7 @@ export function StockGrid({ productos }: Readonly<StockGridProps>) {
               {/* Spacer para empujar el precio y botones hacia abajo */}
               <div className="mt-auto pt-4 flex items-center justify-between border-t border-border">
                 <div className="flex flex-col">
-                  <span className="text-xl font-extrabold text-primary leading-none">
+                  <span className="text-xl font-semibold leading-none">
                     ${producto.precio.toLocaleString("es-AR")}
                   </span>
                   <span className="text-xs text-muted-foreground mt-1 font-medium">

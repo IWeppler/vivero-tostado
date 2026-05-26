@@ -278,7 +278,7 @@ export function FilterToolbar({
         </Select>
 
         <Select value={orden} onValueChange={onOrdenChange}>
-          <SelectTrigger className="w-50 rounded-none shadow-none cursor-pointer border-border/60 hover:border-foreground/40 bg-white focus:ring-0 transition-colors text-xs font-medium h-10">
+          <SelectTrigger className="w-55 rounded-none shadow-none cursor-pointer border-border/60 hover:border-foreground/40 bg-white focus:ring-0 transition-colors text-xs font-medium h-10">
             <div className="flex items-center gap-2">
               <ArrowUpDown className="h-3 w-3 opacity-50" />
               <SelectValue placeholder="Ordenar por" />

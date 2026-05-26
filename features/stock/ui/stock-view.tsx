@@ -136,7 +136,7 @@ export function StockView({ productos, userRole }: Readonly<StockViewProps>) {
         }`}
         onClick={() => setView("table")}
       >
-        <List className="h-4 w-4 mr-1" /> Tabla
+        <List className="h-4 w-4" />
       </Button>
       <Button
         variant={view === "grid" ? "default" : "ghost"}
@@ -147,7 +147,7 @@ export function StockView({ productos, userRole }: Readonly<StockViewProps>) {
         }`}
         onClick={() => setView("grid")}
       >
-        <LayoutGrid className="h-4 w-4 mr-1" /> Grilla
+        <LayoutGrid className="h-4 w-4" />
       </Button>
     </div>
   );

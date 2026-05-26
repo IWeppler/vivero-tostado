@@ -85,7 +85,7 @@ export function ProductDetailSheet({
               )}
             </div>
             <div className="pt-1">
-              <h3 className="text-xl sm:text-2xl font-bold text-foreground leading-tight">
+              <h3 className="text-xl sm:text-2xl font-semibold text-foreground leading-tight">
                 {producto.nombre}
               </h3>
               <div className="flex flex-col gap-2 mt-3">
@@ -97,7 +97,7 @@ export function ProductDetailSheet({
                     {capitalizar(producto.tipo)}
                   </Badge>
                 </div>
-                <div className="text-2xl font-black text-emerald-700">
+                <div className="text-2xl font-semibold">
                   {formatearMoneda(producto.precio)}
                 </div>
               </div>
