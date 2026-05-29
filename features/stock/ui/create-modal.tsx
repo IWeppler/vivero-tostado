@@ -105,16 +105,16 @@ export function CrearProductoModal() {
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-        <Button className="w-12 h-12 rounded-xl sm:w-auto sm:h-10 sm:px-4 sm:rounded-lg bg-emerald-700 text-white hover:bg-emerald-800 cursor-pointer transition-transform active:scale-95">
+        <Button className="w-12 h-12 rounded-xl sm:w-auto sm:h-10 sm:px-4 sm:rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 hover:text-white cursor-pointer transition-transform active:scale-95">
           <Plus className="h-6 w-6 sm:h-4 sm:w-4 sm:mr-2" strokeWidth={2.5} />
           <span className="hidden sm:inline">Nuevo Producto</span>
         </Button>
       </DialogTrigger>
 
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className="sm:max-w-150">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Leaf className="w-5 h-5 text-emerald-600" />
+            <Leaf className="w-5 h-5 text-primary" />
             Añadir Nuevo Producto
           </DialogTitle>
         </DialogHeader>
@@ -158,7 +158,7 @@ export function CrearProductoModal() {
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="precio_costo">Costo Base (ARS)</Label>
+                <Label htmlFor="precio_costo">Costo Base</Label>
                 <Input
                   id="precio_costo"
                   name="precio_costo"
@@ -170,7 +170,7 @@ export function CrearProductoModal() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="precio">Precio Público (ARS)</Label>
+                <Label htmlFor="precio">Precio Público</Label>
                 <Input
                   id="precio"
                   name="precio"
@@ -188,12 +188,12 @@ export function CrearProductoModal() {
               <div className="flex flex-col items-center justify-center w-full">
                 <Label
                   htmlFor="imagenes"
-                  className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-border rounded-lg cursor-pointer bg-muted/20 hover:bg-emerald-50 hover:border-emerald-200 transition-colors"
+                  className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-border rounded-lg cursor-pointer bg-muted/20 hover:bg-primary/20 hover:border-primary/50 transition-colors"
                 >
                   <div className="flex flex-col items-center justify-center pt-5 pb-6 text-center px-4">
                     <ImagePlus className="w-8 h-8 mb-3 text-muted-foreground" />
                     <p className="mb-1 text-sm text-muted-foreground">
-                      <span className="font-semibold text-emerald-600">
+                      <span className="font-semibold text-primary">
                         Haz clic para subir
                       </span>{" "}
                       o arrastra tus fotos aquí
@@ -236,7 +236,7 @@ export function CrearProductoModal() {
             </div>
 
             <div className="border-t border-border pt-4">
-              <h3 className="text-sm font-medium mb-3 text-emerald-800">
+              <h3 className="text-sm font-medium mb-3 text-primary">
                 Stock Inicial por Variante
               </h3>
               <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
@@ -266,7 +266,7 @@ export function CrearProductoModal() {
 
             <Button
               type="submit"
-              className="w-full bg-emerald-600 hover:bg-emerald-700 text-white"
+              className="w-full bg-primary hover:bg-primary/90 text-white"
               disabled={isPending || isCompressing}
             >
               {isCompressing ? (

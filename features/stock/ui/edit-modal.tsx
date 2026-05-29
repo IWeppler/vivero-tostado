@@ -34,10 +34,12 @@ import {
 
 interface EditarProductoModalProps {
   producto: Producto;
+  children?: React.ReactNode;
 }
 
 export function EditarProductoModal({
   producto,
+  children,
 }: Readonly<EditarProductoModalProps>) {
   const [isOpen, setIsOpen] = useState(false);
   const [archivos, setArchivos] = useState<File[]>([]);
@@ -107,15 +109,14 @@ export function EditarProductoModal({
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-8 w-8 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-colors cursor-pointer"
-          title="Editar producto"
-        >
-          <Pencil className="h-4 w-4" />
-          <span className="sr-only">Editar</span>
-        </Button>
+        {children ? (
+          children
+        ) : (
+          <Button variant="ghost" size="icon" title="Editar producto">
+            <Pencil className="h-4 w-4" />
+            <span className="sr-only">Editar</span>
+          </Button>
+        )}
       </DialogTrigger>
 
       <DialogContent className="sm:max-w-140">
@@ -182,7 +183,7 @@ export function EditarProductoModal({
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="precio_costo">Precio de Costo (ARS)</Label>
+                <Label htmlFor="precio_costo">Precio de Costo</Label>
                 <Input
                   id="precio_costo"
                   name="precio_costo"
@@ -194,7 +195,7 @@ export function EditarProductoModal({
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="precio">Precio Público (ARS)</Label>
+                <Label htmlFor="precio">Precio Público</Label>
                 <Input
                   id="precio"
                   name="precio"

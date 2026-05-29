@@ -33,7 +33,7 @@ export default async function PublicLayout({
   };
 
   return (
-    <div className="min-h-screen bg-[#fffefe] flex flex-col">
+    <div className="min-h-screen bg-background flex flex-col">
       <Navbar branding={systemBranding} />
       <CartSidebar numeroWhatsApp={systemBranding.whatsapp} />
       {children}

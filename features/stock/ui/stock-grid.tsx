@@ -1,132 +1,222 @@
 "use client";
 
-import { Producto } from "@/entities/productos/types";
-import { Badge } from "@/shared/ui/badge";
-import { Image as ImageIcon } from "lucide-react";
-import { EditarProductoModal } from "./edit-modal";
-import { EliminarProductoModal } from "./delete-modal";
+import { useState } from "react";
 import Image from "next/image";
+import { Producto } from "@/entities/productos/types";
+import { TODAS_LAS_VARIANTES } from "@/entities/productos/constants";
+import { Image as ImageIcon, Plus } from "lucide-react";
+import { Button } from "@/shared/ui/button";
+import { useCartStore } from "@/shared/store/cart-store";
+import { toast } from "sonner";
+import { ProductDetailSheet } from "./product-detail-sheet";
 
 interface StockGridProps {
   productos: Producto[];
+  userRole: string; // Para saber si es admin y puede vender sin stock
 }
 
-export function StockGrid({ productos }: Readonly<StockGridProps>) {
+const formatearMoneda = (monto: number) => {
+  return new Intl.NumberFormat("es-AR", {
+    style: "currency",
+    currency: "ARS",
+    maximumFractionDigits: 0,
+  }).format(monto);
+};
+
+const capitalizar = (str: string) => {
+  if (!str) return "";
+  return str.charAt(0).toUpperCase() + str.slice(1).replace("_", " ");
+};
+
+const obtenerPrimeraImagen = (imagenUrl: unknown): string | null => {
+  if (!imagenUrl) return null;
+  if (Array.isArray(imagenUrl) && imagenUrl.length > 0) return imagenUrl[0];
+  if (typeof imagenUrl === "string") {
+    if (imagenUrl.startsWith("[")) {
+      try {
+        const parsed = JSON.parse(imagenUrl);
+        return Array.isArray(parsed) ? parsed[0] : imagenUrl;
+      } catch {
+        return imagenUrl;
+      }
+    }
+    return imagenUrl;
+  }
+  return null;
+};
+
+export function StockGrid({ productos, userRole }: Readonly<StockGridProps>) {
+  const addItem = useCartStore((state) => state.addItem);
+  const setIsOpen = useCartStore((state) => state.setIsOpen);
+  const isAdmin = userRole === "ADMIN";
+
+  // Estado para saber qué tarjeta tiene las variantes abiertas
+  const [variantesAbiertas, setVariantesAbiertas] = useState<
+    Record<string, boolean>
+  >({});
+
+  const toggleVariantes = (id: string) => {
+    setVariantesAbiertas((prev) => ({ ...prev, [id]: !prev[id] }));
+  };
+
+  const handleAgregarAlCarrito = (
+    producto: Producto,
+    variante: string,
+    stockMax: number,
+  ) => {
+    if (stockMax <= 0 && !isAdmin) {
+      toast.error("No hay stock suficiente.");
+      return;
+    }
+
+    addItem({
+      productoId: producto.id,
+      nombre: producto.nombre,
+      tipo: producto.tipo,
+      variante,
+      cantidad: 1,
+      precio: producto.precio,
+      imagenUrl: obtenerPrimeraImagen(producto.imagen_url),
+      stockMaximo: stockMax,
+    });
+
+    setIsOpen(true);
+
+    // Auto-cierra el panel
+    if (variantesAbiertas[producto.id]) {
+      setVariantesAbiertas((prev) => ({ ...prev, [producto.id]: false }));
+    }
+  };
+
   if (productos.length === 0) {
     return (
-      <div className="text-center py-12 bg-card border border-border">
+      <div className="text-center py-12">
         <p className="text-muted-foreground">
-          No hay productos en el inventario.
+          No hay productos que coincidan con la búsqueda.
         </p>
       </div>
     );
   }
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+    // grid-cols-2 para que se vean 2 columnas en celulares
+    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 m-2">
       {productos.map((producto) => {
-        let primeraImagen = null;
-        if (
-          Array.isArray(producto.imagen_url) &&
-          producto.imagen_url.length > 0
-        ) {
-          primeraImagen = producto.imagen_url[0];
-        } else if (typeof producto.imagen_url === "string") {
-          if (producto.imagen_url.startsWith("[")) {
-            try {
-              const parsed = JSON.parse(producto.imagen_url);
-              primeraImagen = Array.isArray(parsed)
-                ? parsed[0]
-                : producto.imagen_url;
-            } catch {
-              primeraImagen = producto.imagen_url;
-            }
-          } else {
-            primeraImagen = producto.imagen_url;
-          }
-        }
+        const primeraImagen = obtenerPrimeraImagen(producto.imagen_url);
+        const isOpen = variantesAbiertas[producto.id];
 
-        const precioCosto = producto.precio_costo ?? 0;
+        // Lógica de variantes (Igual que en la tabla)
+        const stockOrdenado = producto.stock
+          ? [...producto.stock].sort((a, b) => {
+              const indexA = TODAS_LAS_VARIANTES.indexOf(
+                a.variante.toUpperCase(),
+              );
+              const indexB = TODAS_LAS_VARIANTES.indexOf(
+                b.variante.toUpperCase(),
+              );
+              return (
+                (indexA === -1 ? 99 : indexA) - (indexB === -1 ? 99 : indexB)
+              );
+            })
+          : [];
+
+        const variantesParaVender = isAdmin
+          ? stockOrdenado
+          : stockOrdenado.filter((s) => s.cantidad > 0);
+        const esVentaDirecta = variantesParaVender.length === 1;
 
         return (
-          <div
-            key={producto.id}
-            className="flex flex-col border border-border bg-card text-card-foreground overflow-hidden"
-          >
-            {/* Contenedor de Imagen */}
-            <div className="aspect-square bg-muted flex items-center justify-center relative border-b border-border">
-              {primeraImagen ? (
-                <Image
-                  src={primeraImagen}
-                  alt={producto.nombre}
-                  className="object-cover w-full h-full"
-                />
-              ) : (
-                <ImageIcon className="w-12 h-12 text-muted-foreground opacity-30" />
-              )}
-              {/* Badge flotante de Tipo */}
-              <div className="absolute top-3 right-3">
-                <Badge
-                  variant="secondary"
-                  className="backdrop-blur-sm bg-background/80"
-                >
-                  {producto.tipo}
-                </Badge>
-              </div>
-            </div>
-
-            {/* Contenido (Info) */}
-            <div className="p-4 flex flex-col flex-1">
-              <h3
-                className="font-bold text-lg leading-tight truncate"
-                title={producto.nombre}
-              >
-                {producto.nombre}
-              </h3>
-
-              <div className="mb-4">
-                <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wider">
-                  Stock Disponible
-                </p>
-                <div className="flex flex-wrap gap-1.5">
-                  {producto.stock && producto.stock.length > 0 ? (
-                    producto.stock.map((s) => (
-                      <Badge
-                        key={s.id}
-                        variant={s.cantidad > 0 ? "outline" : "destructive"}
-                        className="text-xs px-1.5"
-                      >
-                        {s.variante}: {s.cantidad}
-                      </Badge>
-                    ))
+          <div key={producto.id} className="flex flex-col group relative">
+            {/* CONTENEDOR DE IMAGEN (Click abre detalles) */}
+            <div className="relative aspect-4/5 bg-muted/30 rounded-xl overflow-hidden mb-3 border border-border/40 transition-all group-hover:border-border">
+              <ProductDetailSheet producto={producto} userRole={userRole}>
+                <div className="w-full h-full cursor-pointer">
+                  {primeraImagen ? (
+                    <Image
+                      src={primeraImagen}
+                      alt={producto.nombre}
+                      fill
+                      className="object-cover transition-transform duration-500 group-hover:scale-105"
+                      sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 20vw"
+                    />
                   ) : (
-                    <span className="text-sm text-muted-foreground italic">
-                      Sin definir
-                    </span>
+                    <div className="w-full h-full flex items-center justify-center">
+                      <ImageIcon className="w-8 h-8 text-muted-foreground opacity-30" />
+                    </div>
+                  )}
+                </div>
+              </ProductDetailSheet>
+
+              {/* OVERLAY DE VARIANTES */}
+              <div
+                className={`absolute bottom-0 left-0 w-full bg-white/95 backdrop-blur-md border-t border-border/50 transition-transform duration-300 ease-in-out flex flex-col p-2 ${
+                  isOpen ? "translate-y-0" : "translate-y-full"
+                }`}
+              >
+                <div className="flex gap-1.5 overflow-x-auto scrollbar-hide pb-1">
+                  {variantesParaVender.map((v) => (
+                    <Button
+                      key={v.id}
+                      variant="outline"
+                      size="sm"
+                      onClick={() =>
+                        handleAgregarAlCarrito(producto, v.variante, v.cantidad)
+                      }
+                      className={`h-8 px-3 rounded-md text-xs font-bold shrink-0 shadow-none border-border/60 ${
+                        v.cantidad > 0
+                          ? "hover:bg-foreground hover:text-background hover:border-foreground"
+                          : "opacity-40 line-through decoration-muted-foreground/50 cursor-not-allowed"
+                      }`}
+                    >
+                      {v.variante}
+                    </Button>
+                  ))}
+                  {variantesParaVender.length === 0 && (
+                    <p className="text-xs text-muted-foreground italic px-1">
+                      Sin stock
+                    </p>
                   )}
                 </div>
               </div>
 
-              {/* Spacer para empujar el precio y botones hacia abajo */}
-              <div className="mt-auto pt-4 flex items-center justify-between border-t border-border">
-                <div className="flex flex-col">
-                  <span className="text-xl font-semibold leading-none">
-                    ${producto.precio.toLocaleString("es-AR")}
-                  </span>
-                  <span className="text-xs text-muted-foreground mt-1 font-medium">
-                    Costo: ${precioCosto.toLocaleString("es-AR")}
-                  </span>
-                </div>
+              {/* BOTÓN + FLOTANTE */}
+              {!isOpen && (
+                <Button
+                  size="icon"
+                  onClick={() => {
+                    if (esVentaDirecta) {
+                      handleAgregarAlCarrito(
+                        producto,
+                        variantesParaVender[0].variante,
+                        variantesParaVender[0].cantidad,
+                      );
+                    } else {
+                      toggleVariantes(producto.id);
+                    }
+                  }}
+                  className="absolute bottom-2 right-2 w-8 h-8 rounded-full bg-background text-foreground hover:bg-card transition-all z-10"
+                >
+                  <Plus className="w-4 h-4" />
+                </Button>
+              )}
+            </div>
 
-                <div className="flex items-center gap-1">
-                  <EditarProductoModal producto={producto} />
-                  <EliminarProductoModal
-                    id={producto.id}
-                    nombre={producto.nombre}
-                    tipo={producto.tipo}
-                  />
-                </div>
+            {/* INFO DEL PRODUCTO */}
+            <div className="px-1 flex flex-col">
+              <div className="flex justify-between items-start gap-2">
+                <h3
+                  className="font-semibold text-sm leading-tight text-foreground truncate"
+                  title={producto.nombre}
+                >
+                  {producto.nombre}
+                </h3>
               </div>
+              <p className="text-[11px] text-muted-foreground mt-0.5 capitalize">
+                {capitalizar(producto.tipo)}
+              </p>
+              <p className="font-bold text-sm mt-1 text-foreground">
+                {formatearMoneda(producto.precio)}
+              </p>
             </div>
           </div>
         );

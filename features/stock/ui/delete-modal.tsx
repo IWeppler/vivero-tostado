@@ -21,12 +21,14 @@ interface EliminarProductoModalProps {
   id: string;
   nombre: string;
   tipo: string;
+  children?: React.ReactNode;
 }
 
 export function EliminarProductoModal({
   id,
   nombre,
   tipo,
+  children,
 }: Readonly<EliminarProductoModalProps>) {
   const [isOpen, setIsOpen] = useState(false);
 
@@ -48,15 +50,19 @@ export function EliminarProductoModal({
   return (
     <AlertDialog open={isOpen} onOpenChange={setIsOpen}>
       <AlertDialogTrigger asChild>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-8 w-8 cursor-pointer text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
-          title="Eliminar producto"
-        >
-          <Trash2 className="h-4 w-4" />
-          <span className="sr-only">Eliminar</span>
-        </Button>
+        {children ? (
+          children
+        ) : (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 cursor-pointer text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+            title="Eliminar producto"
+          >
+            <Trash2 className="h-4 w-4" />
+            <span className="sr-only">Eliminar</span>
+          </Button>
+        )}
       </AlertDialogTrigger>
 
       <AlertDialogContent>

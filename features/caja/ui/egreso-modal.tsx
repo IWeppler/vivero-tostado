@@ -62,7 +62,7 @@ export function EgresoModal() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="monto">Monto gastado (ARS)</Label>
+            <Label htmlFor="monto">Monto gastado</Label>
             <Input
               id="monto"
               name="monto"

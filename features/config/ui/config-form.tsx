@@ -64,7 +64,7 @@ export function ConfigForm({ config }: Readonly<{ config: ConfiguracionPOS }>) {
     <Card className="border-border">
       <CardHeader>
         <CardTitle className="text-xl flex items-center gap-2">
-          <Store className="w-5 h-5 text-emerald-600" />
+          <Store className="w-5 h-5 text-primary" />
           Datos del Comercio
         </CardTitle>
         <CardDescription>
@@ -103,10 +103,10 @@ export function ConfigForm({ config }: Readonly<{ config: ConfiguracionPOS }>) {
 
               <Label
                 htmlFor="logo"
-                className="flex flex-col items-center justify-center h-20 px-6 border-2 border-dashed border-border rounded-lg cursor-pointer bg-muted/20 hover:bg-emerald-50 hover:border-emerald-200 transition-colors flex-1 sm:flex-none"
+                className="flex flex-col items-center justify-center h-20 px-6 border-2 border-dashed border-border rounded-lg cursor-pointer bg-muted/20 hover:bg-primary/20 hover:border-primary transition-colors flex-1 sm:flex-none"
               >
                 <div className="flex flex-col items-center justify-center text-center">
-                  <span className="font-semibold text-emerald-600 text-sm">
+                  <span className="font-semibold text-primary text-sm">
                     Cambiar Logo
                   </span>
                   <span className="text-xs text-muted-foreground hidden sm:block">
@@ -188,7 +188,7 @@ export function ConfigForm({ config }: Readonly<{ config: ConfiguracionPOS }>) {
             <Button
               type="submit"
               disabled={isPending || isCompressing}
-              className="bg-emerald-600 hover:bg-emerald-700 text-white w-full sm:w-auto"
+              className="w-full sm:w-auto"
             >
               {isPending || isCompressing ? (
                 <>

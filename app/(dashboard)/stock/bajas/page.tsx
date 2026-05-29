@@ -10,10 +10,8 @@ import { revalidatePath } from "next/cache";
 export const dynamic = "force-dynamic";
 
 // --- ACTIONS INTERNOS ---
-// (Es válido poner actions en la misma página si son exclusivos de esta vista)
-
-async function aprobarMerma(
-  mermaId: string,
+async function aprobarBaja(
+  bajasId: string,
   productoId: string,
   variante: string,
   cantidadA_restar: number,
@@ -39,32 +37,25 @@ async function aprobarMerma(
     .update({ cantidad: nuevoStock })
     .eq("id", stockItem.id);
 
-  // 3. Cambiar el estado de la merma a APROBADA
-  await supabase
-    .from("mermas")
-    .update({ estado: "APROBADA" })
-    .eq("id", mermaId);
+  // 3. Cambiar el estado de la baja a APROBADA
+  await supabase.from("bajas").update({ estado: "APROBADA" }).eq("id", bajasId);
 
   revalidatePath("/stock");
-  revalidatePath("/stock/mermas");
+  revalidatePath("/stock/bajas");
 }
 
-async function rechazarMerma(mermaId: string) {
+async function rechazarBaja(bajaId: string) {
   "use server";
   const cookieStore = await cookies();
   const supabase = createClient(cookieStore);
 
-  await supabase
-    .from("mermas")
-    .update({ estado: "RECHAZADA" })
-    .eq("id", mermaId);
+  await supabase.from("bajas").update({ estado: "RECHAZADA" }).eq("id", bajaId);
 
-  revalidatePath("/stock/mermas");
+  revalidatePath("/stock/bajas");
 }
 
 // --- PÁGINA ---
-
-export default async function MermasPage() {
+export default async function BajasPage() {
   const cookieStore = await cookies();
   const supabase = createClient(cookieStore);
 
@@ -84,9 +75,9 @@ export default async function MermasPage() {
     redirect("/stock"); // Si un vendedor se cuela por URL, lo pateamos al inventario
   }
 
-  // 2. Traer las mermas pendientes y el historial
-  const { data: mermas, error } = await supabase
-    .from("mermas")
+  // 2. Traer las bajas pendientes y el historial
+  const { data: bajas, error } = await supabase
+    .from("bajas")
     .select(
       `
       id,
@@ -104,12 +95,12 @@ export default async function MermasPage() {
 
   if (error) {
     return (
-      <div className="p-8 text-center text-red-500">Error cargando mermas.</div>
+      <div className="p-8 text-center text-red-500">Error cargando bajas.</div>
     );
   }
 
-  const pendientes = mermas?.filter((m) => m.estado === "PENDIENTE") || [];
-  const historial = mermas?.filter((m) => m.estado !== "PENDIENTE") || [];
+  const pendientes = bajas?.filter((b) => b.estado === "PENDIENTE") || [];
+  const historial = bajas?.filter((b) => b.estado !== "PENDIENTE") || [];
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-12">
@@ -145,27 +136,27 @@ export default async function MermasPage() {
           </div>
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {pendientes.map((merma) => (
+            {pendientes.map((baja) => (
               <div
-                key={merma.id}
+                key={baja.id}
                 className="bg-white border border-amber-200 rounded-xl p-5 relative overflow-hidden"
               >
                 <div className="absolute top-0 left-0 w-1 h-full bg-amber-400"></div>
                 <div className="flex justify-between items-start mb-3">
                   <div>
-                    <h3 className="font-bold text-foreground truncate max-w-[180px]">
-                      {/* @ts-ignore */}
-                      {merma.productos?.nombre || "Producto Eliminado"}
+                    <h3 className="font-bold text-foreground truncate max-w-45">
+                      {/* @ts-expect-error nombre no existe */}
+                      {baja.productos?.nombre || "Producto Eliminado"}
                     </h3>
                     <p className="text-xs text-muted-foreground mt-0.5">
-                      Variante: {merma.variante}
+                      Variante: {baja.variante}
                     </p>
                   </div>
                   <Badge
                     variant="outline"
                     className="bg-amber-50 text-amber-700 border-amber-200"
                   >
-                    -{merma.cantidad}
+                    -{baja.cantidad}
                   </Badge>
                 </div>
 
@@ -173,11 +164,11 @@ export default async function MermasPage() {
                   <p className="font-medium text-foreground text-xs mb-1 uppercase tracking-wider">
                     Motivo Reportado
                   </p>
-                  <p className="text-muted-foreground">{merma.motivo}</p>
+                  <p className="text-muted-foreground">{baja.motivo}</p>
                   <p className="text-[10px] text-muted-foreground mt-2 italic">
-                    {/* @ts-ignore */}
-                    Reportado por: {merma.perfiles?.nombre || "Usuario"} •{" "}
-                    {new Date(merma.creado_en).toLocaleDateString("es-AR", {
+                    {/* @ts-expect-error nombre no existe */}
+                    Reportado por: {baja.perfiles?.nombre || "Usuario"} •{" "}
+                    {new Date(baja.creado_en).toLocaleDateString("es-AR", {
                       day: "numeric",
                       month: "short",
                     })}
@@ -186,7 +177,7 @@ export default async function MermasPage() {
 
                 <div className="flex gap-2 w-full">
                   <form
-                    action={rechazarMerma.bind(null, merma.id)}
+                    action={rechazarBaja.bind(null, baja.id)}
                     className="flex-1"
                   >
                     <Button
@@ -198,12 +189,12 @@ export default async function MermasPage() {
                     </Button>
                   </form>
                   <form
-                    action={aprobarMerma.bind(
+                    action={aprobarBaja.bind(
                       null,
-                      merma.id,
-                      merma.producto_id,
-                      merma.variante,
-                      merma.cantidad,
+                      baja.id,
+                      baja.producto_id,
+                      baja.variante,
+                      baja.cantidad,
                     )}
                     className="flex-1"
                   >
@@ -224,7 +215,7 @@ export default async function MermasPage() {
       {historial.length > 0 && (
         <div className="space-y-4 pt-8 border-t border-border">
           <h2 className="text-lg font-semibold text-muted-foreground">
-            Historial de Mermas
+            Historial de Bajas
           </h2>
           <div className="bg-white rounded-xl border border-border overflow-hidden">
             <table className="w-full text-sm text-left">
@@ -237,26 +228,26 @@ export default async function MermasPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {historial.slice(0, 10).map((merma) => (
-                  <tr key={merma.id} className="hover:bg-muted/30">
+                {historial.slice(0, 10).map((baja) => (
+                  <tr key={baja.id} className="hover:bg-muted/30">
                     <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">
-                      {new Date(merma.creado_en).toLocaleDateString("es-AR")}
+                      {new Date(baja.creado_en).toLocaleDateString("es-AR")}
                     </td>
                     <td className="px-4 py-3 font-medium">
-                      {/* @ts-ignore */}
-                      {merma.productos?.nombre}{" "}
+                      {/* @ts-expect-error nombre no existe en any */}
+                      {baja.productos?.nombre}{" "}
                       <span className="text-muted-foreground font-normal">
-                        ({merma.variante})
+                        ({baja.variante})
                       </span>
                       <span className="ml-2 text-rose-500 font-bold">
-                        -{merma.cantidad}
+                        -{baja.cantidad}
                       </span>
                     </td>
                     <td className="px-4 py-3 text-muted-foreground">
-                      {merma.motivo}
+                      {baja.motivo}
                     </td>
                     <td className="px-4 py-3">
-                      {merma.estado === "APROBADA" ? (
+                      {baja.estado === "APROBADA" ? (
                         <Badge
                           variant="outline"
                           className="bg-emerald-50 text-emerald-700 border-emerald-200"

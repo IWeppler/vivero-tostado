@@ -37,7 +37,7 @@ export default async function StockPage() {
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center justify-between">
+      {/* <div className="flex flex-col gap-3 sm:flex-row sm:items-center justify-between">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
             Inventario
@@ -46,7 +46,7 @@ export default async function StockPage() {
             Gestiona el stock, precios y catálogo de tus plantas.
           </p>
         </div>
-      </div>
+      </div> */}
 
       <Suspense fallback={<StockSkeleton />}>
         {/* Pasamos el userRole al StockView */}

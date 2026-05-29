@@ -3,6 +3,10 @@ import "./globals.css";
 import { Toaster } from "@/shared/ui/sonner";
 import { createClient } from "@/shared/config/supabase/server";
 import { cookies } from "next/headers";
+import { Inter } from "next/font/google";
+import { cn } from "@/lib/utils";
+
+const inter = Inter({subsets:['latin'],variable:'--font-sans'});
 
 export const viewport: Viewport = {
   themeColor: "#09090b",
@@ -38,7 +42,7 @@ export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="es" className={`h-full antialiased`}>
+    <html lang="es" className={cn("h-full", "antialiased", "font-sans", inter.variable)}>
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link

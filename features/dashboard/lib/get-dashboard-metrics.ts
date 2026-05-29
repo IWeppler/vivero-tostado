@@ -1,24 +1,53 @@
-import { Venta } from "@/entities/ventas/types";
 import { Producto } from "@/entities/productos/types";
+import { EgresoCaja } from "@/entities/caja/types";
 
 export type PeriodoDashboard =
+  | "hoy"
   | "mes"
   | "trimestre"
   | "semestre"
   | "anio"
   | "historico";
 
+// --- TIPOS ESTRICTOS PARA EL DASHBOARD ---
+
+export interface VentaItemDashboard {
+  cantidad: number;
+  precio_unitario: number;
+  precio_costo?: number;
+  variante?: string;
+  producto_id?: string;
+  producto?:
+    | { nombre: string; tipo?: string; imagen_url?: string }
+    | { nombre: string; tipo?: string; imagen_url?: string }[]
+    | any;
+}
+
+export interface VentaDashboard {
+  id: string;
+  total: number;
+  precio_costo?: number;
+  cantidad: number;
+  fecha_venta: string;
+  metodo_pago?: string | null;
+  perfiles?: { nombre: string } | { nombre: string }[] | any;
+  ventas_items?: VentaItemDashboard[];
+  [key: string]: any;
+}
+
 export function getDashboardMetrics(
-  ventas: Venta[],
+  ventas: VentaDashboard[],
   productos: Producto[],
-  egresos: any[] = [],
-  mermas: any[] = [],
+  egresos: EgresoCaja[] = [],
+  bajas: any[] = [],
   periodo: PeriodoDashboard = "mes",
 ) {
   const now = new Date();
   let startDate = new Date(0);
 
-  if (periodo === "mes") {
+  if (periodo === "hoy") {
+    startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  } else if (periodo === "mes") {
     startDate = new Date(now.getFullYear(), now.getMonth(), 1);
   } else if (periodo === "trimestre") {
     startDate = new Date(now.getFullYear(), now.getMonth() - 3, 1);
@@ -39,116 +68,217 @@ export function getDashboardMetrics(
       ? egresos
       : egresos.filter((e) => new Date(e.fecha) >= startDate);
 
-  const mermasFiltradas =
+  const bajasFiltradas =
     periodo === "historico"
-      ? mermas
-      : mermas.filter((m) => new Date(m.creado_en) >= startDate);
+      ? bajas
+      : bajas.filter((m) => new Date(m.creado_en) >= startDate);
 
   // --- CORE KPIs FINANCIEROS ---
   let ingresosBrutos = 0;
-  let gananciaBrutaVentas = 0; // Ventas - Costo de Plantas
+  let costoMercaderiaVendida = 0;
+  let gananciaBrutaVentas = 0;
   let unidadesVendidas = 0;
 
+  const catMap = new Map<string, number>();
+  const rentabilidadCatMap = new Map<string, number>();
+  const metodoPagoMap = new Map<string, number>();
+  const diasSemana = [
+    "Domingo",
+    "Lunes",
+    "Martes",
+    "Miércoles",
+    "Jueves",
+    "Viernes",
+    "Sábado",
+  ];
+  const diaMap = new Map<string, number>();
+  diasSemana.forEach((d) => diaMap.set(d, 0));
+
+  const productosConVentas = new Set<string>();
+  const ventasPorProducto: Record<
+    string,
+    { nombre: string; ingresos: number; unidades: number; ganancia: number }
+  > = {};
+
+  // 2. Escaneamos la Cabecera de la Venta (Tickets)
   ventasFiltradas.forEach((v) => {
-    const total = Number(v.total);
-    const cantidad = Number(v.cantidad);
-    const precio = Number(v.precio_unitario);
-    const costoUnitario = Number(v.precio_costo ?? 0);
+    const totalTicket = Number(v.total || 0);
+    const costoTicket = Number(v.precio_costo || 0);
 
-    ingresosBrutos += total;
-    unidadesVendidas += cantidad;
+    ingresosBrutos += totalTicket;
+    costoMercaderiaVendida += costoTicket;
+    gananciaBrutaVentas += totalTicket - costoTicket;
 
-    if (costoUnitario > 0) {
-      gananciaBrutaVentas += (precio - costoUnitario) * cantidad;
-    }
-  });
+    // Métodos de Pago
+    const metodo = v.metodo_pago || "EFECTIVO";
+    metodoPagoMap.set(metodo, (metodoPagoMap.get(metodo) || 0) + totalTicket);
 
-  const ordenes = ventasFiltradas.length;
-  const ticketPromedio = ordenes > 0 ? ingresosBrutos / ordenes : 0;
+    // Días de mayor venta
+    const date = new Date(v.fecha_venta);
+    const diaName = diasSemana[date.getDay()];
+    diaMap.set(diaName, (diaMap.get(diaName) || 0) + totalTicket);
 
-  // --- EGRESOS Y MERMAS (Nuevas Fugas de Capital) ---
-  let totalEgresos = 0;
-  egresosFiltrados.forEach((e) => {
-    totalEgresos += Number(e.monto || 0);
-  });
+    // 3. Escaneamos los items dentro de cada Ticket (v.ventas_items)
+    const items = v.ventas_items || [];
 
-  let costoPerdidoMermas = 0;
-  let unidadesMermadas = 0;
-  mermasFiltradas.forEach((m) => {
-    const productoAfectado = productos.find((p) => p.id === m.producto_id);
-    const costo = Number(productoAfectado?.precio_costo ?? 0);
-    const cantidad = Number(m.cantidad || 0);
+    items.forEach((item: VentaItemDashboard) => {
+      const cantidadItem = Number(item.cantidad || 0);
+      const precioUnitario = Number(item.precio_unitario || 0);
+      const costoUnitario = Number(item.precio_costo || 0);
 
-    costoPerdidoMermas += cantidad * costo;
-    unidadesMermadas += cantidad;
-  });
+      const itemIngreso = precioUnitario * cantidadItem;
+      const itemGanancia = (precioUnitario - costoUnitario) * cantidadItem;
 
-  // Ganancia Neta Real = Ganancia Bruta (Ventas - Costos) - Gastos Operativos (Egresos)
-  const gananciaNeta = gananciaBrutaVentas - totalEgresos;
+      unidadesVendidas += cantidadItem;
 
-  // Margen de ganancia neta en porcentaje sobre el ingreso
-  const margenPorcentaje =
-    ingresosBrutos > 0 ? (gananciaNeta / ingresosBrutos) * 100 : 0;
+      // Supabase a veces anida los joins 1:1 en arrays, esto lo previene extrayendo el primer elemento
+      const prodData = Array.isArray(item.producto)
+        ? item.producto[0]
+        : item.producto;
 
-  // --- OPERATIVO ---
-  let stockTotalUnidades = 0;
-  let stockValorizadoCosto = 0;
-  let productosCriticos = 0;
+      // Categorías (Ingresos y Rentabilidad)
+      const catOriginal = prodData?.tipo || "Sin categoría";
+      const cat = catOriginal.charAt(0).toUpperCase() + catOriginal.slice(1);
 
-  productos.forEach((pro) => {
-    const costo = Number(pro.precio_costo ?? 0);
+      catMap.set(cat, (catMap.get(cat) || 0) + itemIngreso);
+      rentabilidadCatMap.set(
+        cat,
+        (rentabilidadCatMap.get(cat) || 0) + itemGanancia,
+      );
 
-    pro.stock?.forEach((s) => {
-      const cantidadStock = Number(s.cantidad);
-      stockTotalUnidades += cantidadStock;
-      stockValorizadoCosto += cantidadStock * costo;
+      // Ranking de Productos
+      if (item.producto_id) productosConVentas.add(item.producto_id);
 
-      if (cantidadStock > 0 && cantidadStock <= 3) {
-        productosCriticos++;
-      }
-    });
-  });
-
-  // --- INTELIGENCIA DE CATÁLOGO ---
-  const ventasPorProducto = ventasFiltradas.reduce(
-    (acc, v) => {
-      const id = v.producto_id || "eliminado";
-      const total = Number(v.total);
-      const cantidad = Number(v.cantidad);
-      const precio = Number(v.precio_unitario);
-      const costoUnitario = Number(v.precio_costo ?? 0);
-
-      if (!acc[id]) {
-        acc[id] = {
-          nombre: v.producto ? `${v.producto.nombre}` : "Producto Eliminado",
+      const pId = item.producto_id || "eliminado";
+      if (!ventasPorProducto[pId]) {
+        ventasPorProducto[pId] = {
+          nombre: prodData ? `${prodData.nombre}` : "Producto Eliminado",
           ingresos: 0,
           unidades: 0,
           ganancia: 0,
         };
       }
+      ventasPorProducto[pId].ingresos += itemIngreso;
+      ventasPorProducto[pId].unidades += cantidadItem;
+      ventasPorProducto[pId].ganancia += itemGanancia;
+    });
+  });
 
-      acc[id].ingresos += total;
-      acc[id].unidades += cantidad;
+  const ordenes = ventasFiltradas.length;
+  const ticketPromedio = ordenes > 0 ? ingresosBrutos / ordenes : 0;
 
-      if (costoUnitario > 0) {
-        acc[id].ganancia += (precio - costoUnitario) * cantidad;
+  // --- EGRESOS Y BAJAS ---
+  let totalEgresos = 0;
+  egresosFiltrados.forEach((e) => {
+    totalEgresos += Number(e.monto || 0);
+  });
+
+  let costoPerdidoBajas = 0;
+  let unidadesBajas = 0;
+  const bajasMotivoMap = new Map<string, number>();
+
+  bajasFiltradas.forEach((b) => {
+    const productoAfectado = productos.find((p) => p.id === b.producto_id);
+    const costo = Number(productoAfectado?.precio_costo ?? 0);
+    const cantidad = Number(b.cantidad || 0);
+    const costoTotalBaja = cantidad * costo;
+
+    costoPerdidoBajas += costoTotalBaja;
+    unidadesBajas += cantidad;
+
+    const motivo = b.motivo || "No especificado";
+    bajasMotivoMap.set(
+      motivo,
+      (bajasMotivoMap.get(motivo) || 0) + costoTotalBaja,
+    );
+  });
+
+  // Cálculo del Resultado Operativo (Ganancia Neta)
+  const resultadoOperativo = gananciaBrutaVentas - totalEgresos;
+  const margenPorcentaje =
+    ingresosBrutos > 0 ? (resultadoOperativo / ingresosBrutos) * 100 : 0;
+
+  // --- OPERATIVO Y STOCK ---
+  let stockTotalUnidades = 0;
+  let stockValorizadoCosto = 0;
+  let productosCriticos = 0;
+  const stockCriticoDetallado: any[] = [];
+  const productosSinMovimiento: Producto[] = [];
+
+  productos.forEach((pro) => {
+    const costo = Number(pro.precio_costo ?? 0);
+    let stockTotalProducto = 0;
+
+    pro.stock?.forEach((s) => {
+      const cantidadStock = Number(s.cantidad);
+      stockTotalUnidades += cantidadStock;
+      stockValorizadoCosto += cantidadStock * costo;
+      stockTotalProducto += cantidadStock;
+
+      if (cantidadStock > 0 && cantidadStock <= 3) {
+        productosCriticos++;
+        stockCriticoDetallado.push({
+          nombre: pro.nombre,
+          variante: s.variante,
+          cantidad: cantidadStock,
+        });
       }
+    });
 
-      return acc;
-    },
-    {} as Record<
-      string,
-      { nombre: string; ingresos: number; unidades: number; ganancia: number }
-    >,
-  );
+    if (stockTotalProducto > 0 && !productosConVentas.has(pro.id)) {
+      productosSinMovimiento.push(pro);
+    }
+  });
 
-  const topProductosUnidades = Object.values(ventasPorProducto)
+  // --- RESULTADOS DE INTELIGENCIA DE CATÁLOGO ---
+  const topProductos = Object.values(ventasPorProducto)
     .sort((a, b) => b.unidades - a.unidades)
-    .slice(0, 5);
+    .slice(0, 10);
 
   const topProductosRentables = Object.values(ventasPorProducto)
     .sort((a, b) => b.ganancia - a.ganancia)
+    .slice(0, 10);
+
+  const peoresProductosRentables = Object.values(ventasPorProducto)
+    .filter((p) => p.ganancia > 0)
+    .sort((a, b) => a.ganancia - b.ganancia)
     .slice(0, 5);
+
+  // --- FORMATEO FINAL DE GRÁFICOS ---
+  const donutData = [
+    {
+      label: "Costo Mercadería",
+      value: costoMercaderiaVendida,
+      color: "#f59e0b",
+    },
+    { label: "Egresos", value: totalEgresos, color: "#f43f5e" },
+    {
+      label: "Result. Operativo",
+      value: resultadoOperativo > 0 ? resultadoOperativo : 0,
+      color: "#10b981",
+    },
+  ];
+
+  const ventasPorCategoria = Array.from(catMap.entries())
+    .map(([label, value]) => ({ label, value }))
+    .sort((a, b) => b.value - a.value);
+
+  const rentabilidadPorCategoria = Array.from(rentabilidadCatMap.entries())
+    .map(([label, value]) => ({ label, value }))
+    .sort((a, b) => b.value - a.value);
+
+  const ventasPorDia = Array.from(diaMap.entries())
+    .map(([label, value]) => ({ label, value }))
+    .filter((d) => d.value > 0)
+    .sort((a, b) => b.value - a.value);
+
+  const ventasPorMetodo = Array.from(metodoPagoMap.entries())
+    .map(([label, value]) => ({ label, value }))
+    .sort((a, b) => b.value - a.value);
+
+  const bajasPorMotivo = Array.from(bajasMotivoMap.entries())
+    .map(([label, value]) => ({ label, value }))
+    .sort((a, b) => b.value - a.value);
 
   return {
     ingresos: ingresosBrutos,
@@ -156,15 +286,24 @@ export function getDashboardMetrics(
     unidadesVendidas,
     ticketPromedio,
     gananciaBrutaVentas,
-    gananciaNeta,
+    gananciaNeta: resultadoOperativo,
     totalEgresos,
-    costoPerdidoMermas,
-    unidadesMermadas,
+    costoPerdidoBajas,
+    unidadesBajas,
     margenPorcentaje,
     stockTotalUnidades,
     stockValorizadoCosto,
     productosCriticos,
-    topProductos: topProductosUnidades,
+    stockCriticoDetallado,
+    productosSinMovimiento,
+    topProductos,
     topProductosRentables,
+    peoresProductosRentables,
+    donutData,
+    ventasPorCategoria,
+    rentabilidadPorCategoria,
+    ventasPorDia,
+    ventasPorMetodo,
+    bajasPorMotivo,
   };
 }

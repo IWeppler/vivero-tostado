@@ -105,7 +105,7 @@ export function Navbar({ branding }: NavbarProps) {
           href="/store"
           className="flex items-center gap-3 transition-opacity hover:opacity-80 shrink-0"
         >
-          <div className="w-10 h-10 flex items-center justify-center rounded-none overflow-hidden bg-black text-white">
+          <div className="w-10 h-10 flex items-center justify-center rounded-none overflow-hidden text-white">
             <Image
               src={branding.posLogo}
               alt={`Logo ${branding.posName}`}
@@ -114,7 +114,7 @@ export function Navbar({ branding }: NavbarProps) {
               className="object-cover"
             />
           </div>
-          <span className="font-black text-xl tracking-tight hidden sm:block uppercase">
+          <span className="font-semibold text-xl tracking-tight hidden sm:block uppercase">
             {branding.posName}
           </span>
         </Link>

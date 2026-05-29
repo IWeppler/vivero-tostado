@@ -8,14 +8,14 @@ Integración con WhatsApp: Al finalizar la compra, se genera automáticamente un
 💼 Para el Local (Dashboard POS)
 Sistema Multi-Rol:
 ADMIN: Acceso total (Dashboard financiero, métricas, edición de stock, configuración, arqueo de caja).
-VENDEDOR: Acceso limitado (Solo lectura de stock, venta rápida, registro de mermas y listado de sus ventas del día).
+VENDEDOR: Acceso limitado (Solo lectura de stock, venta rápida, registro de bajas y listado de sus ventas del día).
 Gestión de Inventario (/stock): Control de productos por variantes (M8, N12, 3L, etc.). Cálculo automático de margen de ganancia (Precio - Costo).
 Venta Rápida POS: Sistema de carrito interno para el mostrador. Descuenta automáticamente el stock de la base de datos al confirmar la venta y registra qué vendedor la realizó.
 Módulo de Caja y Finanzas (/caja):
 Dashboard en tiempo real con cálculos de: Ingresos Brutos - Costo de Mercadería - Egresos = Ganancia Neta.
 Registro de gastos operativos (egresos) como fletes o insumos.
 Filtros dinámicos (Hoy, Este Mes, Este Año).
-Gestión de Mermas (/stock/mermas): Los vendedores pueden reportar plantas secas, roturas o plagas. El Administrador debe aprobarlas para que se descuenten del inventario físico, generando métricas de pérdidas.
+Gestión de Bajas (/stock/bajas): Los vendedores pueden reportar plantas secas, roturas o plagas. El Administrador debe aprobarlas para que se descuenten del inventario físico, generando métricas de pérdidas.
 Personalización (/configuracion): Interfaz para modificar dinámicamente el nombre del local, logo, número de WhatsApp y dirección sin tocar el código.
 🛠️ Stack Tecnológico
 Framework: Next.js (App Router, Server Actions, React)
@@ -51,7 +51,7 @@ productos: Información base (nombre, tipo, precio, costo, imagen, publicado).
 productos_stock: Control de cantidad vinculada a una variante (Ej: Talle N12) por cada producto.
 ventas: Registro de transacciones con vendedor_id para trazabilidad.
 perfiles: Vinculada al sistema de auth.users. Define el rol (ADMIN o VENDEDOR).
-mermas: Solicitudes de baja de inventario con estado (PENDIENTE, APROBADA, RECHAZADA).
+bajas: Solicitudes de baja de inventario con estado (PENDIENTE, APROBADA, RECHAZADA).
 egresos: Registro de gastos operativos para el cálculo de caja.
 configuracion_pos: Tabla de una sola fila para persistir el branding (Logo, WhatsApp, etc.).
 (Asegurarse de tener configuradas correctamente las políticas de Row Level Security - RLS para que los vendedores solo tengan permisos de lectura en catálogos y escritura en ventas).
@@ -70,7 +70,7 @@ El proyecto sigue una arquitectura modular basada en Features (Funcionalidades):
 │ ├── productos/ # Acciones y vistas del catálogo público
 │ ├── purchases/ # Importación de pedidos/remitos
 │ ├── sales/ # Registro de ventas, tablas y acciones
-│ └── stock/ # Inventario, edición, mermas y modales
+│ └── stock/ # Inventario, edición, bajas y modales
 └── shared/
 ├── components/ # Componentes reutilizables (Navbar, Sidebar, etc.)
 ├── config/ # Configuración de clientes (Supabase)
@@ -82,5 +82,6 @@ El proyecto sigue una arquitectura modular basada en Features (Funcionalidades):
 El proyecto utiliza un middleware.ts en Next.js para proteger las rutas.
 Si un usuario no autenticado intenta acceder a /stock, es redirigido a /store (o /auth).
 Si un usuario con rol VENDEDOR intenta acceder a / (Dashboard Financiero), /configuracion o /caja, es redirigido forzosamente a /stock.
+
 👨‍💻 Autor
-Desarrollado para la gestión optimizada de Vivero Tostado.
+Desarrollado por Ignacio Weppler para la gestión optimizada de Vivero Tostado.

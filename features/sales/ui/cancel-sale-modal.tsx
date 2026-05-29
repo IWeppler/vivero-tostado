@@ -5,17 +5,17 @@ import { anularVentaAction } from "../actions/cancel-sale";
 import { toast } from "sonner";
 
 import {
-  AlertDialog,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/shared/ui/alert-dialog";
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogTrigger,
+} from "@/shared/ui/dialog";
 import { Button } from "@/shared/ui/button";
-import { RotateCcw } from "lucide-react";
+import { Label } from "@/shared/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/shared/ui/radio-group";
+import { RotateCcw, AlertTriangle, PackagePlus, Loader2 } from "lucide-react";
 
 interface AnularVentaModalProps {
   id: string;
@@ -34,19 +34,31 @@ export function AnularVentaModal({
 }: Readonly<AnularVentaModalProps>) {
   const [isOpen, setIsOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
+  const [motivo, setMotivo] = useState<"RESTAURAR_STOCK" | "BAJA">(
+    "RESTAURAR_STOCK",
+  );
 
   const handleAnular = () => {
     startTransition(async () => {
-      const result = await anularVentaAction(id);
+      const result = await anularVentaAction(id, motivo);
 
       if (result.success) {
         setIsOpen(false);
         if (isProductoEliminado) {
-          toast.success("Venta anulada correctamente. (Stock no restaurado)");
-        } else {
           toast.success(
-            `Venta anulada. Se han devuelto ${cantidad} unidad(es) de talle ${variante} al stock.`,
+            "Venta anulada. El dinero se restó de la caja de hoy.",
+            {
+              description:
+                "Stock no restaurado porque el producto fue eliminado del catálogo.",
+            },
           );
+        } else {
+          toast.success("Venta anulada y dinero reintegrado a caja.", {
+            description:
+              motivo === "RESTAURAR_STOCK"
+                ? `Se devolvieron ${cantidad}u al inventario.`
+                : `Se registró como Baja (pérdida).`,
+          });
         }
       } else if (result.error) {
         toast.error(result.error);
@@ -55,56 +67,120 @@ export function AnularVentaModal({
   };
 
   return (
-    <AlertDialog open={isOpen} onOpenChange={setIsOpen}>
-      <AlertDialogTrigger asChild>
+    <Dialog>
+      <DialogTrigger asChild>
         <Button
           variant="ghost"
           size="icon"
-          className="h-8 w-8 text-orange-600 hover:text-orange-700 hover:bg-orange-50 dark:hover:bg-orange-900/20 transition-colors"
-          title="Anular venta"
+          className="text-rose-500 hover:text-rose-700 h-8 w-8 sm:h-9 sm:w-9 cursor-pointer shrink-0"
+          title="Anular Venta"
         >
-          <RotateCcw className="h-4 w-4" />
-          <span className="sr-only">Anular</span>
+          <RotateCcw className="w-4 h-4 sm:w-5 sm:h-5" />
         </Button>
-      </AlertDialogTrigger>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2 text-foreground">
+            Registrar Devolución
+          </DialogTitle>
+          <DialogDescription>
+            Vas a anular la venta de{" "}
+            <strong className="text-foreground">
+              {cantidad}x {productoNombre} ({variante})
+            </strong>
+            . El dinero se restará automáticamente de la caja de hoy como un
+            Egreso.
+          </DialogDescription>
+        </DialogHeader>
 
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>¿Anular esta venta?</AlertDialogTitle>
-          <AlertDialogDescription className="space-y-2">
-            <p>
-              Estás a punto de anular la venta de{" "}
-              <span className="font-bold">
-                {cantidad}x {productoNombre} (Talle {variante})
-              </span>
-              .
-            </p>
-            {isProductoEliminado ? (
-              <p className="text-destructive font-medium">
-                Nota: El producto original ha sido eliminado del sistema. La
-                venta se borrará del historial, pero no se puede restaurar el
-                stock.
-              </p>
-            ) : (
-              <p className="text-muted-foreground">
-                El registro se eliminará del historial y el stock volverá
-                automáticamente al inventario.
-              </p>
-            )}
-          </AlertDialogDescription>
-        </AlertDialogHeader>
+        <div className="space-y-6 pt-4">
+          {!isProductoEliminado && (
+            <div className="space-y-3">
+              <Label className="text-sm font-semibold">
+                ¿Qué hacemos con la planta física?
+              </Label>
+              <RadioGroup
+                value={motivo}
+                onValueChange={(v) => setMotivo(v as any)}
+              >
+                <div
+                  className={`flex items-start space-x-3 p-3 rounded-lg border-2 transition-colors cursor-pointer ${motivo === "RESTAURAR_STOCK" ? "border-emerald-500 bg-emerald-50" : "border-border"}`}
+                  onClick={() => setMotivo("RESTAURAR_STOCK")}
+                >
+                  <RadioGroupItem
+                    value="RESTAURAR_STOCK"
+                    id="r1"
+                    className="mt-1"
+                  />
+                  <div className="space-y-1">
+                    <Label
+                      htmlFor="r1"
+                      className="font-bold text-emerald-800 cursor-pointer flex items-center gap-1.5"
+                    >
+                      <PackagePlus className="w-4 h-4" /> Volver a la estantería
+                    </Label>
+                    <p className="text-xs text-muted-foreground">
+                      El cliente se arrepintió. La planta está sana y se sumará
+                      al inventario (+{cantidad}).
+                    </p>
+                  </div>
+                </div>
 
-        <AlertDialogFooter>
-          <AlertDialogCancel disabled={isPending}>Cancelar</AlertDialogCancel>
-          <Button
-            variant="destructive"
-            onClick={handleAnular}
-            disabled={isPending}
-          >
-            {isPending ? "Anulando..." : "Sí, anular venta"}
-          </Button>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+                <div
+                  className={`flex items-start space-x-3 p-3 rounded-lg border-2 transition-colors cursor-pointer ${motivo === "BAJA" ? "border-amber-500 bg-amber-50" : "border-border"}`}
+                  onClick={() => setMotivo("BAJA")}
+                >
+                  <RadioGroupItem value="BAJA" id="r2" className="mt-1" />
+                  <div className="space-y-1">
+                    <Label
+                      htmlFor="r2"
+                      className="font-bold text-amber-800 cursor-pointer flex items-center gap-1.5"
+                    >
+                      <AlertTriangle className="w-4 h-4" /> Descartar (Producto
+                      dañado)
+                    </Label>
+                    <p className="text-xs text-muted-foreground">
+                      La planta se marchitó o rompió. Se registrará como Baja y
+                      no volverá al stock.
+                    </p>
+                  </div>
+                </div>
+              </RadioGroup>
+            </div>
+          )}
+
+          {isProductoEliminado && (
+            <div className="bg-rose-50 border border-rose-200 p-4 rounded-xl flex items-start gap-3">
+              <AlertTriangle className="w-5 h-5 text-rose-600 shrink-0" />
+              <p className="text-sm text-rose-800">
+                El producto original fue eliminado del catálogo maestro. La
+                devolución restará el dinero de la caja, pero no es posible
+                restaurar el stock.
+              </p>
+            </div>
+          )}
+
+          <div className="flex justify-end gap-2 pt-2 border-t border-border">
+            <Button
+              variant="outline"
+              onClick={() => setIsOpen(false)}
+              disabled={isPending}
+            >
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleAnular}
+              disabled={isPending}
+            >
+              {isPending ? (
+                <Loader2 className="w-4 h-4 animate-spin mr-2" />
+              ) : null}
+              Confirmar Devolución
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }

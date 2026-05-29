@@ -4,7 +4,7 @@ import { createClient } from "@/shared/config/supabase/server";
 import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
 
-export async function createMermaAction(prevState: any, formData: FormData) {
+export async function createBajaAction(prevState: any, formData: FormData) {
   const producto_id = formData.get("producto_id") as string;
   const variante = formData.get("variante") as string;
   const cantidad = Number(formData.get("cantidad"));
@@ -25,7 +25,7 @@ export async function createMermaAction(prevState: any, formData: FormData) {
     return { error: "No autorizado.", success: false };
   }
 
-  const { error } = await supabase.from("mermas").insert({
+  const { error } = await supabase.from("bajas").insert({
     producto_id,
     variante,
     cantidad,
@@ -35,8 +35,12 @@ export async function createMermaAction(prevState: any, formData: FormData) {
   });
 
   if (error) {
-    console.error("Error creando merma:", error);
-    return { error: "Ocurrió un error al registrar la baja.", success: false };
+    console.error("Error creando baja:", error);
+    return {
+      error: "Ocurrió un error al registrar la baja.",
+      success: false,
+      timestamp: Date.now(),
+    };
   }
 
   revalidatePath("/stock");

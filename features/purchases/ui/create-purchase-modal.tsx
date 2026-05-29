@@ -105,7 +105,6 @@ export function ImportarPedidoModal() {
         throw new Error(result.error || "Error en el servidor");
       }
     } catch (error: unknown) {
-      // 💡 5. Tipamos el catch con 'unknown' e instanciamos el Error
       console.error(error);
       const errorMessage =
         error instanceof Error
@@ -123,7 +122,7 @@ export function ImportarPedidoModal() {
       <DialogTrigger asChild>
         <Button
           variant="outline"
-          className="hidden sm:flex h-10 border-border/60 bg-white hover:bg-muted transition-colors font-medium cursor-pointer"
+          className="hidden sm:flex h-10 border-border/60 bg-background hover:bg-muted"
         >
           <FileSpreadsheet className="w-4 h-4 mr-2 text-green-600" />
           Importar Pedido

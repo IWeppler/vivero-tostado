@@ -95,7 +95,7 @@ export function ProductDetail({ producto }: Readonly<ProductDetailProps>) {
       cantidad: 1,
       imagenUrl: imagenes[0] || null,
       stockMaximo: stockMaximo,
-    } as any);
+    });
 
     toast.success("Producto añadido al carrito");
   };

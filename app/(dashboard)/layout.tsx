@@ -23,16 +23,14 @@ export default async function DashboardLayout({
     redirect("/auth");
   }
 
-  // 1. Obtenemos el Rol del usuario desde la tabla perfiles
   const { data: perfil } = await supabase
     .from("perfiles")
     .select("rol")
     .eq("id", user.id)
     .single();
 
-  const userRole = perfil?.rol || "VENDEDOR"; // Asumimos vendedor si no hay perfil
+  const userRole = perfil?.rol || "VENDEDOR";
 
-  // 2. Obtenemos el Branding
   const { data: settings } = await supabase
     .from("configuracion_pos")
     .select("id, posName, posLogo")
@@ -48,21 +46,19 @@ export default async function DashboardLayout({
     mensaje_ticket: "",
   };
 
-  // 3. Renderizamos el Layout seguro
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col md:flex-row">
-      {/* 1. Navegación Lateral  */}
+    // Fondo gris claro global (bg-zinc-50 o bg-muted/30 es ideal)
+    <div className="min-h-screen bg-zinc-50/50 flex flex-col md:flex-row">
       <Sidebar branding={systemBranding} userRole={userRole} />
 
       {/* Contenedor principal de la derecha */}
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        {/* 2. Cabecera superior exclusiva del POS */}
-        <DashboardNavbar />
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden md:p-2 md:pl-0 h-screen">
+        {/* El "Cajón" blanco redondeado que contiene la app */}
+        <div className="flex-1 flex flex-col bg-white md:border md:border-border md:rounded-xl md:shadow-sm overflow-hidden relative">
+          <DashboardNavbar />
 
-        {/* Contenido dinámico de las páginas (Ej: StockView) */}
-        <main className="flex-1 p-2 lg:p-8 overflow-y-auto">
-          {children}
-        </main>
+          <main className="flex-1 p-2 lg:p-4 overflow-y-auto">{children}</main>
+        </div>
       </div>
 
       <CartSidebar />

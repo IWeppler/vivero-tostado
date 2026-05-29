@@ -32,6 +32,7 @@ export function PeriodSelector({
         <SelectValue placeholder="Seleccionar período" />
       </SelectTrigger>
       <SelectContent>
+        <SelectItem value="dia">Hoy</SelectItem>
         <SelectItem value="mes">Este mes</SelectItem>
         <SelectItem value="trimestre">Últimos 3 meses</SelectItem>
         <SelectItem value="semestre">Últimos 6 meses</SelectItem>

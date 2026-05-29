@@ -2,7 +2,7 @@
 
 import { useState, useActionState, startTransition } from "react";
 import { Producto } from "@/entities/productos/types";
-import { createMermaAction } from "../actions/create-merma";
+import { createBajaAction } from "../actions/create-baja";
 import {
   Dialog,
   DialogContent,
@@ -24,28 +24,37 @@ import {
 import { MinusCircle, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
-interface MermaModalProps {
+interface BajaModalProps {
   producto: Producto;
+  children?: React.ReactNode;
 }
 
-export function MermaModal({ producto }: Readonly<MermaModalProps>) {
+type BajaActionState = {
+  error: string | null;
+  success: boolean;
+  timestamp?: number;
+};
+
+export function BajaModal({ producto, children }: Readonly<BajaModalProps>) {
   const [isOpen, setIsOpen] = useState(false);
   const [variante, setVariante] = useState("");
   const [motivo, setMotivo] = useState("");
 
-  const [state, formAction, isPending] = useActionState(
-    async (prevState: any, formData: FormData) => {
-      const result = await createMermaAction(prevState, formData);
+  const [, formAction, isPending] = useActionState(
+    async (prevState: BajaActionState, formData: FormData) => {
+      const result = await createBajaAction(prevState, formData);
+
       if (result.success) {
         toast.success("Baja registrada exitosamente", {
-          description: "La merma quedó en estado PENDIENTE de revisión.",
+          description: "La baja quedo en estado PENDIENTE de revision.",
         });
         setIsOpen(false);
         setVariante("");
         setMotivo("");
-      } else {
-        toast.error(result.error || "Ocurrió un error");
+      } else if (result.error) {
+        toast.error(result.error);
       }
+
       return result;
     },
     { error: null, success: false },
@@ -60,29 +69,28 @@ export function MermaModal({ producto }: Readonly<MermaModalProps>) {
     });
   };
 
-  // Solo permitimos dar de baja talles que tengan stock > 0
   const variantesDisponibles =
     producto.stock?.filter((s) => s.cantidad > 0) || [];
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="text-amber-600 bg-amber-50 hover:bg-amber-100 hover:text-amber-700 h-8 w-8 sm:h-9 sm:w-9 cursor-pointer shrink-0"
-          title="Registrar Merma / Baja"
-        >
-          <MinusCircle className="w-4 h-4 sm:w-5 sm:h-5" />
-        </Button>
+        {children ? (
+          children
+        ) : (
+          <Button variant="ghost" size="icon" title="Registrar Baja">
+            <MinusCircle className="w-4 h-4 sm:w-5 sm:h-5" />
+            <span className="sr-only">Registrar Baja</span>
+          </Button>
+        )}
       </DialogTrigger>
-      <DialogContent aria-describedby="merma-description">
+      <DialogContent aria-describedby="baja-description">
         <DialogHeader>
-          <DialogTitle>Registrar Merma</DialogTitle>
-          <DialogDescription id="merma-description">
+          <DialogTitle>Registrar Baja</DialogTitle>
+          <DialogDescription id="baja-description">
             Reporta una baja de stock para{" "}
             <strong className="text-foreground">{producto.nombre}</strong>. Un
-            administrador deberá aprobarla.
+            administrador debera aprobarla.
           </DialogDescription>
         </DialogHeader>
 
@@ -128,7 +136,7 @@ export function MermaModal({ producto }: Readonly<MermaModalProps>) {
               <Label>Motivo principal</Label>
               <Select value={motivo} onValueChange={setMotivo} required>
                 <SelectTrigger>
-                  <SelectValue placeholder="¿Por qué se da de baja?" />
+                  <SelectValue placeholder="Por que se da de baja?" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="Planta seca">
