@@ -72,7 +72,7 @@ export function AdvisorBanner({ insights }: Readonly<AdvisorBannerProps>) {
 
   return (
     <div
-      className={`relative ${config.bg} border ${config.border} p-5 md:p-6 rounded-2xl flex flex-col sm:flex-row items-start gap-4 shadow-sm transition-all duration-300`}
+      className={`relative ${config.bg} border ${config.border} p-5 md:p-6 rounded-2xl flex flex-col sm:flex-row items-start gap-4 transition-all duration-300`}
     >
       {/* Botón Cerrar */}
       <button
@@ -85,7 +85,7 @@ export function AdvisorBanner({ insights }: Readonly<AdvisorBannerProps>) {
 
       {/* Ícono Izquierdo (Oculto en móvil) */}
       <div
-        className={`p-2.5 ${config.bgIcon} ${config.iconColor} rounded-xl shrink-0 shadow-sm hidden sm:block`}
+        className={`p-2.5 ${config.bgIcon} ${config.iconColor} rounded-xl shrink-0 hidden sm:block`}
       >
         <Icon className="w-6 h-6" />
       </div>
@@ -104,7 +104,7 @@ export function AdvisorBanner({ insights }: Readonly<AdvisorBannerProps>) {
               Recomendaciones inteligentes
             </h4>
             <span
-              className={`text-[10px] uppercase font-bold bg-white/60 px-2 py-0.5 rounded-md tracking-wider border ${config.border}`}
+              className={`text-[10px] uppercase font-semibold ${config.bgIcon} ${config.titleColor} px-2 py-0.5 rounded-md tracking-wider border ${config.border}`}
             >
               {currentInsight.title}
             </span>
@@ -125,7 +125,7 @@ export function AdvisorBanner({ insights }: Readonly<AdvisorBannerProps>) {
           >
             <Button
               size="sm"
-              className={`w-full sm:w-auto font-bold shadow-sm ${config.btnClass}`}
+              className={`w-full sm:w-auto font-bold ${config.btnClass}`}
             >
               {currentInsight.actionLabel}{" "}
               <ArrowRight className="w-4 h-4 ml-1.5" />

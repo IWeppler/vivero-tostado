@@ -82,12 +82,12 @@ export function CajaHistoryTable({
               setSearchQuery(e.target.value);
               setPaginaActual(1);
             }}
-            className="pl-9 h-10 rounded-xl border-border bg-white shadow-none hover:border-foreground/40 transition-colors focus-visible:ring-0"
+            className="pl-9 h-10 rounded-xl border-border bg-background shadow-none hover:border-foreground/40 transition-colors focus-visible:ring-0"
           />
         </div>
       </div>
 
-      <div className="bg-white rounded-2xl border border-border shadow-none overflow-hidden">
+      <div className="bg-card rounded-2xl border border-border shadow-none overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm text-left">
             <thead className="bg-muted/30 text-muted-foreground text-[10px] uppercase font-bold tracking-widest">
@@ -145,14 +145,14 @@ export function CajaHistoryTable({
                         {isAbierto ? (
                           <Badge
                             variant="outline"
-                            className="bg-emerald-50/50 text-emerald-700 border-emerald-200 text-[10px] shadow-none uppercase font-bold tracking-wider"
+                            className="bg-emerald-50/50 dark:bg-emerald-100 text-emerald-700 border-emerald-200 text-[10px] shadow-none uppercase font-bold tracking-wider"
                           >
                             ABIERTO
                           </Badge>
                         ) : (
                           <Badge
                             variant="outline"
-                            className="bg-[#f5f4f4] text-muted-foreground border-border text-[10px] shadow-none uppercase font-bold tracking-wider"
+                            className="bg-background text-muted-foreground border-border text-[10px] shadow-none uppercase font-bold tracking-wider"
                           >
                             CERRADO
                           </Badge>
@@ -183,7 +183,7 @@ export function CajaHistoryTable({
                                 return (
                                   <Badge
                                     variant="outline"
-                                    className="bg-emerald-50/50 text-emerald-700 border-emerald-200 shadow-none text-[10px]"
+                                    className="bg-emerald-50/50 dark:bg-emerald-100 text-emerald-700 border-emerald-200 shadow-none text-[10px]"
                                   >
                                     Perfecto
                                   </Badge>
@@ -193,7 +193,7 @@ export function CajaHistoryTable({
                                 return (
                                   <Badge
                                     variant="outline"
-                                    className="bg-rose-50/50 text-rose-700 border-rose-200 shadow-none text-[10px]"
+                                    className="bg-rose-50/50 dark:bg-rose-100 text-rose-700 border-rose-200 shadow-none text-[10px]"
                                   >
                                     {formatearMoneda(diferencia)}
                                   </Badge>
@@ -202,7 +202,7 @@ export function CajaHistoryTable({
                               return (
                                 <Badge
                                   variant="outline"
-                                  className="bg-blue-50/50 text-blue-700 border-blue-200 shadow-none text-[10px]"
+                                  className="bg-blue-50/50 dark:bg-blue-200 text-blue-700 border-blue-200 shadow-none text-[10px]"
                                 >
                                   +{formatearMoneda(diferencia)}
                                 </Badge>

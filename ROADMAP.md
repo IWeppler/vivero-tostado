@@ -38,9 +38,24 @@ Estas son las funciones "Premium" que justifican cobrar una suscripción mensual
 
 ---
 
-- mejorar ui carrito de venta
+# mejorar ui carrito de venta
+# modificacion de precios masivos
+# boton de descargar pwa
+# ticket en formato pdf
+# dark/light mode
+- los datos del negocio ubicados en el catalogo: direccion, nombre, logo, redes sociales, whatsapp
+-- categorias tambien
+
 - completar el panel de configuraciones
 - conectar promociones con modulo de reportes
 - modularizar el componente de vistas (tienen el filterToolBar integrado)
-- ticket en formato pdf
-- tema impositivo
+- Lectura de código de barras
+- el modulo de caja no deberia entrar en el primer nivel de emprendedor, si en el segundo
+- Método de pago mixto
+- Métodos de pago configurables (comisión estimada, plazo de acreditación): Mercado Pago: 6% comisión; Crédito: 8% comisión; Transferencia: 0%
+- Comisiones por método de pago (bruto cobrado, comisión estimada, neto estimado). Ejemplo: Tarjeta: $100.000 - Comisión: $6.000 = Neto: $94.000
+- Devoluciones y anulaciones. Distinguir: anular venta completa; devolución parcial; cambio de producto; devolución con reintegro; devolución a cuenta corriente
+- Exportar datos:ventas; inventario; clientes; caja; reportes
+- Promociones mejoradas: agregar fecha de inicio y fecha de caducacion.
+
+- tema impositivo en ticket. Facturación / integración fiscal

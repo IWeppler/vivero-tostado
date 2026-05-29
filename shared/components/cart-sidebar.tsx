@@ -36,6 +36,7 @@ import { toast } from "sonner";
 import { registrarVentaAction } from "@/features/sales/actions/create-sale";
 import { TicketSheet } from "@/features/sales/ui/ticket-sheet";
 import { TicketData } from "@/entities/ventas/types";
+import { ConfiguracionPOS } from "@/entities/config/types";
 
 // --- TIPOS DE PROMOCIÓN (Locales) ---
 interface PromocionDB {
@@ -75,6 +76,23 @@ export function CartSidebar({
       clearCart: state.clearCart,
     })),
   );
+  const [branding, setBranding] = useState<ConfiguracionPOS | null>(null);
+
+  useEffect(() => {
+    const fetchConfig = async () => {
+      const supabase = createClient();
+      const { data } = await supabase
+        .from("configuracion_pos")
+        .select("*")
+        .single();
+
+      if (data) {
+        setBranding(data as ConfiguracionPOS);
+      }
+    };
+
+    fetchConfig();
+  }, []);
 
   const mounted = useSyncExternalStore(
     subscribeToClientMount,
@@ -258,7 +276,6 @@ export function CartSidebar({
         formData.append("cart_items", JSON.stringify(items));
         formData.append("metodo_pago", metodoPago);
 
-        // Adjuntamos la promoción si existe
         if (promocionActivaId !== "ninguna" && descuentoDetalle.monto > 0) {
           formData.append("promocion_id", promocionActivaId);
           formData.append("descuento_monto", descuentoDetalle.monto.toString());
@@ -326,8 +343,9 @@ export function CartSidebar({
           isOpen ? "translate-x-0" : "translate-x-full"
         }`}
       >
-        <div className="flex items-center justify-between p-5 border-b border-border bg-muted/20">
-          <h2 className="text-sm font-bold uppercase tracking-widest flex items-center gap-2">
+        {/* 1. HEADER FIJO */}
+        <div className="shrink-0 flex items-center justify-between p-2 border-b border-border bg-muted/20">
+          <h2 className="text-sm font-bold uppercase tracking-wide flex items-center gap-2">
             <ShoppingBag className="w-4 h-4" />
             {isPOSMode ? "Venta en Curso" : "Tu Carrito"}
           </h2>
@@ -339,9 +357,10 @@ export function CartSidebar({
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-5 space-y-6">
+        {/* 2. ÁREA SCROLLEABLE (Productos + Configuración de Venta) */}
+        <div className="flex-1 overflow-y-auto flex flex-col">
           {items.length === 0 ? (
-            <div className="h-full flex flex-col items-center justify-center text-muted-foreground/70 space-y-4">
+            <div className="h-full flex flex-col items-center justify-center p-5 text-muted-foreground/70 space-y-4">
               <ShoppingBag className="w-16 h-16" strokeWidth={1} />
               <p className="text-sm uppercase tracking-widest font-medium text-center">
                 {isPOSMode
@@ -357,247 +376,266 @@ export function CartSidebar({
               </Button>
             </div>
           ) : (
-            items.map((item) => (
-              <div
-                key={`${item.productoId}-${item.variante}`}
-                className="flex gap-4 relative group"
-              >
-                <button
-                  onClick={() => removeItem(item.productoId, item.variante)}
-                  className="absolute -left-2 -top-2 w-6 h-6 bg-background border border-border flex items-center justify-center text-muted-foreground hover:text-destructive hover:border-destructive transition-colors z-10 opacity-0 group-hover:opacity-100 cursor-pointer rounded-full"
-                  title="Eliminar producto"
-                >
-                  <X className="w-3 h-3" />
-                </button>
+            <div className="flex flex-col flex-1">
+              {/* Lista de Productos */}
+              <div className="p-5 space-y-6">
+                {items.map((item) => (
+                  <div
+                    key={`${item.productoId}-${item.variante}`}
+                    className="flex gap-4 relative group"
+                  >
+                    <button
+                      onClick={() => removeItem(item.productoId, item.variante)}
+                      className="absolute -left-2 -top-2 w-6 h-6 bg-background border border-border flex items-center justify-center text-muted-foreground hover:text-destructive hover:border-destructive transition-colors z-10 opacity-0 group-hover:opacity-100 cursor-pointer rounded-full"
+                      title="Eliminar producto"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
 
-                <div className="w-20 h-24 bg-muted/30 rounded-md border border-border/50 shrink-0 flex items-center justify-center overflow-hidden">
-                  {item.imagenUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={item.imagenUrl}
-                      alt={item.nombre}
-                      className="object-cover w-full h-full"
-                    />
-                  ) : (
-                    <ShoppingBag className="w-6 h-6 text-muted-foreground/30" />
-                  )}
-                </div>
-
-                <div className="flex flex-col flex-1 justify-between py-1">
-                  <div>
-                    <h3 className="font-bold text-sm uppercase tracking-wide leading-tight line-clamp-2">
-                      {item.nombre}
-                    </h3>
-                    <p className="text-[10px] text-muted-foreground uppercase tracking-widest mt-1">
-                      {item.tipo} • Talle {item.variante}
-                    </p>
-                  </div>
-
-                  <div className="flex items-center justify-between mt-3">
-                    <div className="flex items-center border border-border rounded-md overflow-hidden h-8">
-                      <button
-                        onClick={() =>
-                          updateQuantity(
-                            item.productoId,
-                            item.variante,
-                            item.cantidad - 1,
-                          )
-                        }
-                        className="w-8 h-full flex items-center justify-center hover:bg-muted text-muted-foreground transition-colors cursor-pointer"
-                        disabled={item.cantidad <= 1 || isPending}
-                      >
-                        <Minus className="w-3 h-3" />
-                      </button>
-                      <span className="w-8 text-center text-xs font-semibold">
-                        {item.cantidad}
-                      </span>
-                      <button
-                        onClick={() =>
-                          updateQuantity(
-                            item.productoId,
-                            item.variante,
-                            item.cantidad + 1,
-                          )
-                        }
-                        className="w-8 h-full flex items-center justify-center hover:bg-muted text-muted-foreground transition-colors cursor-pointer"
-                        disabled={isPending}
-                      >
-                        <Plus className="w-3 h-3" />
-                      </button>
+                    <div className="w-20 h-24 bg-muted/30 rounded-md border border-border/50 shrink-0 flex items-center justify-center overflow-hidden">
+                      {item.imagenUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={item.imagenUrl}
+                          alt={item.nombre}
+                          className="object-cover w-full h-full"
+                        />
+                      ) : (
+                        <ShoppingBag className="w-6 h-6 text-muted-foreground/30" />
+                      )}
                     </div>
 
-                    <span className="font-bold text-sm">
-                      ${(item.precio * item.cantidad).toLocaleString("es-AR")}
-                    </span>
+                    <div className="flex flex-col flex-1 justify-between py-1">
+                      <div>
+                        <h3 className="font-bold text-sm uppercase tracking-wide leading-tight line-clamp-2">
+                          {item.nombre}
+                        </h3>
+                        <p className="text-[10px] text-muted-foreground uppercase tracking-widest mt-1">
+                          {item.tipo} • Talle {item.variante}
+                        </p>
+                      </div>
+
+                      <div className="flex items-center justify-between mt-3">
+                        <div className="flex items-center border border-border rounded-md overflow-hidden h-8">
+                          <button
+                            onClick={() =>
+                              updateQuantity(
+                                item.productoId,
+                                item.variante,
+                                item.cantidad - 1,
+                              )
+                            }
+                            className="w-8 h-full flex items-center justify-center hover:bg-muted text-muted-foreground transition-colors cursor-pointer"
+                            disabled={item.cantidad <= 1 || isPending}
+                          >
+                            <Minus className="w-3 h-3" />
+                          </button>
+                          <span className="w-8 text-center text-xs font-semibold">
+                            {item.cantidad}
+                          </span>
+                          <button
+                            onClick={() =>
+                              updateQuantity(
+                                item.productoId,
+                                item.variante,
+                                item.cantidad + 1,
+                              )
+                            }
+                            className="w-8 h-full flex items-center justify-center hover:bg-muted text-muted-foreground transition-colors cursor-pointer"
+                            disabled={isPending}
+                          >
+                            <Plus className="w-3 h-3" />
+                          </button>
+                        </div>
+
+                        <span className="font-bold text-sm">
+                          $
+                          {(item.precio * item.cantidad).toLocaleString(
+                            "es-AR",
+                          )}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* MÉTODOS DE PAGO Y DESCUENTOS (Ahora dentro del scroll) */}
+              {isPOSMode && (
+                <div className="mt-auto p-5 border-t border-border/50 bg-muted/10 space-y-6">
+                  <div>
+                    <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-3">
+                      Métodos de Pago
+                    </p>
+                    <div className="grid grid-cols-3 gap-2">
+                      <button
+                        onClick={() => setMetodoPago("EFECTIVO")}
+                        className={`flex flex-col items-center justify-center gap-1.5 p-2 rounded-lg border text-xs font-semibold transition-all ${
+                          metodoPago === "EFECTIVO"
+                            ? "bg-background border-border text-foreground"
+                            : "bg-transparent border-transparent text-muted-foreground hover:bg-muted cursor-pointer"
+                        }`}
+                      >
+                        <Banknote
+                          className={`w-5 h-5 ${
+                            metodoPago === "EFECTIVO" ? "text-emerald-500" : ""
+                          }`}
+                        />
+                        Efectivo
+                      </button>
+                      <button
+                        onClick={() => setMetodoPago("TRANSFERENCIA")}
+                        className={`flex flex-col items-center justify-center gap-1.5 p-2 rounded-lg border text-xs font-semibold transition-all ${
+                          metodoPago === "TRANSFERENCIA"
+                            ? "bg-background border-border text-foreground"
+                            : "bg-transparent border-transparent text-muted-foreground hover:bg-muted cursor-pointer"
+                        }`}
+                      >
+                        <Smartphone
+                          className={`w-5 h-5 ${
+                            metodoPago === "TRANSFERENCIA"
+                              ? "text-blue-500"
+                              : ""
+                          }`}
+                        />
+                        Transf.
+                      </button>
+                      <button
+                        onClick={() => setMetodoPago("TARJETA")}
+                        className={`flex flex-col items-center justify-center gap-1.5 p-2 rounded-lg border text-xs font-semibold transition-all ${
+                          metodoPago === "TARJETA"
+                            ? "bg-background border-border text-foreground"
+                            : "bg-transparent border-transparent text-muted-foreground hover:bg-muted cursor-pointer"
+                        }`}
+                      >
+                        <CreditCard
+                          className={`w-5 h-5 ${
+                            metodoPago === "TARJETA" ? "text-purple-500" : ""
+                          }`}
+                        />
+                        Tarjeta
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* SELECTOR DE PROMOCIONES */}
+                  <div className="pt-4 border-t border-border/50">
+                    <div className="flex items-center gap-2 mb-3 text-xs font-bold text-muted-foreground uppercase tracking-widest">
+                      <Tag className="w-3.5 h-3.5" /> Descuentos
+                    </div>
+
+                    {promocionesElegibles.length > 0 ? (
+                      <Select
+                        value={promocionActivaId}
+                        onValueChange={setPromocionId}
+                      >
+                        <SelectTrigger className="w-full text-sm bg-background border-border h-10">
+                          <SelectValue placeholder="Aplicar descuento..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem
+                            value="ninguna"
+                            className="text-muted-foreground italic"
+                          >
+                            No aplicar descuento
+                          </SelectItem>
+                          {promocionesElegibles.map((promo) => (
+                            <SelectItem
+                              key={promo.id}
+                              value={promo.id}
+                              className="font-medium"
+                            >
+                              {promo.nombre}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      <div className="w-full text-xs text-muted-foreground bg-muted/50 p-2.5 rounded-md border border-border/50 flex items-center justify-center italic">
+                        No hay descuentos aplicables a este carrito.
+                      </div>
+                    )}
                   </div>
                 </div>
-              </div>
-            ))
+              )}
+            </div>
           )}
         </div>
 
+        {/* 3. FOOTER FIJO (Minimalista) */}
         {items.length > 0 && (
-          <div className="border-t border-border bg-card flex flex-col">
-            {isPOSMode && (
-              <div className="p-4 border-b border-border/50 bg-muted/10">
-                <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-3">
-                  Métodos de Pago
-                </p>
-                <div className="grid grid-cols-3 gap-2">
-                  <button
-                    onClick={() => setMetodoPago("EFECTIVO")}
-                    className={`flex flex-col items-center justify-center gap-1.5 p-2 rounded-lg border text-xs font-semibold transition-all ${
-                      metodoPago === "EFECTIVO"
-                        ? "bg-background border-border text-foreground"
-                        : "bg-transparent border-transparent text-muted-foreground hover:bg-muted cursor-pointer"
-                    }`}
-                  >
-                    <Banknote
-                      className={`w-5 h-5 ${metodoPago === "EFECTIVO" ? "text-emerald-500" : ""}`}
-                    />
-                    Efectivo
-                  </button>
-                  <button
-                    onClick={() => setMetodoPago("TRANSFERENCIA")}
-                    className={`flex flex-col items-center justify-center gap-1.5 p-2 rounded-lg border text-xs font-semibold transition-all ${
-                      metodoPago === "TRANSFERENCIA"
-                        ? "bg-background border-border text-foreground"
-                        : "bg-transparent border-transparent text-muted-foreground hover:bg-muted cursor-pointer"
-                    }`}
-                  >
-                    <Smartphone
-                      className={`w-5 h-5 ${metodoPago === "TRANSFERENCIA" ? "text-blue-500" : ""}`}
-                    />
-                    Transf.
-                  </button>
-                  <button
-                    onClick={() => setMetodoPago("TARJETA")}
-                    className={`flex flex-col items-center justify-center gap-1.5 p-2 rounded-lg border text-xs font-semibold transition-all ${
-                      metodoPago === "TARJETA"
-                        ? "bg-background border-border text-foreground"
-                        : "bg-transparent border-transparent text-muted-foreground hover:bg-muted cursor-pointer"
-                    }`}
-                  >
-                    <CreditCard
-                      className={`w-5 h-5 ${metodoPago === "TARJETA" ? "text-purple-500" : ""}`}
-                    />
-                    Tarjeta
-                  </button>
+          <div className="shrink-0 border-t border-border bg-card p-5 shadow-[0_-10px_40px_rgba(0,0,0,0.03)] z-10">
+            {/* DESGLOSE TOTAL */}
+            {descuentoDetalle.monto > 0 && (
+              <div className="space-y-1.5 mb-3">
+                <div className="flex items-center justify-between text-muted-foreground text-sm">
+                  <span>Subtotal</span>
+                  <span>${totalCarrito.toLocaleString("es-AR")}</span>
                 </div>
-
-                {/* SELECTOR DE PROMOCIONES */}
-                <div className="mt-4 pt-4 border-t border-border/50">
-                  <div className="flex items-center gap-2 mb-2 text-xs font-bold text-muted-foreground uppercase tracking-widest">
-                    <Tag className="w-3.5 h-3.5" /> Descuentos
-                  </div>
-
-                  {promocionesElegibles.length > 0 ? (
-                    <Select
-                      value={promocionActivaId}
-                      onValueChange={setPromocionId}
-                    >
-                      <SelectTrigger className="w-full text-sm bg-background border-border shadow-none h-10">
-                        <SelectValue placeholder="Aplicar descuento..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem
-                          value="ninguna"
-                          className="text-muted-foreground italic"
-                        >
-                          No aplicar descuento
-                        </SelectItem>
-                        {promocionesElegibles.map((promo) => (
-                          <SelectItem
-                            key={promo.id}
-                            value={promo.id}
-                            className="font-medium"
-                          >
-                            {promo.nombre}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  ) : (
-                    <div className="w-full text-xs text-muted-foreground bg-muted/50 p-2.5 rounded-md border border-border/50 flex items-center justify-center italic">
-                      No hay descuentos aplicables a este carrito.
-                    </div>
-                  )}
+                <div className="flex items-center justify-between text-emerald-600 dark:text-emerald-400 font-semibold text-sm">
+                  <span>Promo: {descuentoDetalle.nombre}</span>
+                  <span>
+                    -${descuentoDetalle.monto.toLocaleString("es-AR")}
+                  </span>
                 </div>
               </div>
             )}
 
-            <div className="p-5">
-              {/* DESGLOSE TOTAL */}
-              {descuentoDetalle.monto > 0 && (
-                <div className="space-y-1.5 mb-3">
-                  <div className="flex items-center justify-between text-muted-foreground text-sm">
-                    <span>Subtotal</span>
-                    <span>${totalCarrito.toLocaleString("es-AR")}</span>
-                  </div>
-                  <div className="flex items-center justify-between text-emerald-600 font-bold text-sm">
-                    <span>Promo: {descuentoDetalle.nombre}</span>
-                    <span>
-                      -${descuentoDetalle.monto.toLocaleString("es-AR")}
-                    </span>
-                  </div>
-                </div>
-              )}
-
-              <div className="flex items-center justify-between mb-4">
-                <span className="text-sm font-semibold uppercase text-muted-foreground">
-                  Total a cobrar
-                </span>
-                <span className="text-2xl font-black text-foreground">
-                  ${totalFinal.toLocaleString("es-AR")}
-                </span>
-              </div>
-
-              {isPOSMode ? (
-                <Button
-                  onClick={handleConfirmarVentaPOS}
-                  disabled={isPending}
-                  className="w-full h-12 flex items-center justify-center gap-2 bg-foreground hover:bg-foreground/90 text-background font-bold text-sm uppercase tracking-wide transition-colors cursor-pointer rounded-lg shadow-none"
-                >
-                  {isPending ? (
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                  ) : (
-                    <>
-                      <CheckCircle2 className="w-5 h-5" /> Confirmar Venta
-                    </>
-                  )}
-                </Button>
-              ) : (
-                <a
-                  href={generarLinkWhatsApp()}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={handleEnviarPedidoWhatsApp}
-                  className="w-full flex items-center justify-center gap-3 h-12 rounded-lg bg-[#25D366] hover:bg-[#1EBE57] text-white font-bold text-sm uppercase tracking-widest shadow-none"
-                >
-                  <Image
-                    src="/whatsappp.png"
-                    alt="Whatsapp"
-                    width={20}
-                    height={20}
-                  />
-                  Enviar Pedido
-                </a>
-              )}
-
-              <button
-                onClick={clearCart}
-                disabled={isPending}
-                className="w-full mt-4 text-[10px] uppercase tracking-widest text-muted-foreground hover:text-destructive transition-colors font-semibold disabled:opacity-50 cursor-pointer"
-              >
-                Vaciar {isPOSMode ? "venta" : "carrito"}
-              </button>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-semibold uppercase text-muted-foreground tracking-wide">
+                Total a cobrar
+              </span>
+              <span className="text-2xl font-semibold text-foreground">
+                ${totalFinal.toLocaleString("es-AR")}
+              </span>
             </div>
+
+            {isPOSMode ? (
+              <Button
+                onClick={handleConfirmarVentaPOS}
+                disabled={isPending}
+                className="w-full h-12 flex items-center justify-center gap-2 bg-foreground hover:bg-foreground/90 text-background font-bold text-sm uppercase tracking-wide transition-colors cursor-pointer rounded-lg shadow-none"
+              >
+                {isPending ? (
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                ) : (
+                  <>
+                    <CheckCircle2 className="w-5 h-5" /> Confirmar Venta
+                  </>
+                )}
+              </Button>
+            ) : (
+              <a
+                href={generarLinkWhatsApp()}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={handleEnviarPedidoWhatsApp}
+                className="w-full flex items-center justify-center gap-3 h-12 rounded-lg bg-[#25D366] hover:bg-[#1EBE57] text-white font-bold text-sm uppercase tracking-widest shadow-none"
+              >
+                <Image
+                  src="/whatsappp.png"
+                  alt="Whatsapp"
+                  width={20}
+                  height={20}
+                />
+                Enviar Pedido
+              </a>
+            )}
+
+            <button
+              onClick={clearCart}
+              disabled={isPending}
+              className="w-full mt-4 text-[10px] uppercase tracking-widest text-muted-foreground hover:text-destructive transition-colors font-semibold disabled:opacity-50 cursor-pointer"
+            >
+              Vaciar {isPOSMode ? "venta" : "carrito"}
+            </button>
           </div>
         )}
       </div>
 
       <TicketSheet
         ticket={ventaExitosa}
+        config={branding || ({} as ConfiguracionPOS)}
         onClose={() => setVentaExitosa(null)}
       />
     </>

@@ -25,7 +25,7 @@ export function CartButton() {
       <ShoppingCart className="w-6 h-6" strokeWidth={1.5} />
 
       {mounted && getTotalItems() > 0 && (
-        <span className="absolute top-0 right-0 translate-x-1 -translate-y-1 bg-primary text-primary-foreground text-[10px] font-bold w-5 h-5 flex items-center justify-center rounded-full border-2 border-white">
+        <span className="absolute top-0 right-0 translate-x-1 -translate-y-1 bg-primary text-primary-foreground text-[10px] font-bold w-5 h-5 flex items-center justify-center rounded-full border-2 border-primary">
           {getTotalItems()}
         </span>
       )}

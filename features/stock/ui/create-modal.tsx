@@ -22,7 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/shared/ui/select";
-import { Plus, ImagePlus, Leaf, Loader2 } from "lucide-react";
+import { Plus, ImagePlus, Loader2 } from "lucide-react";
 import { ScrollArea } from "@/shared/ui/scroll-area";
 import {
   TIPO_OPTIONS,
@@ -100,7 +100,7 @@ export function CrearProductoModal() {
   };
 
   const variantesAMostrar =
-    VARIANTE_OPTIONS[tipoSeleccionada] || VARIANTE_OPTIONS["interior"];
+    VARIANTE_OPTIONS[tipoSeleccionada] || VARIANTE_OPTIONS["Interior"];
 
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
@@ -113,8 +113,7 @@ export function CrearProductoModal() {
 
       <DialogContent className="sm:max-w-150">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Leaf className="w-5 h-5 text-primary" />
+          <DialogTitle className="flex items-center gap-2 text-foreground">
             Añadir Nuevo Producto
           </DialogTitle>
         </DialogHeader>
@@ -188,12 +187,12 @@ export function CrearProductoModal() {
               <div className="flex flex-col items-center justify-center w-full">
                 <Label
                   htmlFor="imagenes"
-                  className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-border rounded-lg cursor-pointer bg-muted/20 hover:bg-primary/20 hover:border-primary/50 transition-colors"
+                  className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-border rounded-lg cursor-pointer bg-muted/20 hover:bg-muted-foreground/10 hover:border-muted-foreground/50 transition-colors"
                 >
                   <div className="flex flex-col items-center justify-center pt-5 pb-6 text-center px-4">
                     <ImagePlus className="w-8 h-8 mb-3 text-muted-foreground" />
                     <p className="mb-1 text-sm text-muted-foreground">
-                      <span className="font-semibold text-primary">
+                      <span className="font-semibold text-foreground">
                         Haz clic para subir
                       </span>{" "}
                       o arrastra tus fotos aquí
@@ -236,7 +235,7 @@ export function CrearProductoModal() {
             </div>
 
             <div className="border-t border-border pt-4">
-              <h3 className="text-sm font-medium mb-3 text-primary">
+              <h3 className="text-sm font-medium mb-3 text-foreground">
                 Stock Inicial por Variante
               </h3>
               <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">

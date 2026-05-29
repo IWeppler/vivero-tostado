@@ -132,7 +132,7 @@ export function ImportarPedidoModal() {
       <DialogContent className="sm:max-w-[450px]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <UploadCloud className="w-5 h-5 text-blue-600" />
+            <UploadCloud className="w-5 h-5 text-primary" />
             Importar Remito / Pedido
           </DialogTitle>
           <DialogDescription>
@@ -160,22 +160,22 @@ export function ImportarPedidoModal() {
               className={`flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg transition-colors ${
                 isProcessing
                   ? "bg-muted/50 border-border cursor-not-allowed"
-                  : "bg-blue-50/50 border-blue-200 hover:bg-blue-50 cursor-pointer"
+                  : "bg-muted/50 border-border hover:bg-muted cursor-pointer"
               }`}
             >
               <div className="flex flex-col items-center justify-center pt-5 pb-6 text-center px-4">
                 {isProcessing ? (
                   <>
-                    <Loader2 className="w-8 h-8 mb-3 text-blue-500 animate-spin" />
-                    <p className="text-sm font-semibold text-blue-600">
+                    <Loader2 className="w-8 h-8 mb-3 text-muted-foreground animate-spin" />
+                    <p className="text-sm font-semibold text-muted-foreground">
                       Procesando y emparejando...
                     </p>
                   </>
                 ) : (
                   <>
-                    <FileSpreadsheet className="w-8 h-8 mb-3 text-blue-400" />
+                    <FileSpreadsheet className="w-8 h-8 mb-3 text-muted-foreground" />
                     <p className="mb-1 text-sm text-muted-foreground">
-                      <span className="font-semibold text-blue-600">
+                      <span className="font-semibold text-foreground">
                         Haz clic para subir
                       </span>{" "}
                       el Excel

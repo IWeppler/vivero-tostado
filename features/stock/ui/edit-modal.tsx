@@ -104,7 +104,7 @@ export function EditarProductoModal({
   };
 
   const variantesAMostrar =
-    VARIANTE_OPTIONS[categoriaSeleccionada] || VARIANTE_OPTIONS["interior"];
+    VARIANTE_OPTIONS[categoriaSeleccionada] || VARIANTE_OPTIONS["Interior"];
 
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
@@ -177,7 +177,7 @@ export function EditarProductoModal({
                 name="descripcion"
                 defaultValue={producto.descripcion || ""}
                 placeholder="Añade detalles, tamaño de la maceta, requerimientos de luz..."
-                className="resize-none min-h-[100px]"
+                className="resize-none min-h-25"
               />
             </div>
 

@@ -169,7 +169,7 @@ export function StockTable({ productos, userRole }: Readonly<StockTableProps>) {
           return (
             <Fragment key={producto.id}>
               <TableRow
-                className={`group transition-colors border-b border-border/40 ${
+                className={`group transition-colors bg-card border-b border-border/40 ${
                   variantesEstanAbiertas ? "bg-muted/10" : "hover:bg-muted/20"
                 }`}
               >
@@ -214,7 +214,7 @@ export function StockTable({ productos, userRole }: Readonly<StockTableProps>) {
 
                 <TableCell className="text-center font-bold hidden sm:table-cell py-3">
                   <span
-                    className={sinStock ? "text-rose-500" : "text-foreground"}
+                    className={sinStock ? "text-destructive" : "text-foreground"}
                   >
                     {totalUnidades}{" "}
                     <span className="text-[10px] font-normal text-muted-foreground uppercase tracking-widest">
@@ -278,7 +278,7 @@ export function StockTable({ productos, userRole }: Readonly<StockTableProps>) {
                       className={`h-8 w-8 text-primary shrink-0 shadow-none rounded-md ${
                         variantesEstanAbiertas
                           ? "bg-primary/20"
-                          : "bg-primary/10 hover:bg-primary/20"
+                          : "bg-primary/20 dark:text-blue-400 hover:bg-primary/20"
                       }`}
                       title="Elegir variante"
                     >

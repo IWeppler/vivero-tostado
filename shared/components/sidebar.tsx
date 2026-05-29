@@ -15,10 +15,11 @@ import {
   Wallet,
   ChartArea,
 } from "lucide-react";
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ConfiguracionPOS } from "@/entities/config/types";
 import { CartButton } from "@/shared/ui/cart-button";
 import { useSidebarStore } from "@/shared/store/sidebar-store";
+import { createClient } from "../config/supabase/client";
 
 const ALL_NAV_ITEMS = [
   { name: "Inicio", href: "/", icon: LayoutDashboard, adminOnly: true },
@@ -42,10 +43,7 @@ interface SidebarProps {
 export function Sidebar({ branding, userRole }: Readonly<SidebarProps>) {
   const pathname = usePathname();
   const { isCollapsed, isOpenMobile, setIsOpenMobile } = useSidebarStore();
-
-  const initial = branding.posName
-    ? branding.posName.charAt(0).toUpperCase()
-    : "S";
+  const [isCajaAbierta, setIsCajaAbierta] = useState<boolean | null>(null);
 
   const visibleNavItems = useMemo(() => {
     return ALL_NAV_ITEMS.filter((item) => {
@@ -55,6 +53,35 @@ export function Sidebar({ branding, userRole }: Readonly<SidebarProps>) {
       return true;
     });
   }, [userRole]);
+
+  useEffect(() => {
+    if (userRole !== "ADMIN") return;
+    let isMounted = true;
+
+    const fetchCajaStatus = async () => {
+      const supabase = createClient();
+      const { data } = await supabase
+        .from("turnos_caja")
+        .select("id")
+        .eq("estado", "ABIERTO")
+        .limit(1);
+
+      if (isMounted) {
+        setIsCajaAbierta(data && data.length > 0);
+      }
+    };
+
+    fetchCajaStatus();
+
+    const interval = setInterval(fetchCajaStatus, 5000);
+
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
+  }, [userRole, pathname]);
+
+  const initial = branding.posName;
 
   return (
     <>
@@ -112,7 +139,7 @@ export function Sidebar({ branding, userRole }: Readonly<SidebarProps>) {
       <aside
         className={`
         fixed md:sticky top-16 md:top-0 left-0 h-[calc(100vh-64px)] md:h-screen 
-        bg-background md:bg-transparent border-r border-border md:border-none 
+        bg-sidebar  border-r border-border md:border-none 
         flex flex-col shrink-0 z-50 transition-all duration-300 ease-in-out
         ${isOpenMobile ? "translate-x-0" : "-translate-x-full"} md:translate-x-0
         ${isCollapsed ? "md:w-20" : "w-full md:w-64"} w-64
@@ -122,7 +149,7 @@ export function Sidebar({ branding, userRole }: Readonly<SidebarProps>) {
         <div
           className={`hidden md:flex items-center border-b border-transparent h-16 shrink-0 transition-all duration-300 ${isCollapsed ? "justify-center px-0" : "px-6 gap-3"}`}
         >
-          <div className="w-9 h-9 flex items-center justify-center rounded-lg overflow-hidden border border-border bg-white shrink-0">
+          <div className="w-9 h-9 flex items-center justify-center rounded-lg overflow-hidden border border-border bg-sidebar shrink-0">
             {branding.posLogo ? (
               <Image
                 src={branding.posLogo}
@@ -152,6 +179,8 @@ export function Sidebar({ branding, userRole }: Readonly<SidebarProps>) {
               (item.href !== "/" && pathname.startsWith(item.href));
 
             const Icon = item.icon;
+            const showCajaAlert =
+              item.name === "Caja y Movimientos" && isCajaAbierta === false;
 
             return (
               <Link
@@ -169,11 +198,18 @@ export function Sidebar({ branding, userRole }: Readonly<SidebarProps>) {
                     : "text-muted-foreground hover:bg-muted hover:text-foreground"
                 }`}
               >
-                <Icon
-                  className={`w-5 h-5 shrink-0 transition-colors ${
-                    isActive ? "text-primary-foreground" : ""
-                  }`}
-                />
+                <div className="relative flex items-center justify-center">
+                  <Icon
+                    className={`w-5 h-5 shrink-0 transition-colors ${
+                      isActive ? "text-primary-foreground" : ""
+                    }`}
+                  />
+                  {showCajaAlert && (
+                    <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5">
+                      <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-rose-600"></span>
+                    </span>
+                  )}
+                </div>
                 {!isCollapsed && <span className="truncate">{item.name}</span>}
               </Link>
             );
@@ -186,7 +222,7 @@ export function Sidebar({ branding, userRole }: Readonly<SidebarProps>) {
             <button
               type="submit"
               title={isCollapsed ? "Cerrar Sesión" : undefined}
-              className={`flex items-center text-rose-600 rounded-lg hover:bg-rose-50 hover:text-rose-700 transition-colors cursor-pointer font-medium ${
+              className={`flex items-center text-destructive rounded-lg hover:bg-destructive/10 transition-colors cursor-pointer font-medium ${
                 isCollapsed
                   ? "justify-center h-10 w-10 mx-auto"
                   : "w-full gap-3 px-3 py-2.5"

@@ -1,0 +1,22 @@
+================================
+      COMPROBANTE DE COMPRA     
+================================
+
+Nro. Recibo: #BE27222B
+Fecha: 29/05/2026, 04:57 p. m.
+Método de pago: EFECTIVO
+Vendedor: sabiduriaomniversal
+
+--------------------------------
+PRODUCTOS:
+2x CRISANTEMO (N12)
+   $6.237
+1x CLAVELINA (M12)
+   $2.290
+--------------------------------
+Subtotal: $8.527
+Descuento (10% EFECTIVO): -$853
+--------------------------------
+TOTAL PAGADO: $7.674
+================================
+    ¡Gracias por su compra!     

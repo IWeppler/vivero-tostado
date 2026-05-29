@@ -2,7 +2,6 @@
 
 import { createClient } from "@/shared/config/supabase/server";
 import { cookies } from "next/headers";
-import { Venta } from "@/entities/ventas/types";
 
 export async function getVentasAction() {
   try {
@@ -24,7 +23,14 @@ export async function getVentasAction() {
           cantidad,
           precio_unitario,
           variante,
+          descuento_monto,
+          precio_final,
+          promocion_nombre,
           producto:productos(nombre, imagen_url)
+        ),
+        ventas_descuentos (
+          monto_descontado,
+          promocion_nombre
         )
       `,
       )
@@ -35,7 +41,7 @@ export async function getVentasAction() {
       return { data: null, error: "No se pudo cargar el historial de ventas." };
     }
 
-    return { data: (data ?? []) as Venta[], error: null };
+    return { data, error: null };
   } catch (err) {
     console.error("Unexpected error in getVentasAction:", err);
     return {

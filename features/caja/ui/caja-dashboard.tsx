@@ -181,8 +181,8 @@ export function CajaDashboard({
       {!turno ? (
         <Card className="border-border bg-background shadow-none overflow-hidden rounded-2xl">
           <div className="flex flex-col md:flex-row">
-            <div className="p-6 md:p-10 md:w-1/2 flex flex-col justify-center bg-muted/20">
-              <div className="w-12 h-12 bg-blue-50 text-primary border border-primary/30 rounded-xl flex items-center justify-center mb-5">
+            <div className="p-6 md:p-10 md:w-1/2 flex flex-col justify-center">
+              <div className="w-12 h-12 bg-primary/5 text-primary border border-primary/30 rounded-xl flex items-center justify-center mb-5">
                 <Lock className="w-5 h-5" />
               </div>
               <h2 className="text-2xl font-bold text-foreground mb-3 tracking-tight">
@@ -194,7 +194,7 @@ export function CajaDashboard({
                 inicial.
               </p>
             </div>
-            <div className="p-6 md:p-10 md:w-1/2 border-t md:border-t-0 md:border-l border-border bg-background flex flex-col justify-center">
+            <div className="p-6 md:p-10 md:w-1/2 border-t md:border-t-0 md:border-l border-border bg-card flex flex-col justify-center">
               <form action={abrirAction} className="space-y-6">
                 <div className="space-y-3">
                   <Label
@@ -224,7 +224,7 @@ export function CajaDashboard({
                 <Button
                   type="submit"
                   disabled={isAbrirPending}
-                  className="w-full h-12 bg-neutral-900 hover:bg-neutral-800 text-background font-bold rounded-xl shadow-none cursor-pointer transition-colors"
+                  className="w-full h-12 bg-primary hover:bg-primary/90 text-white rounded-xl shadow-none cursor-pointer transition-colors"
                 >
                   {isAbrirPending ? (
                     <Loader2 className="w-5 h-5 animate-spin mr-2" />
@@ -239,7 +239,7 @@ export function CajaDashboard({
         </Card>
       ) : (
         <div className="space-y-6">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-background p-4 sm:p-5 rounded-2xl border border-border shadow-none">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-card p-4 sm:p-5 rounded-2xl border border-border shadow-none">
             <div className="flex items-center gap-4">
               <div className="hidden sm:flex w-10 h-10 bg-emerald-50 text-emerald-600 rounded-full items-center justify-center border border-emerald-100">
                 <Unlock className="w-4 h-4" />
@@ -247,7 +247,7 @@ export function CajaDashboard({
               <div>
                 <div className="flex items-center gap-2 mb-1">
                   <span className="relative flex h-2 w-2">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75 "></span>
                     <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
                   </span>
                   <span className="text-xs font-bold uppercase tracking-widest text-emerald-700">
@@ -269,7 +269,7 @@ export function CajaDashboard({
 
               <Dialog open={isCerrarOpen} onOpenChange={setIsCerrarOpen}>
                 <DialogTrigger asChild>
-                  <Button className="bg-neutral-900 text-background hover:bg-neutral-800 w-full sm:w-auto shadow-none cursor-pointer">
+                  <Button className="bg-primary hover:bg-primary/90 text-white w-full sm:w-auto shadow-none cursor-pointer">
                     <Lock className="w-4 h-4 mr-2" /> Cierre Z (Arqueo)
                   </Button>
                 </DialogTrigger>
@@ -363,24 +363,24 @@ export function CajaDashboard({
 
           {/* Tarjetas de Métricas de Flujo */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <Card className="bg-emerald-50 border border-emerald-200 shadow-none rounded-2xl">
+            <Card className="bg-emerald-50 dark:bg-emerald-100/10 border border-emerald-200 dark:border-emerald-200/20 shadow-none rounded-2xl">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-xs font-bold uppercase tracking-widest text-emerald-800">
+                <CardTitle className="text-xs font-bold uppercase tracking-widest text-emerald-800 dark:text-emerald-500">
                   Efectivo Esperado
                 </CardTitle>
-                <Banknote className="w-4 h-4 text-emerald-600" />
+                <Banknote className="w-4 h-4 text-emerald-600 dark:text-emerald-500" />
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-black text-emerald-700 tracking-tight">
+                <div className="text-3xl font-black text-emerald-700 tracking-tight dark:text-emerald-300">
                   {formatearMoneda(totales.efectivoEsperado)}
                 </div>
-                <p className="text-xs mt-1 text-emerald-600/80 font-medium">
+                <p className="text-xs mt-1 text-emerald-600/80 font-medium dark:text-emerald-500">
                   Dinero físico en cajón
                 </p>
               </CardContent>
             </Card>
 
-            <Card className="bg-background border-border shadow-none rounded-2xl">
+            <Card className="bg-card border-border shadow-none rounded-2xl">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
                   Fondo Inicial
@@ -394,7 +394,7 @@ export function CajaDashboard({
               </CardContent>
             </Card>
 
-            <Card className="bg-background border-border shadow-none rounded-2xl">
+            <Card className="bg-card border-border shadow-none rounded-2xl">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
                   Digital (Tarj/Transf)
@@ -408,15 +408,15 @@ export function CajaDashboard({
               </CardContent>
             </Card>
 
-            <Card className="bg-rose-50/50 border-rose-100 shadow-none rounded-2xl">
+            <Card className="bg-rose-50/50 dark:bg-destructive/10 border-rose-100 dark:border-destructive shadow-none rounded-2xl">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-xs font-bold uppercase tracking-widest text-rose-800">
+                <CardTitle className="text-xs font-bold uppercase tracking-widest text-rose-800 dark:text-destructive">
                   Egresos Físicos
                 </CardTitle>
-                <ArrowDownRight className="w-4 h-4 text-rose-500" />
+                <ArrowDownRight className="w-4 h-4 text-rose-500 dark:text-destructive" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-rose-700">
+                <div className="text-2xl font-bold text-rose-700 dark:text-destructive">
                   {formatearMoneda(totales.totalEgresos)}
                 </div>
               </CardContent>
@@ -424,7 +424,7 @@ export function CajaDashboard({
           </div>
 
           {/* Tabla de Movimientos del Turno Abierto */}
-          <Card className="border-border shadow-none overflow-hidden bg-background rounded-2xl">
+          <Card className="border-border shadow-none overflow-hidden bg-card rounded-2xl">
             <CardHeader className="bg-transparent border-b border-border py-4 px-5">
               <CardTitle className="text-base flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <div className="flex items-center gap-2 font-semibold">
@@ -443,7 +443,7 @@ export function CajaDashboard({
             </CardHeader>
             <div className="overflow-x-auto">
               <table className="w-full text-sm text-left">
-                <thead className="bg-muted/30 text-muted-foreground text-[10px] uppercase font-bold tracking-widest">
+                <thead className="text-muted-foreground text-xs uppercase font-bold tracking-widest">
                   <tr>
                     <th className="px-5 py-3 border-b border-border">Hora</th>
                     <th className="px-5 py-3 border-b border-border">

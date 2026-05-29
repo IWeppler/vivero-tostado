@@ -187,13 +187,13 @@ export default async function DashboardPage() {
       {/* 💰 CARDS PRINCIPALES (KPIs Diarios) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Card 1: Ingresos Brutos */}
-        <div className="bg-white p-5 rounded-2xl border border-border flex flex-col justify-between relative overflow-hidden">
+        <div className="bg-card p-5 rounded-2xl border border-border flex flex-col justify-between relative overflow-hidden">
           <div className="flex justify-between items-start mb-2">
             <div className="text-sm font-semibold text-muted-foreground">
               Ingresos brutos de hoy
             </div>
             <div
-              className={`text-xs font-bold px-2 py-0.5 rounded-md ${crecimientoIngresos >= 0 ? "bg-emerald-100 text-emerald-700" : "bg-rose-100 text-rose-700"}`}
+              className={`text-xs font-bold px-2 py-0.5 rounded-md ${crecimientoIngresos >= 0 ? "bg-emerald-100 text-emerald-700" : "bg-destructive/10 text-destructive"}`}
             >
               {crecimientoIngresos >= 0 ? "+" : ""}
               {crecimientoIngresos.toFixed(0)}% vs ayer
@@ -210,13 +210,13 @@ export default async function DashboardPage() {
         </div>
 
         {/* Card 2: Unidades Vendidas */}
-        <div className="bg-white p-5 rounded-2xl border border-border flex flex-col justify-between">
+        <div className="bg-card p-5 rounded-2xl border border-border flex flex-col justify-between">
           <div className="flex justify-between items-start mb-2">
             <div className="text-sm font-semibold text-muted-foreground">
               Unidades vendidas
             </div>
             <div
-              className={`text-xs font-bold px-2 py-0.5 rounded-md ${crecimientoUnidades >= 0 ? "bg-emerald-100 text-emerald-700" : "bg-rose-100 text-rose-700"}`}
+              className={`text-xs px-2 py-0.5 rounded-md ${crecimientoUnidades >= 0 ? "bg-emerald-100 text-emerald-700" : "bg-destructive/10 text-destructive"}`}
             >
               {crecimientoUnidades >= 0 ? "+" : ""}
               {crecimientoUnidades.toFixed(0)}% vs ayer
@@ -233,7 +233,7 @@ export default async function DashboardPage() {
         </div>
 
         {/* Card 3: Tickets Emitidos */}
-        <div className="bg-white p-5 rounded-2xl border border-border flex flex-col justify-between">
+        <div className="bg-card p-5 rounded-2xl border border-border flex flex-col justify-between">
           <div className="flex justify-between items-start mb-2">
             <div className="text-sm font-semibold text-muted-foreground">
               Tickets emitidos
@@ -272,7 +272,7 @@ export default async function DashboardPage() {
       {/* 🏢 BLOQUES OPERATIVOS (Alertas y Caja) */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* Caja Resumida */}
-        <div className="bg-white p-5 rounded-2xl border border-border flex flex-col justify-between">
+        <div className="bg-card p-5 rounded-2xl border border-border flex flex-col justify-between">
           <div className="flex items-center gap-2 mb-3">
             <Wallet className="w-5 h-5 text-primary" />
             <h3 className="font-bold text-foreground">Caja actual</h3>
@@ -313,7 +313,7 @@ export default async function DashboardPage() {
         </div>
 
         {/* Alertas de Stock */}
-        <div className="bg-white p-5 rounded-2xl border border-border flex flex-col justify-between">
+        <div className="bg-card p-5 rounded-2xl border border-border flex flex-col justify-between">
           <div className="flex items-center gap-2 mb-3">
             <Package className="w-5 h-5 text-orange-600" />
             <h3 className="font-bold text-foreground">Alertas de stock</h3>
@@ -344,7 +344,7 @@ export default async function DashboardPage() {
         </div>
 
         {/* Bajas del Día */}
-        <div className="bg-white p-5 rounded-2xl border border-border flex flex-col justify-between">
+        <div className="bg-card p-5 rounded-2xl border border-border flex flex-col justify-between">
           <div className="flex items-center gap-2 mb-3">
             <DropletOff className="w-5 h-5 text-rose-500" />
             <h3 className="font-bold text-foreground">Bajas de hoy</h3>
@@ -387,7 +387,7 @@ export default async function DashboardPage() {
       {/* 🏆 RANKINGS Y FEED (Lo que se mueve AHORA) */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Top Rotación HOY */}
-        <div className="bg-white rounded-2xl border border-border flex flex-col">
+        <div className="bg-card rounded-2xl border border-border flex flex-col">
           <div className="p-5 border-b border-border/50">
             <h2 className="text-base font-bold text-foreground flex items-center gap-2">
               <Flame className="w-5 h-5 text-orange-500" /> Mayor Rotación Hoy
@@ -427,7 +427,7 @@ export default async function DashboardPage() {
         </div>
 
         {/* Top Rentabilidad HOY */}
-        <div className="bg-white rounded-2xl border border-border flex flex-col">
+        <div className="bg-card rounded-2xl border border-border flex flex-col">
           <div className="p-5 border-b border-border/50">
             <h2 className="text-base font-bold text-foreground flex items-center gap-2">
               <Trophy className="w-5 h-5 text-emerald-500" /> Mayor Rentabilidad
@@ -470,7 +470,7 @@ export default async function DashboardPage() {
         </div>
 
         {/* FEED DE ÚLTIMAS VENTAS */}
-        <div className="bg-white rounded-2xl border border-border flex flex-col">
+        <div className="bg-card rounded-2xl border border-border flex flex-col">
           <div className="p-5 border-b border-border/50 flex justify-between items-center">
             <h2 className="text-base font-bold text-foreground flex items-center gap-2">
               <ShoppingBag className="w-5 h-5 text-blue-500" /> Últimas Ventas

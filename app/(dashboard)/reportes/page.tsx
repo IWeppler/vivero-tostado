@@ -108,14 +108,6 @@ export default async function ReportesPage({
 
   return (
     <div>
-      {/* HEADER ESTRATÉGICO */}
-      {/* <div className="mb-4">
-        <h1>Reportes e Inteligencia</h1>
-        <p>Análisis comercial, financiero e inventario del negocio.</p>Configuración del Sistema
-
-        <h3>Período</h3>
-      </div> */}
-
       <AdvisorBanner insights={insights} />
 
       <Tabs defaultValue="resumen" className="w-full space-y-4 mt-2">
@@ -210,14 +202,14 @@ export default async function ReportesPage({
             </Card>
             <Card className="shadow-none">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium text-blue-900">
+                <CardTitle className="text-sm font-medium text-primary">
                   Margen Op. Estimado
                 </CardTitle>
                 <Percent className="w-4 h-4" />
               </CardHeader>
               <CardContent>
                 <div
-                  className={`text-2xl font-semibold ${metrics.margenPorcentaje < 0 ? "text-rose-600" : "text-blue-700"}`}
+                  className={`text-2xl font-semibold ${metrics.margenPorcentaje < 0 ? "text-destructive" : "text-primary"}`}
                 >
                   {metrics.margenPorcentaje.toFixed(1)}%
                 </div>
@@ -407,7 +399,7 @@ export default async function ReportesPage({
                 <ArrowDownRight className="w-4 h-4 text-rose-500" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-rose-600">
+                <div className="text-2xl font-bold text-rose-600 dark:text-rose-500">
                   -{formatearMoneda(metrics.totalEgresos)}
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
@@ -483,7 +475,7 @@ export default async function ReportesPage({
                       .map((producto, idx) => (
                         <div
                           key={idx}
-                          className="p-4 flex items-center justify-between hover:bg-muted/30 transition-colors"
+                          className="p-4 flex items-center justify-between hover:bg-muted/60 transition-colors"
                         >
                           <span className="font-medium text-sm">
                             {idx + 1}. {producto.nombre}
@@ -504,7 +496,7 @@ export default async function ReportesPage({
 
             <Card className="border-border shadow-none">
               <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2 text-rose-800">
+                <CardTitle className="text-lg flex items-center gap-2 text-rose-800 dark:text-destructive">
                   <AlertTriangle className="w-5 h-5 text-rose-500" /> Menor
                   Margen de Ganancia
                 </CardTitle>
@@ -515,12 +507,12 @@ export default async function ReportesPage({
                     {metrics.peoresProductosRentables.map((producto, idx) => (
                       <div
                         key={idx}
-                        className="p-4 flex items-center justify-between hover:bg-rose-50/50 transition-colors"
+                        className="p-4 flex items-center justify-between hover:bg-muted/60 transition-colors"
                       >
                         <span className="font-medium text-sm text-foreground">
                           {producto.nombre}
                         </span>
-                        <span className="font-bold text-rose-600">
+                        <span className="font-bold text-rose-600 dark:text-destructive">
                           +{formatearMoneda(producto.ganancia)}
                         </span>
                       </div>
@@ -577,26 +569,26 @@ export default async function ReportesPage({
               </CardContent>
             </Card>
             <Card
-              className={`shadow-none ${metrics.productosCriticos > 0 ? "border-rose-200 bg-rose-50" : "border-border"}`}
+              className={`shadow-none ${metrics.productosCriticos > 0 ? "border-rose-200 bg-rose-50 dark:bg-destructive/10" : "border-border"}`}
             >
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle
-                  className={`text-sm font-bold ${metrics.productosCriticos > 0 ? "text-rose-800" : "text-muted-foreground"}`}
+                  className={`text-sm font-bold ${metrics.productosCriticos > 0 ? "text-rose-800 dark:text-destructive" : "text-muted-foreground"}`}
                 >
                   Alertas de Stock
                 </CardTitle>
                 <AlertTriangle
-                  className={`w-4 h-4 ${metrics.productosCriticos > 0 ? "text-rose-600" : "text-muted-foreground"}`}
+                  className={`w-4 h-4 ${metrics.productosCriticos > 0 ? "text-rose-600 dark:text-destructive" : "text-muted-foreground"}`}
                 />
               </CardHeader>
               <CardContent>
                 <div
-                  className={`text-2xl font-bold ${metrics.productosCriticos > 0 ? "text-rose-700" : "text-foreground"}`}
+                  className={`text-2xl font-bold ${metrics.productosCriticos > 0 ? "text-rose-700 dark:text-destructive" : "text-foreground"}`}
                 >
                   {metrics.productosCriticos}
                 </div>
                 <p
-                  className={`text-xs mt-1 ${metrics.productosCriticos > 0 ? "text-rose-600 font-medium" : "text-muted-foreground"}`}
+                  className={`text-xs mt-1 ${metrics.productosCriticos > 0 ? "text-rose-600 font-medium dark:text-destructive" : "text-muted-foreground"}`}
                 >
                   Productos en nivel crítico
                 </p>
@@ -619,7 +611,7 @@ export default async function ReportesPage({
                     {metrics.topProductos.slice(0, 5).map((producto, idx) => (
                       <div
                         key={idx}
-                        className="p-4 flex items-center justify-between hover:bg-muted/30 transition-colors"
+                        className="p-4 flex items-center justify-between hover:bg-muted/60 transition-colors"
                       >
                         <span className="font-medium text-sm">
                           {idx + 1}. {producto.nombre}
@@ -641,7 +633,7 @@ export default async function ReportesPage({
             {/* Productos sin Movimiento */}
             <Card className="border-border shadow-none">
               <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2 text-slate-500">
+                <CardTitle className="text-lg flex items-center gap-2 text-slate-500 dark:text-slate-300">
                   <Package className="w-5 h-5" /> Productos sin movimiento
                 </CardTitle>
               </CardHeader>
@@ -652,7 +644,7 @@ export default async function ReportesPage({
                       {metrics.productosSinMovimiento.map((producto, idx) => (
                         <div
                           key={idx}
-                          className="p-4 flex items-center justify-between hover:bg-muted/10 transition-colors"
+                          className="p-4 flex items-center justify-between hover:bg-muted/60 transition-colors"
                         >
                           <span className="font-medium text-sm text-foreground">
                             {producto.nombre}
@@ -679,7 +671,7 @@ export default async function ReportesPage({
           {/* Listado Detallado Stock Crítico */}
           <Card className="border-border shadow-none">
             <CardHeader className="bg-muted/20 border-b border-border py-4">
-              <CardTitle className="text-base text-rose-800">
+              <CardTitle className="text-base text-rose-800 dark:text-destructive">
                 Stock Crítico Detallado (≤ 3 unidades)
               </CardTitle>
             </CardHeader>
@@ -692,7 +684,7 @@ export default async function ReportesPage({
                     <th className="px-5 py-3 text-right">Cant. Actual</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-border bg-white">
+                <tbody className="divide-y divide-border">
                   {metrics.stockCriticoDetallado.length === 0 ? (
                     <tr>
                       <td
@@ -706,7 +698,7 @@ export default async function ReportesPage({
                     metrics.stockCriticoDetallado.map((item, idx) => (
                       <tr
                         key={idx}
-                        className="hover:bg-muted/30 transition-colors"
+                        className="hover:bg-muted/60 transition-colors"
                       >
                         <td className="px-5 py-3 font-medium text-foreground">
                           {item.nombre}
@@ -714,7 +706,7 @@ export default async function ReportesPage({
                         <td className="px-5 py-3 text-muted-foreground">
                           {item.variante}
                         </td>
-                        <td className="px-5 py-3 text-right font-bold text-rose-600">
+                        <td className="px-5 py-3 text-right font-bold text-rose-600 dark:text-destructive">
                           {item.cantidad} u.
                         </td>
                       </tr>
@@ -824,7 +816,7 @@ export default async function ReportesPage({
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-border bg-white">
+                  <tbody className="divide-y divide-border">
                     {bajasDelPeriodo.length === 0 ? (
                       <tr>
                         <td
@@ -842,7 +834,7 @@ export default async function ReportesPage({
                         return (
                           <tr
                             key={baja.id}
-                            className="hover:bg-muted/30 transition-colors"
+                            className="hover:bg-muted/60 transition-colors"
                           >
                             <td className="px-5 py-3 text-muted-foreground whitespace-nowrap">
                               {new Date(baja.creado_en).toLocaleDateString(

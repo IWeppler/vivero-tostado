@@ -104,7 +104,7 @@ export function AnularVentaModal({
                 onValueChange={(v) => setMotivo(v as any)}
               >
                 <div
-                  className={`flex items-start space-x-3 p-3 rounded-lg border-2 transition-colors cursor-pointer ${motivo === "RESTAURAR_STOCK" ? "border-emerald-500 bg-emerald-50" : "border-border"}`}
+                  className={`flex items-start space-x-3 p-3 rounded-lg border-2 transition-colors cursor-pointer ${motivo === "RESTAURAR_STOCK" ? "border-emerald-500 bg-emerald-50 dark:bg-emerald-200/10" : "border-border"}`}
                   onClick={() => setMotivo("RESTAURAR_STOCK")}
                 >
                   <RadioGroupItem
@@ -115,7 +115,7 @@ export function AnularVentaModal({
                   <div className="space-y-1">
                     <Label
                       htmlFor="r1"
-                      className="font-bold text-emerald-800 cursor-pointer flex items-center gap-1.5"
+                      className="font-bold text-emerald-800 dark:text-emerald-500 cursor-pointer flex items-center gap-1.5"
                     >
                       <PackagePlus className="w-4 h-4" /> Volver a la estantería
                     </Label>
@@ -127,17 +127,16 @@ export function AnularVentaModal({
                 </div>
 
                 <div
-                  className={`flex items-start space-x-3 p-3 rounded-lg border-2 transition-colors cursor-pointer ${motivo === "BAJA" ? "border-amber-500 bg-amber-50" : "border-border"}`}
+                  className={`flex items-start space-x-3 p-3 rounded-lg border-2 transition-colors cursor-pointer ${motivo === "BAJA" ? "border-amber-500 bg-amber-50 dark:bg-amber-200/10" : "border-border"}`}
                   onClick={() => setMotivo("BAJA")}
                 >
                   <RadioGroupItem value="BAJA" id="r2" className="mt-1" />
                   <div className="space-y-1">
                     <Label
                       htmlFor="r2"
-                      className="font-bold text-amber-800 cursor-pointer flex items-center gap-1.5"
+                      className="font-bold text-amber-800 dark:text-amber-500 cursor-pointer flex items-center gap-1.5"
                     >
-                      <AlertTriangle className="w-4 h-4" /> Descartar (Producto
-                      dañado)
+                      <AlertTriangle className="w-4 h-4" /> Descartar
                     </Label>
                     <p className="text-xs text-muted-foreground">
                       La planta se marchitó o rompió. Se registrará como Baja y

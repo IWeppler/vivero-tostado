@@ -48,7 +48,7 @@ export function DashboardNavbar() {
   const { title, description } = getPageInfo();
 
   return (
-    <header className="hidden md:flex h-16 shrink-0 items-center gap-2 border-b border-border bg-white px-6">
+    <header className="hidden md:flex h-16 shrink-0 items-center gap-2 border-b border-border bg-background px-6">
       <div className="flex items-center gap-4 flex-1">
         <button
           onClick={toggleSidebar}
@@ -63,7 +63,7 @@ export function DashboardNavbar() {
 
         {/* Título de la página y descripción */}
         <div className="flex items-center gap-3">
-          <h1 className="text-base font-bold text-foreground">{title}</h1>
+          <h1 className="text-base font-semibold text-foreground">{title}</h1>
           {description && (
             <>
               <span className="text-muted-foreground/40 hidden lg:block">

@@ -36,20 +36,8 @@ export default async function StockPage() {
   }
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto">
-      {/* <div className="flex flex-col gap-3 sm:flex-row sm:items-center justify-between">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
-            Inventario
-          </h1>
-          <p className="text-muted-foreground text-sm mt-1">
-            Gestiona el stock, precios y catálogo de tus plantas.
-          </p>
-        </div>
-      </div> */}
-
+    <div className="space-y-6 mx-auto">
       <Suspense fallback={<StockSkeleton />}>
-        {/* Pasamos el userRole al StockView */}
         <StockView productos={result.data ?? []} userRole={userRole} />
       </Suspense>
     </div>

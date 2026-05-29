@@ -20,7 +20,7 @@ export default async function ConfiguracionPage() {
     .order("creado_en", { ascending: false });
 
   return (
-    <div className="space-y-6 max-w-6xl mx-auto pb-12">
+    <div className="space-y-6 mx-auto">
       {configError || !config ? (
         <div className="p-4 rounded-md bg-destructive/10 border border-destructive/20 text-destructive font-medium">
           {configError ||

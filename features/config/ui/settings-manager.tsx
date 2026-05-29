@@ -20,6 +20,7 @@ import {
 } from "@/shared/ui/select";
 import { ConfigForm } from "./config-form";
 import { PromotionsPanel } from "@/features/promotions/ui/promotions-panel";
+import { PreferencesPanel } from "@/features/preferences/ui/preferences-panel";
 
 const SECTIONS = [
   {
@@ -81,11 +82,11 @@ export function SettingsManager({
   const renderPanel = () => {
     switch (activeSection) {
       case "comercio":
-        // Aquí metemos tu formulario actual de configuración
         return <ConfigForm config={config} />;
       case "promociones":
-        // Este será nuestro próximo paso
         return <PromotionsPanel promociones={promociones} />;
+      case "preferencias":
+        return <PreferencesPanel />;
       default:
         // Placeholder para las secciones vacías
         return (
@@ -135,7 +136,7 @@ export function SettingsManager({
                 onClick={() => setActiveSection(section.id)}
                 className={`flex items-start gap-3 p-3 rounded-xl transition-all text-left w-full cursor-pointer ${
                   isActive
-                    ? "bg-white text-foreground border border-border font-semibold"
+                    ? "bg-card text-foreground border border-border font-semibold"
                     : "hover:bg-muted/50 text-muted-foreground hover:text-foreground border border-transparent font-medium"
                 }`}
               >

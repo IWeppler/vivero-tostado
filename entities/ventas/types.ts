@@ -20,7 +20,15 @@ export interface VentaItem {
   cantidad: number;
   precio_unitario: number;
   variante: string;
+  descuento_monto?: number;
+  precio_final?: number;
+  promocion_nombre?: string | null;
   producto?: SupabaseRelation<VentaProducto>;
+}
+
+export interface VentaDescuento {
+  monto_descontado: number;
+  promocion_nombre: string;
 }
 
 export interface Venta {
@@ -32,6 +40,7 @@ export interface Venta {
   metodo_pago?: string | null;
   perfiles?: SupabaseRelation<VentaPerfil>;
   ventas_items?: VentaItem[];
+  ventas_descuentos?: VentaDescuento[];
 }
 
 export interface TicketItemData {

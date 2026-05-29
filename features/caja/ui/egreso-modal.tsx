@@ -36,7 +36,10 @@ export function EgresoModal() {
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button variant="destructive" className="text-white bg-rose-600 hover:bg-rose-700">
+        <Button
+          variant="destructive"
+          className="text-white bg-destructive hover:bg-destructive/90"
+        >
           <TrendingDown className="w-4 h-4 mr-2" />
           Anotar Gasto
         </Button>

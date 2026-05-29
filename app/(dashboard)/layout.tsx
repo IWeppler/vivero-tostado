@@ -47,14 +47,13 @@ export default async function DashboardLayout({
   };
 
   return (
-    // Fondo gris claro global (bg-zinc-50 o bg-muted/30 es ideal)
-    <div className="min-h-screen bg-zinc-50/50 flex flex-col md:flex-row">
+    <div className="min-h-screen bg-sidebar flex flex-col md:flex-row">
       <Sidebar branding={systemBranding} userRole={userRole} />
 
       {/* Contenedor principal de la derecha */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden md:p-2 md:pl-0 h-screen">
         {/* El "Cajón" blanco redondeado que contiene la app */}
-        <div className="flex-1 flex flex-col bg-white md:border md:border-border md:rounded-xl md:shadow-sm overflow-hidden relative">
+        <div className="flex-1 flex flex-col bg-background md:border md:border-border md:rounded-xl md:shadow-sm overflow-hidden relative">
           <DashboardNavbar />
 
           <main className="flex-1 p-2 lg:p-4 overflow-y-auto">{children}</main>

@@ -103,7 +103,7 @@ export default async function BajasPage() {
   const historial = bajas?.filter((b) => b.estado !== "PENDIENTE") || [];
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto pb-12">
+    <div className="space-y-6 mx-auto">
       <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 border-b border-border pb-4">
         <Link href="/stock" className="shrink-0">
           <Button
@@ -217,7 +217,7 @@ export default async function BajasPage() {
           <h2 className="text-lg font-semibold text-muted-foreground">
             Historial de Bajas
           </h2>
-          <div className="bg-white rounded-xl border border-border overflow-hidden">
+          <div className="bg-card rounded-xl border border-border overflow-hidden">
             <table className="w-full text-sm text-left">
               <thead className="bg-muted/50 text-muted-foreground text-xs uppercase font-bold">
                 <tr>

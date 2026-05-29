@@ -11,7 +11,6 @@ export async function registrarVentaAction(
   const cartData = formData.get("cart_items") as string;
   const metodoPago = (formData.get("metodo_pago") as string) || "EFECTIVO";
 
-  // Capturamos los datos de la promoción enviados desde el carrito
   const promocionId = formData.get("promocion_id") as string | null;
   const descuentoMonto = Number(formData.get("descuento_monto") || 0);
 
@@ -39,7 +38,7 @@ export async function registrarVentaAction(
     };
   }
 
-  // --- 🚨 BLOQUEO ESTRICTO DE CAJA 🚨 ---
+  // --- BLOQUEO ESTRICTO DE CAJA ---
   const { data: turnoAbierto } = await supabase
     .from("turnos_caja")
     .select("id")
@@ -48,12 +47,52 @@ export async function registrarVentaAction(
     .single();
 
   if (!turnoAbierto) {
-    // Retornamos un código de error específico para que la UI lo entienda
     return { error: "CAJA_CERRADA", success: false };
   }
-  // --------------------------------------
 
-  // 1. Validar Stock y recuperar costos
+  // --- PRE-CARGA DE PROMOCIÓN (Para distribuir el descuento correctamente) ---
+  let promoData = null;
+  let categoriasPromo: string[] = [];
+
+  if (promocionId && descuentoMonto > 0) {
+    const { data: promo } = await supabase
+      .from("promociones")
+      .select(
+        "nombre, tipo_descuento, valor_descuento, tipo_regla, usos_actuales",
+      )
+      .eq("id", promocionId)
+      .single();
+
+    if (promo) {
+      promoData = promo;
+      if (promo.tipo_regla === "CATEGORIA") {
+        const { data: cats } = await supabase
+          .from("promociones_categorias")
+          .select("categoria_nombre")
+          .eq("promocion_id", promocionId);
+        if (cats)
+          categoriasPromo = cats.map((c) => c.categoria_nombre.toLowerCase());
+      }
+    }
+  }
+
+  // Identificamos cuánto suman los productos elegibles para prorratear el descuento
+  let totalElegible = 0;
+  items.forEach((item) => {
+    let elegible = false;
+    if (!promoData || promoData.tipo_regla !== "CATEGORIA") {
+      elegible = true;
+    } else {
+      elegible = categoriasPromo.includes((item.tipo || "").toLowerCase());
+    }
+    if (elegible) {
+      totalElegible +=
+        Number(item.precioUnitario ?? item.precio ?? 0) *
+        Number(item.cantidad ?? 1);
+    }
+  });
+
+  // --- 1. Validar Stock, Costos y Prorratear Descuentos ---
   const itemsProcesados = [];
   let totalVenta = 0;
   let costoTotalVenta = 0;
@@ -75,11 +114,25 @@ export async function registrarVentaAction(
     const precioCostoReal = Number(
       (stockActual.producto as any)?.precio_costo || 0,
     );
-
-    const precioFinal = Number(item.precioUnitario ?? item.precio ?? 0);
+    const precioUnitario = Number(item.precioUnitario ?? item.precio ?? 0);
     const cantidadFinal = Number(item.cantidad ?? 1);
 
-    totalVenta += precioFinal * cantidadFinal;
+    // Lógica de Descuento por Línea (Prorrateo Matemático)
+    let elegible = false;
+    if (!promoData || promoData.tipo_regla !== "CATEGORIA") elegible = true;
+    else elegible = categoriasPromo.includes((item.tipo || "").toLowerCase());
+
+    let itemDescuentoMonto = 0;
+    let itemPrecioFinal = precioUnitario;
+
+    if (promoData && elegible && totalElegible > 0) {
+      const pesoItem = (precioUnitario * cantidadFinal) / totalElegible;
+      const descuentoTotalLinea = descuentoMonto * pesoItem;
+      itemDescuentoMonto = descuentoTotalLinea / cantidadFinal;
+      itemPrecioFinal = precioUnitario - itemDescuentoMonto;
+    }
+
+    totalVenta += precioUnitario * cantidadFinal;
     costoTotalVenta += precioCostoReal * cantidadFinal;
 
     itemsProcesados.push({
@@ -89,26 +142,26 @@ export async function registrarVentaAction(
       stockId: stockActual.id,
       stockOriginal: stockActual.cantidad,
       precioCosto: precioCostoReal,
-      precioUnitario: precioFinal,
+      precioUnitario: precioUnitario,
+      descuentoMonto: itemDescuentoMonto,
+      precioFinal: itemPrecioFinal,
     });
   }
 
   const totalSeguro = isNaN(totalVenta) ? 0 : totalVenta;
   const costoSeguro = isNaN(costoTotalVenta) ? 0 : costoTotalVenta;
-
-  // Calculamos el Total Final descontando la promoción (El mínimo es 0)
   const totalConDescuento = Math.max(
     0,
     totalSeguro - (isNaN(descuentoMonto) ? 0 : descuentoMonto),
   );
 
-  // 2. CREAR LA CABECERA (El Ticket único)
+  // --- 2. CREAR LA CABECERA (ventas) ---
   const { data: nuevaVenta, error: ventaError } = await supabase
     .from("ventas")
     .insert({
       vendedor_id: user.id,
       metodo_pago: metodoPago,
-      total: totalConDescuento, // Guardamos el total con el descuento aplicado
+      total: totalConDescuento,
       precio_costo: costoSeguro,
       cantidad: items.length,
     })
@@ -116,22 +169,14 @@ export async function registrarVentaAction(
     .single();
 
   if (ventaError || !nuevaVenta) {
-    console.error("Error creando cabecera:", ventaError);
     return { error: "No se pudo crear el ticket de venta.", success: false };
   }
 
-  // --- NUEVO: REGISTRAR EL DESCUENTO SI EXISTE ---
-  if (promocionId && descuentoMonto > 0) {
-    // Buscamos los datos de la promoción para dejar el registro inmutable
-    const { data: promoData } = await supabase
-      .from("promociones")
-      .select("nombre, tipo_descuento, usos_actuales")
-      .eq("id", promocionId)
-      .single();
-
-    if (promoData) {
-      // Guardamos la trazabilidad
-      await supabase.from("ventas_descuentos").insert({
+  // --- 3. REGISTRAR TRAZABILIDAD DEL DESCUENTO ---
+  if (promocionId && descuentoMonto > 0 && promoData) {
+    const { error: descError } = await supabase
+      .from("ventas_descuentos")
+      .insert({
         venta_id: nuevaVenta.id,
         promocion_id: promocionId,
         promocion_nombre: promoData.nombre,
@@ -139,18 +184,20 @@ export async function registrarVentaAction(
         monto_descontado: descuentoMonto,
       });
 
-      // Actualizamos el contador de usos de la promoción
-      await supabase
-        .from("promociones")
-        .update({
-          usos_actuales: (promoData.usos_actuales || 0) + 1,
-        })
-        .eq("id", promocionId);
-    }
-  }
-  // -----------------------------------------------
+    if (descError) console.error("Fallo insertando trazabilidad:", descError);
 
-  // 3. CREAR LOS DETALLES (ventas_items)
+    const { error: updatePromoError } = await supabase
+      .from("promociones")
+      .update({
+        usos_actuales: (promoData.usos_actuales || 0) + 1,
+      })
+      .eq("id", promocionId);
+
+    if (updatePromoError)
+      console.error("Fallo sumando uso de promo:", updatePromoError);
+  }
+
+  // --- 4. CREAR LOS DETALLES (ventas_items) ---
   const insertItems = itemsProcesados.map((item) => ({
     venta_id: nuevaVenta.id,
     producto_id: item.productoId,
@@ -158,6 +205,11 @@ export async function registrarVentaAction(
     cantidad: item.cantidad,
     precio_unitario: item.precioUnitario,
     precio_costo: item.precioCosto,
+    descuento_monto: item.descuentoMonto,
+    precio_final: item.precioFinal,
+    promocion_id: promoData && item.descuentoMonto > 0 ? promocionId : null,
+    promocion_nombre:
+      promoData && item.descuentoMonto > 0 ? promoData.nombre : null,
   }));
 
   const { error: itemsError } = await supabase
@@ -165,14 +217,13 @@ export async function registrarVentaAction(
     .insert(insertItems);
 
   if (itemsError) {
-    console.error("Error insertando detalles:", itemsError);
     return {
       error: "Error al guardar los productos en el ticket.",
       success: false,
     };
   }
 
-  // 4. DESCONTAR STOCK
+  // --- 5. DESCONTAR STOCK ---
   for (const item of itemsProcesados) {
     await supabase
       .from("productos_stock")
@@ -180,7 +231,6 @@ export async function registrarVentaAction(
       .eq("id", item.stockId);
   }
 
-  // Refrescamos las rutas para que la tabla de ventas y caja se actualicen
   revalidatePath("/", "layout");
   return { error: null, success: true };
 }

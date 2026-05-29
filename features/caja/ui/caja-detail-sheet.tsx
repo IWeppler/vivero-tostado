@@ -236,7 +236,7 @@ export function CajaDetailSheet({
                     </div>
                     <div className="text-right">
                       <p
-                        className={`font-bold text-sm ${mov.tipo === "INGRESO" ? "text-emerald-600" : "text-rose-600"}`}
+                        className={`font-semibold text-sm ${mov.tipo === "INGRESO" ? "text-emerald-600" : "text-destructive"}`}
                       >
                         {mov.tipo === "INGRESO" ? "+" : "-"}
                         {formatearMoneda(mov.monto)}

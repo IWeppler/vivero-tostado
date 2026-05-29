@@ -57,7 +57,7 @@ export async function crearProductoAlVueloAction(
     .from("productos")
     .insert({
       nombre,
-      tipo: "Interior", // Asignamos un tipo por defecto
+      tipo: "Interior",
       precio_costo,
       precio: precio_venta,
       slug,

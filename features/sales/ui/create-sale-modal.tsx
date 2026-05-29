@@ -160,7 +160,7 @@ export function CreateSaleModal({ productos = [] }: Readonly<Props>) {
       return (
         <span className="truncate">
           {productoSeleccionado.nombre} {productoSeleccionado.tipo}{" "}
-          <span className="text-green-600 font-medium ml-1">
+          <span className="text-muted-foreground font-medium ml-1">
             ${productoSeleccionado.precio.toLocaleString("es-AR")}
           </span>
         </span>
@@ -245,7 +245,7 @@ export function CreateSaleModal({ productos = [] }: Readonly<Props>) {
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-        <Button className="w-full h-10 sm:w-auto bg-neutral-900 hover:bg-neutral-800 text-white cursor-pointer">
+        <Button variant="outline" className="w-full h-10 sm:w-auto">
           <Plus className="mr-2 h-4 w-4" /> Registrar Venta
         </Button>
       </DialogTrigger>
@@ -297,7 +297,7 @@ export function CreateSaleModal({ productos = [] }: Readonly<Props>) {
                               }}
                               className="flex items-center gap-3 cursor-pointer py-2"
                             >
-                              <div className="h-10 w-10 rounded-md bg-neutral-100 flex items-center justify-center overflow-hidden shrink-0 border border-neutral-200">
+                              <div className="h-10 w-10 rounded-md bg-card flex items-center justify-center overflow-hidden shrink-0 border border-border">
                                 {imagenPreview ? (
                                   <Image
                                     src={imagenPreview}
@@ -305,7 +305,7 @@ export function CreateSaleModal({ productos = [] }: Readonly<Props>) {
                                     className="h-full w-full object-cover"
                                   />
                                 ) : (
-                                  <ShoppingCart className="h-4 w-4 text-neutral-400" />
+                                  <ShoppingCart className="h-4 w-4 text-muted" />
                                 )}
                               </div>
                               <div className="flex flex-col flex-1">
@@ -379,7 +379,7 @@ export function CreateSaleModal({ productos = [] }: Readonly<Props>) {
             <Button
               type="button"
               onClick={handleAgregarAlCarrito}
-              className="w-full h-10 bg-foreground"
+              className="w-full h-10 bg-background"
               disabled={!selectedProductoId || !selectedVariante}
             >
               <ShoppingCart className="w-4 h-4 mr-2" /> Añadir a la lista
@@ -418,7 +418,7 @@ export function CreateSaleModal({ productos = [] }: Readonly<Props>) {
                         </p>
                       </div>
                       <div className="flex items-center gap-3">
-                        <p className="font-bold text-sm text-primary">
+                        <p className="text-sm text-primary dark:text-foreground">
                           $
                           {(item.cantidad * item.precioUnitario).toLocaleString(
                             "es-AR",

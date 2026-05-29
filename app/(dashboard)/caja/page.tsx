@@ -65,7 +65,7 @@ export default async function CajaPage() {
   }
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto pb-12">
+    <div className="space-y-6 mx-auto pb-12">
       <CajaDashboard
         turno={turnoAbierto}
         ventas={ventas}

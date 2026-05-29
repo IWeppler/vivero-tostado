@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   aprobarOrdenAction,
@@ -38,22 +38,120 @@ import {
   PlusCircle,
   Percent,
   Trash2,
+  Search,
+  ChevronDown,
 } from "lucide-react";
 import Link from "next/link";
 import { ItemResuelto, OrdenCompra } from "@/entities/compras/types";
 import { Producto } from "@/entities/productos/types";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/shared/ui/select";
 
 interface MergeTableProps {
   orden: OrdenCompra;
   itemsOriginales: ItemResuelto[];
   productos: Producto[];
+}
+
+// --- NUEVO COMPONENTE: Combobox de Búsqueda Personalizado ---
+function SearchableSelect({
+  productos,
+  value,
+  onSelect,
+}: {
+  productos: Producto[];
+  value: string | null;
+  onSelect: (id: string) => void;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const wrapperRef = useRef<HTMLDivElement>(null);
+
+  // Cierra el dropdown si se hace click fuera de él
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (
+        wrapperRef.current &&
+        !wrapperRef.current.contains(event.target as Node)
+      ) {
+        setIsOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // Filtra los productos por el texto ingresado
+  const filtered = productos.filter(
+    (p) =>
+      p.nombre.toLowerCase().includes(search.toLowerCase()) ||
+      (p.tipo && p.tipo.toLowerCase().includes(search.toLowerCase())),
+  );
+
+  const selectedProduct = productos.find((p) => p.id === value);
+
+  return (
+    <div className="relative w-full" ref={wrapperRef}>
+      {/* Botón Trigger (Gatillo) */}
+      <div
+        className="flex items-center justify-between w-full h-10 px-3 py-2 text-sm bg-white border border-rose-300 rounded-md cursor-pointer focus:ring-2 focus:ring-rose-500 hover:bg-muted/10 transition-colors"
+        onClick={() => {
+          setIsOpen(!isOpen);
+          setSearch(""); // Reseteamos la búsqueda al abrir
+        }}
+      >
+        <span
+          className={`truncate ${selectedProduct ? "text-foreground" : "text-muted-foreground"}`}
+        >
+          {selectedProduct
+            ? `${selectedProduct.nombre} (${selectedProduct.tipo})`
+            : "-- Buscar Producto --"}
+        </span>
+        <ChevronDown className="w-4 h-4 text-muted-foreground opacity-50 shrink-0 ml-2" />
+      </div>
+
+      {/* Contenido del Dropdown */}
+      {isOpen && (
+        <div className="absolute z-50 w-full mt-1 bg-popover text-popover-foreground border border-border rounded-md shadow-md outline-none animate-in fade-in-0 zoom-in-95">
+          {/* Buscador interno */}
+          <div className="flex items-center px-3 border-b border-border/50">
+            <Search className="w-4 h-4 mr-2 text-muted-foreground opacity-50" />
+            <input
+              type="text"
+              className="flex w-full h-10 text-sm bg-transparent border-none outline-none placeholder:text-muted-foreground focus:ring-0"
+              placeholder="Escribe para buscar..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              autoFocus
+            />
+          </div>
+
+          {/* Lista de Resultados */}
+          <div className="max-h-48 overflow-y-auto p-1">
+            {filtered.length === 0 ? (
+              <p className="py-4 text-sm text-center text-muted-foreground italic">
+                No se encontraron productos.
+              </p>
+            ) : (
+              filtered.map((p) => (
+                <div
+                  key={p.id}
+                  className="relative flex w-full cursor-pointer select-none items-center rounded-sm py-2 px-2 text-sm outline-none hover:bg-muted font-medium"
+                  onClick={() => {
+                    onSelect(p.id);
+                    setIsOpen(false);
+                  }}
+                >
+                  {p.nombre}{" "}
+                  <span className="text-muted-foreground font-normal ml-1">
+                    ({p.tipo})
+                  </span>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }
 
 export function MergeTable({
@@ -208,7 +306,7 @@ export function MergeTable({
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white p-6 rounded-xl border border-border">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <Link
             href="/stock"
@@ -226,7 +324,7 @@ export function MergeTable({
         </div>
         <Button
           size="lg"
-          className="h-10 bg-emerald-600 hover:bg-emerald-700 text-white w-full sm:w-auto cursor-pointer"
+          className="h-10 bg-primary hover:bg-primary/90 text-white w-full sm:w-auto cursor-pointer"
           onClick={handleAprobar}
           disabled={isSubmitting}
         >
@@ -236,7 +334,7 @@ export function MergeTable({
       </div>
 
       {/* Acciones Rápidas (Margen Global) */}
-      <div className="flex flex-col sm:flex-row items-center gap-4 bg-white p-4 rounded-xl border border-border">
+      <div className="flex flex-col sm:flex-row items-center gap-4 bg-background p-4 rounded-xl border border-border">
         <div className="flex items-center gap-2 w-full sm:w-auto">
           <Percent className="w-4 h-4 text-muted-foreground" />
           <span className="text-sm font-medium whitespace-nowrap">
@@ -256,7 +354,7 @@ export function MergeTable({
             variant="secondary"
             size="sm"
             onClick={handleAplicarMargenGlobal}
-            className="hover:bg-primary/80"
+            className="hover:bg-foreground hover:text-white"
           >
             Aplicar
           </Button>
@@ -286,17 +384,17 @@ export function MergeTable({
       </div>
 
       {/* Tabla Interactiva */}
-      <div className="bg-white rounded-xl border border-border overflow-hidden overflow-x-auto">
+      <div className="bg-background rounded-xl border border-border overflow-hidden overflow-x-auto">
         <table className="w-full text-sm text-left">
-          <thead className="bg-muted/50 text-muted-foreground text-xs uppercase font-bold tracking-widest">
+          <thead className="bg-muted/50 text-foreground/80 text-xs uppercase font-semibold tracking-wide">
             <tr>
-              <th className="px-6 py-4">Estado</th>
-              <th className="px-6 py-4">Ítem del Proveedor</th>
-              <th className="px-6 py-4">Producto en Sistema</th>
-              <th className="px-6 py-4 text-center">Cant.</th>
-              <th className="px-6 py-4 text-right">Costo Unidad</th>
-              <th className="px-6 py-4 text-right min-w-40">Precio Público</th>
-              <th className="px-4 py-4"></th>
+              <th className="px-6 py-2">Estado</th>
+              <th className="px-6 py-2">Ítem del Proveedor</th>
+              <th className="px-6 py-2">Producto en Sistema</th>
+              <th className="px-6 py-2 text-center">Cant.</th>
+              <th className="px-6 py-2 text-right">Costo Unidad</th>
+              <th className="px-6 py-2 text-right min-w-40">Precio Público</th>
+              <th className="px-4 py-2"></th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
@@ -344,38 +442,22 @@ export function MergeTable({
 
                   <td className="px-6 py-4 min-w-70">
                     {isDesconocido ? (
-                      <div className="flex flex-col gap-2">
-                        <div className="relative group">
-                          <Select
-                            value={item.producto_id || undefined}
-                            onValueChange={(value) =>
-                              handleAssignProduct(idx, value)
-                            }
-                          >
-                            <SelectTrigger className="w-full h-10 bg-white border-rose-300 focus:ring-2 focus:ring-rose-500">
-                              <SelectValue placeholder="-- Seleccionar Producto --" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {localProductos.map((p) => (
-                                <SelectItem key={p.id} value={p.id}>
-                                  {p.nombre} ({p.tipo})
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none text-muted-foreground">
-                            ▼
-                          </div>
-                        </div>
+                      <div className="flex flex-col gap-2 relative">
+                        {/* AQUÍ SE REEMPLAZA EL COMPONENTE SELECT POR EL BUSCADOR */}
+                        <SearchableSelect
+                          productos={localProductos}
+                          value={item.producto_id || null}
+                          onSelect={(value) => handleAssignProduct(idx, value)}
+                        />
                         <Button
                           variant="outline"
                           size="sm"
-                          className="h-8 text-xs border-dashed text-green-600 hover:bg-primary/5"
+                          className="h-8 text-xs border-dashed text-green-700 hover:bg-green-50 hover:text-green-800 hover:border-green-600"
                           onClick={() => {
                             setItemToCreateIdx(idx);
                             setNuevoProductoData({
                               nombre: item.raw_nombre,
-                              precio: Math.ceil(item.precio_costo * 1.5), // 50% de margen base por defecto
+                              precio: Math.ceil(item.precio_costo * 1.5),
                             });
                           }}
                         >
@@ -386,7 +468,7 @@ export function MergeTable({
                     ) : (
                       <div className="flex items-center justify-between gap-2">
                         <div>
-                          <p className="font-bold text-emerald-800">
+                          <p className="font-semibold text-green-800">
                             {pReal?.nombre}
                           </p>
                           <p className="text-xs text-muted-foreground mt-0.5">
@@ -397,7 +479,7 @@ export function MergeTable({
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-8 w-8 text-rose-500 hover:text-rose-600 hover:bg-rose-50"
+                          className="h-8 w-8 text-rose-500 hover:text-rose-600 hover:bg-rose-50 shrink-0"
                           onClick={() => handleUndo(idx)}
                           title="Deshacer asignación"
                         >
@@ -407,12 +489,12 @@ export function MergeTable({
                     )}
                   </td>
 
-                  <td className="px-6 py-4 text-center font-bold text-base">
+                  <td className="px-6 py-2 text-center font-semibold">
                     +{item.cantidad}
                   </td>
 
-                  <td className="px-6 py-4 text-right">
-                    <p className="font-bold text-foreground">
+                  <td className="px-6 py-2 text-right">
+                    <p className="font-semibold text-foreground">
                       ${Number(item.precio_costo).toLocaleString("es-AR")}
                     </p>
                     {isInflacion && pReal && (
@@ -423,7 +505,7 @@ export function MergeTable({
                     )}
                   </td>
 
-                  <td className="px-6 py-4 text-right">
+                  <td className="px-6 py-2 text-right">
                     {item.producto_id ? (
                       <div className="flex flex-col items-end gap-1">
                         <div className="relative w-28">
@@ -432,7 +514,7 @@ export function MergeTable({
                           </span>
                           <Input
                             type="number"
-                            className={`pl-7 h-9 font-bold text-right ${isInflacion ? "border-amber-400 bg-amber-50 focus-visible:ring-amber-500" : ""}`}
+                            className={`pl-7 h-9 font-semibold text-right ${isInflacion ? "border-amber-400 bg-amber-50 focus-visible:ring-amber-500" : ""}`}
                             value={item.precio_venta_actualizado || 0}
                             onChange={(e) =>
                               handleUpdatePrice(idx, Number(e.target.value))
