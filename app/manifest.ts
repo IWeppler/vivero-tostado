@@ -2,10 +2,12 @@ import { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
+    id: "/",
     name: "Vivero Tostado - POS System",
     short_name: "Vivero POS",
     description: "Sistema de gestión y punto de venta web",
-    start_url: "/auth",
+    start_url: "/",
+    scope: "/",
     display: "standalone",
     background_color: "#09090b",
     theme_color: "#09090b",

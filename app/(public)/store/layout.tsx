@@ -3,6 +3,7 @@ import { CartSidebar } from "@/shared/components/cart-sidebar";
 import { createClient } from "@/shared/config/supabase/server";
 import { ConfiguracionPOS } from "@/entities/config/types";
 import { cookies } from "next/headers";
+import Link from "next/link";
 
 export const metadata = {
   title: "Tienda Oficial | Vivero Tostado",
@@ -39,11 +40,17 @@ export default async function PublicLayout({
       {children}
 
       {/* FOOTER BÁSICO */}
-      <footer className="bg-neutral-900 border-t border-border py-8 mt-auto">
-        <div className="max-w-7xl mx-auto px-4 text-center text-sm text-neutral-400">
-          © {new Date().getFullYear()} {systemBranding.posName} Todos los
+      <footer className="bg-neutral-900 border-t border-border py-8 mt-auto flex items-center justify-center relative">
+        <div className="max-w-7xl mx-auto px-4 text-center text-sm text-neutral-400 boreder">
+          © {new Date().getFullYear()} {systemBranding.posName}. Todos los
           derechos reservados.
         </div>
+        <Link
+          href="/auth"
+          className="right-1 absolute text-sm text-muted-foreground"
+        >
+          Ingresar
+        </Link>
       </footer>
     </div>
   );

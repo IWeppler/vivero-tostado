@@ -61,7 +61,7 @@ function SearchBar() {
           value={term}
           onChange={handleSearch}
           placeholder="Buscar producto..."
-          className="w-full h-10 pl-10 pr-4 bg-[#f5f4f4] border-none outline-none focus:ring-1 focus:ring-foreground text-xs transition-all rounded-none uppercase tracking-widest font-bold placeholder:text-muted-foreground/60 text-foreground"
+          className="w-full h-10 pl-10 pr-4 bg-[#f5f4f4] border-none outline-none focus:ring-1 focus:ring-foreground text-xs transition-all rounded-none tracking-wide font-medium placeholder:text-muted-foreground/60 text-foreground"
         />
       </div>
 
