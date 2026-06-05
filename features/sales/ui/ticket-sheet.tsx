@@ -121,9 +121,9 @@ export function TicketSheet({
         {/* ── HEADER DE LA APP ─────────────────────────────────────────── */}
         <SheetContent
           side="right"
-          className="w-full sm:max-w-110 p-0 flex flex-col h-dvh overflow-hidden bg-background border-l border-border"
+          className="w-full md:max-w-110 p-0 flex flex-col h-dvh overflow-hidden bg-background border-l border-border"
         >
-          <SheetHeader className="flex-row items-center justify-between px-5 py-4 border-b border-border bg-card shrink-0 mt-4 sm:mt-0">
+          <SheetHeader className="flex-row items-center justify-between px-2 md:px-5 py-4 border-b border-border bg-card shrink-0 mt-4 sm:mt-0">
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
                 <ShoppingBasket className="w-4 h-4 text-primary" />
@@ -139,14 +139,14 @@ export function TicketSheet({
             </div>
           </SheetHeader>
 
-          {/* ── SCROLLABLE BODY (UI sin sombras) ─────────────────────────────────── */}
+          {/* ── SCROLLABLE BODY  ─────────────────────────────────── */}
           <div className="flex-1 overflow-y-auto min-h-0">
-            <div className="px-5 py-5 space-y-4">
+            <div className="px-2 space-y-2 md:px-5 md:py-5 md:space-y-4">
               {/* TOTAL CARD */}
               <div className="rounded-xl border border-border bg-card overflow-hidden">
-                <div className="p-5">
+                <div className="p-2 md:p-5">
                   <div className="flex items-start justify-between mb-1">
-                    <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                    <span className="text-[10px] md:text-xs font-medium text-muted-foreground uppercase tracking-wider">
                       Total cobrado
                     </span>
                     <Badge className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 text-[10px] font-semibold px-2 py-0.5 gap-1">
@@ -154,7 +154,7 @@ export function TicketSheet({
                       Pagada
                     </Badge>
                   </div>
-                  <p className="text-3xl font-bold tracking-tight text-foreground">
+                  <p className="text-2xl md:text-3xl font-bold tracking-tight text-foreground">
                     ${ticket?.total?.toLocaleString("es-AR")}
                   </p>
                 </div>
@@ -201,7 +201,7 @@ export function TicketSheet({
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
                   <Package className="w-3.5 h-3.5 text-muted-foreground" />
-                  <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  <h3 className="text-[10px] md:text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                     Productos ({ticket?.items.length ?? 0})
                   </h3>
                 </div>
@@ -299,8 +299,7 @@ export function TicketSheet({
               </Button>
             </div>
             <Button
-              variant="ghost"
-              className="w-full text-muted-foreground hover:text-foreground h-10"
+              className="w-full bg-foreground text-background hover:bg-foreground/90"
               onClick={onClose}
             >
               <Plus className="w-4 h-4 mr-2" />

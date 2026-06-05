@@ -71,7 +71,7 @@ export function EditarProductoModal({
       if (result.success) {
         setIsOpen(false);
         setArchivos([]);
-        toast.success("Producto actualizado correctamente 🌿");
+        toast.success("Producto actualizado correctamente");
       } else if (result.error) {
         toast.error(result.error);
       }
@@ -80,7 +80,6 @@ export function EditarProductoModal({
     { error: null, success: false },
   );
 
-  // Procesamos las imágenes existentes en la base de datos
   let imagenesExistentes: string[] = [];
   if (Array.isArray(producto.imagen_url)) {
     imagenesExistentes = producto.imagen_url;
@@ -209,16 +208,16 @@ export function EditarProductoModal({
             </div>
 
             <div className="space-y-3">
-              <Label>Reemplazar Imágenes (Opcional)</Label>
+              <Label>Reemplazar Imágenes</Label>
               <div className="flex flex-col items-center justify-center w-full">
                 <Label
                   htmlFor={`imagenes-edit-${producto.id}`}
-                  className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-border rounded-lg cursor-pointer bg-muted/20 hover:bg-emerald-50 hover:border-emerald-200 transition-colors"
+                  className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-border rounded-lg cursor-pointer bg-muted/20 hover:bg-primary/10 hover:border-primary/50 transition-colors"
                 >
                   <div className="flex flex-col items-center justify-center pt-5 pb-6 text-center px-4">
                     <ImagePlus className="w-8 h-8 mb-3 text-muted-foreground" />
                     <p className="mb-1 text-sm text-muted-foreground">
-                      <span className="font-semibold text-emerald-600">
+                      <span className="font-semibold text-primary">
                         Haz clic para subir
                       </span>{" "}
                       o arrastra tus fotos aquí
@@ -241,13 +240,13 @@ export function EditarProductoModal({
 
               {archivos.length > 0 && (
                 <div className="flex flex-wrap gap-3 mt-3">
-                  <p className="w-full text-xs font-semibold text-emerald-600 mb-1">
+                  <p className="w-full text-xs font-semibold text-foreground mb-1">
                     Nuevas imágenes listas para subir:
                   </p>
                   {archivos.map((file) => (
                     <div
                       key={file.name}
-                      className="relative w-16 h-16 rounded-md overflow-hidden border-2 border-emerald-500 bg-muted"
+                      className="relative w-16 h-16 rounded-md overflow-hidden border-2 border-primary bg-muted"
                     >
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
@@ -283,9 +282,7 @@ export function EditarProductoModal({
             </div>
 
             <div className="border-t border-border pt-4">
-              <h3 className="text-sm font-medium mb-3 text-emerald-800">
-                Actualizar Stock
-              </h3>
+              <h3 className="text-sm font-medium mb-3">Actualizar Stock</h3>
               <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
                 {variantesAMostrar.map((opt) => (
                   <div
@@ -311,11 +308,7 @@ export function EditarProductoModal({
               </div>
             </div>
 
-            <Button
-              type="submit"
-              className="w-full bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer"
-              disabled={isPending}
-            >
+            <Button type="submit" className="w-full" disabled={isPending}>
               {isPending ? "Actualizando..." : "Guardar Cambios"}
             </Button>
           </form>

@@ -13,24 +13,7 @@ import {
   FileText,
 } from "lucide-react";
 import { CajaDetailSheet } from "./caja-detail-sheet";
-
-const formatearMoneda = (monto: number) => {
-  return new Intl.NumberFormat("es-AR", {
-    style: "currency",
-    currency: "ARS",
-    maximumFractionDigits: 0,
-  }).format(monto);
-};
-
-const formatearFechaHora = (fechaString: string | null) => {
-  if (!fechaString) return "-";
-  return new Intl.DateTimeFormat("es-AR", {
-    day: "2-digit",
-    month: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(new Date(fechaString));
-};
+import { formatearFechaHora, formatearMoneda } from "@/shared/utils/formatters";
 
 interface CajaHistoryTableProps {
   historial: TurnoCajaHistorial[];

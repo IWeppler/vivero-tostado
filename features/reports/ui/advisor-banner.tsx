@@ -8,7 +8,7 @@ import {
   TrendingUp,
   ArrowRight,
 } from "lucide-react";
-import { Insight } from "@/features/dashboard/lib/get-advisor-insights";
+import { Insight } from "@/features/reports/actions/get-advisor-insights";
 import Link from "next/link";
 import { Button } from "@/shared/ui/button";
 
@@ -26,43 +26,43 @@ export function AdvisorBanner({ insights }: Readonly<AdvisorBannerProps>) {
 
   const configMap = {
     danger: {
-      bg: "bg-rose-50",
-      border: "border-rose-200",
+      bg: "bg-rose-50 dark:bg-rose-300/10",
+      border: "border-rose-200 dark:border-rose-700/50",
       icon: AlertTriangle,
       iconColor: "text-rose-600",
-      bgIcon: "bg-rose-100",
-      titleColor: "text-rose-900",
-      msgColor: "text-rose-800",
+      bgIcon: "bg-rose-100 dark:bg-rose-700/20",
+      titleColor: "text-rose-900 dark:text-rose-500",
+      msgColor: "text-rose-800 dark:text-rose-300",
       btnClass: "bg-rose-600 hover:bg-rose-700 text-white",
     },
     warning: {
-      bg: "bg-amber-50",
-      border: "border-amber-200",
+      bg: "bg-amber-50 dark:bg-amber-300/10",
+      border: "border-amber-200 dark:border-amber-700/50",
       icon: AlertTriangle,
       iconColor: "text-amber-600",
-      bgIcon: "bg-amber-100",
-      titleColor: "text-amber-900",
-      msgColor: "text-amber-800",
+      bgIcon: "bg-amber-100 dark:bg-amber-700/20",
+      titleColor: "text-amber-900 dark:text-amber-500",
+      msgColor: "text-amber-800 dark:text-amber-300",
       btnClass: "bg-amber-600 hover:bg-amber-700 text-white",
     },
     success: {
-      bg: "bg-emerald-50",
-      border: "border-emerald-200",
+      bg: "bg-emerald-50 dark:bg-emerald-300/10",
+      border: "border-emerald-200 dark:border-emerald-700/50",
       icon: TrendingUp,
       iconColor: "text-emerald-600",
-      bgIcon: "bg-emerald-100",
-      titleColor: "text-emerald-900",
-      msgColor: "text-emerald-800",
+      bgIcon: "bg-emerald-100 dark:bg-emerald-700/20",
+      titleColor: "text-emerald-900 dark:text-emerald-500",
+      msgColor: "text-emerald-800 dark:text-emerald-300",
       btnClass: "bg-emerald-600 hover:bg-emerald-700 text-white",
     },
     info: {
-      bg: "bg-blue-50",
-      border: "border-blue-200",
+      bg: "bg-blue-50 dark:bg-blue-300/10",
+      border: "border-blue-200 dark:border-blue-700/50",
       icon: Lightbulb,
       iconColor: "text-blue-600",
-      bgIcon: "bg-blue-100",
-      titleColor: "text-blue-900",
-      msgColor: "text-blue-800",
+      bgIcon: "bg-blue-100 dark:bg-blue-700/20",
+      titleColor: "text-blue-900 dark:text-blue-500",
+      msgColor: "text-blue-800 dark:text-blue-300",
       btnClass: "bg-blue-600 hover:bg-blue-700 text-white",
     },
   };

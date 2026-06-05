@@ -1,59 +1,88 @@
 import { SelectOption } from "@/shared/types/select";
 
-// 1. Categorías del Vivero
+// 1. Categorías principales del vivero
 export const TIPO_OPTIONS: SelectOption[] = [
-  { value: "Interior", label: "Plantas de Interior" },
-  { value: "Exterior", label: "Plantas de Exterior" },
-  { value: "Suculentas", label: "Suculentas y Cactus" },
-  { value: "Aromáticas", label: "Aromáticas y Huerta" },
-  { value: "Macetas", label: "Macetas y Decoración" },
-  { value: "Sustratos", label: "Sustratos y Fertilizantes" },
+  { value: "FloresEstacion", label: "Flores de estación" },
+  { value: "Ornamentales", label: "Plantas ornamentales" },
+  { value: "AromaticasHuerta", label: "Aromáticas y huerta" },
+  { value: "Interior", label: "Plantas de interior" },
+  { value: "Suculentas", label: "Suculentas y cactus" },
+  { value: "MacetasDecoracion", label: "Macetas y decoración" },
+  { value: "SustratosInsumos", label: "Sustratos e insumos" },
 ];
 
-// 2. Diccionario de Variantes Dinámicas según la Categoría
+// 2. Variantes dinámicas según la categoría
 export const VARIANTE_OPTIONS: Record<string, SelectOption[]> = {
+  FloresEstacion: [
+    { value: "M8", label: "Maceta M8" },
+    { value: "N10", label: "Maceta N°10" },
+    { value: "N12", label: "Maceta N°12" },
+    { value: "Bandeja", label: "Bandeja" },
+    { value: "Unico", label: "Tamaño único" },
+  ],
+
+  Ornamentales: [
+    { value: "N12", label: "Maceta N°12" },
+    { value: "N14", label: "Maceta N°14" },
+    { value: "N18", label: "Maceta N°18" },
+    { value: "N20", label: "Maceta N°20" },
+    { value: "3L", label: "Envase 3 litros" },
+    { value: "5L", label: "Envase 5 litros" },
+    { value: "10L", label: "Envase 10 litros" },
+    { value: "Unico", label: "Tamaño único" },
+  ],
+
+  AromaticasHuerta: [
+    { value: "Plantin", label: "Plantín" },
+    { value: "M8", label: "Maceta M8" },
+    { value: "N10", label: "Maceta N°10" },
+    { value: "N12", label: "Maceta N°12" },
+    { value: "N14", label: "Maceta N°14" },
+    { value: "Atado", label: "Atado" },
+    { value: "Unico", label: "Tamaño único" },
+  ],
+
   Interior: [
     { value: "N9", label: "Maceta N°9" },
     { value: "N12", label: "Maceta N°12" },
     { value: "N14", label: "Maceta N°14" },
+    { value: "N18", label: "Maceta N°18" },
     { value: "N20", label: "Maceta N°20" },
-    { value: "Unico", label: "Tamaño Único" },
+    { value: "Colgante", label: "Colgante" },
+    { value: "Unico", label: "Tamaño único" },
   ],
-  Exterior: [
-    { value: "N12", label: "Maceta N°12" },
-    { value: "N14", label: "Maceta N°14" },
-    { value: "3L", label: "Envase 3 Litros" },
-    { value: "10L", label: "Envase 10 Litros" },
-    { value: "Unico", label: "Tamaño Único" },
-  ],
+
   Suculentas: [
     { value: "N5", label: "Maceta N°5" },
+    { value: "N7", label: "Maceta N°7" },
     { value: "N9", label: "Maceta N°9" },
-    { value: "Bowl", label: "Bowl/Terrario" },
-    { value: "Unico", label: "Tamaño Único" },
-  ],
-  Aromáticas: [
     { value: "N12", label: "Maceta N°12" },
-    { value: "N14", label: "Maceta N°14" },
-    { value: "Plantin", label: "Plantín" },
+    { value: "Bowl", label: "Bowl / Terrario" },
+    { value: "Unico", label: "Tamaño único" },
   ],
-  Macetas: [
+
+  MacetasDecoracion: [
     { value: "Chica", label: "Pequeña" },
     { value: "Mediana", label: "Mediana" },
     { value: "Grande", label: "Grande" },
-    { value: "Unico", label: "Tamaño Único" },
+    { value: "ExtraGrande", label: "Extra grande" },
+    { value: "Unico", label: "Tamaño único" },
   ],
-  Sustratos: [
-    { value: "1L", label: "1 Litro" },
-    { value: "5L", label: "5 Litros" },
-    { value: "10L", label: "10 Litros" },
-    { value: "20L", label: "20 Litros" },
-    { value: "50L", label: "50 Litros" },
-    { value: "1Kg", label: "1 Kilo" },
+
+  SustratosInsumos: [
+    { value: "1L", label: "1 litro" },
+    { value: "5L", label: "5 litros" },
+    { value: "10L", label: "10 litros" },
+    { value: "20L", label: "20 litros" },
+    { value: "50L", label: "50 litros" },
+    { value: "1Kg", label: "1 kilo" },
+    { value: "5Kg", label: "5 kilos" },
+    { value: "10Kg", label: "10 kilos" },
+    { value: "25Kg", label: "25 kilos" },
+    { value: "Unidad", label: "Unidad" },
   ],
 };
 
-// Generamos un array plano con TODAS las variantes para las validaciones del servidor
 export const TODAS_LAS_VARIANTES = Array.from(
   new Set(
     Object.values(VARIANTE_OPTIONS)
@@ -62,13 +91,4 @@ export const TODAS_LAS_VARIANTES = Array.from(
   ),
 );
 
-// 3. Nivel de Cuidados
-// export const CUIDADOS_OPTIONS: SelectOption[] = [
-//   { value: "todos", label: "Cualquier cuidado" },
-//   { value: "facil", label: "Fácil cuidado (Ideal principiantes)" },
-//   { value: "poca_luz", label: "Tolera poca luz" },
-//   { value: "sol_directo", label: "Sol directo pleno" },
-//   { value: "pet_friendly", label: "Pet Friendly (No tóxica)" },
-// ];
-
-export const getCategoriaPrincipal = () => "Interior";
+export const getCategoriaPrincipal = () => "FloresEstacion";

@@ -22,7 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/shared/ui/select";
-import { Plus, ImagePlus, Loader2 } from "lucide-react";
+import { Plus, ImagePlus, Loader2, PackagePlus } from "lucide-react";
 import { ScrollArea } from "@/shared/ui/scroll-area";
 import {
   TIPO_OPTIONS,
@@ -105,8 +105,11 @@ export function CrearProductoModal() {
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-        <Button className="w-12 h-12 rounded-xl sm:w-auto sm:h-10 sm:px-4 sm:rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 hover:text-white cursor-pointer transition-transform active:scale-95">
-          <Plus className="h-6 w-6 sm:h-4 sm:w-4 sm:mr-2" strokeWidth={2.5} />
+        <Button variant="outline">
+          <PackagePlus
+            className="h-6 w-6 sm:h-4 sm:w-4 sm:mr-2"
+            strokeWidth={1.5}
+          />
           <span className="hidden sm:inline">Nuevo Producto</span>
         </Button>
       </DialogTrigger>

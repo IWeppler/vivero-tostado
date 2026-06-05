@@ -81,13 +81,12 @@ export function StockView({ productos, userRole }: Readonly<StockViewProps>) {
   return (
     <div className="space-y-4">
       {/* 1. BARRA SUPERIOR: Buscador y Acciones */}
-      <div className="flex flex-row gap-4 justify-between items-start xl:items-center bg-sidebar p-4 rounded-xl border border-border">
-        {/* Buscador Integrado */}
-        <div className="relative flex-1 min-w-4/5 md:min-w-1/2 md:max-w-md">
+      <div className="flex flex-row gap-2 sm:gap-4 justify-between items-center bg-sidebar p-2 sm:p-4 rounded-xl border border-border">
+        <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Buscar planta, maceta, sustrato..."
-            className="pl-9 h-10 text-sm rounded-lg border-border/60 bg-muted focus-visible:bg-background shadow-none transition-colors"
+            className="pl-9 h-10 text-sm rounded-lg border-border/60 bg-muted focus-visible:bg-background shadow-none transition-colors w-full"
             value={searchQuery}
             onChange={(e) => {
               setSearchQuery(e.target.value);
@@ -96,15 +95,15 @@ export function StockView({ productos, userRole }: Readonly<StockViewProps>) {
           />
         </div>
 
-        {/* Controles y Botonera Admin */}
-        <div className="flex flex-wrap items-center gap-2 w-full xl:w-auto">
-          {/* Toggle View */}
+        {/* Controles y Botonera Admin (No se encoge nunca en mobile) */}
+        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+          {/* Toggle View (Oculto en celular para ahorrar valioso espacio) */}
           <div className="hidden sm:flex items-center bg-muted border border-border/80 p-0.5 rounded-lg shrink-0">
             <Button
               variant="ghost"
               size="sm"
               onClick={() => setView("table")}
-              className={`h-8 px-2.5 rounded-md ${view === "table" ? "bg-background font-bold" : "text-muted-foreground hover:text-foreground"}`}
+              className={`h-8 px-2.5 rounded-md ${view === "table" ? "bg-background font-bold shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
               title="Vista de lista"
             >
               <List className="h-4 w-4" />
@@ -113,23 +112,23 @@ export function StockView({ productos, userRole }: Readonly<StockViewProps>) {
               variant="ghost"
               size="sm"
               onClick={() => setView("grid")}
-              className={`h-8 px-2.5 rounded-md ${view === "grid" ? "bg-background font-bold" : "text-muted-foreground hover:text-foreground"}`}
+              className={`h-8 px-2.5 rounded-md ${view === "grid" ? "bg-background font-bold shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
               title="Vista de grilla (agrupada)"
             >
               <LayoutGrid className="h-4 w-4" />
             </Button>
           </div>
 
-          {/* Botones Admin Compactos */}
+          {/* Botonera de Acciones Admin */}
           {isAdmin && (
-            <div className="flex flex-1 sm:flex-none justify-end gap-2 sm:ml-2 sm:pl-4 sm:border-l sm:border-border">
-              {/* Opciones Secundarias en Dropdown */}
+            <div className="flex items-center gap-1.5 sm:gap-2 sm:ml-2 sm:pl-4 sm:border-l sm:border-border shrink-0">
+              {/* Opciones Secundarias en Dropdown (Icono en Mobile, Texto en Desktop) */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
                     variant="outline"
                     size="sm"
-                    className="h-10 bg-background border-border/60 hover:bg-muted text-foreground px-3 cursor-pointer"
+                    className="h-10 w-10 sm:w-auto bg-background border-border/60 hover:bg-muted text-foreground p-0 sm:px-3 cursor-pointer shrink-0"
                   >
                     <MoreHorizontal className="h-4 w-4 sm:mr-2 text-muted-foreground" />
                     <span className="hidden sm:inline font-semibold">
@@ -147,7 +146,7 @@ export function StockView({ productos, userRole }: Readonly<StockViewProps>) {
                     <ImportarPedidoModal />
                     <DropdownMenuSeparator className="my-1 bg-border/60" />
                     <Link href="/stock/bajas" className="w-full block">
-                      <button className="w-full flex items-center justify-start h-9 px-2 text-sm font-medium cursor-pointer">
+                      <button className="w-full flex items-center justify-start h-9 px-2 text-sm font-medium cursor-pointer text-amber-700 hover:bg-amber-50 rounded-md hover:text-amber-800 transition-colors">
                         <ClipboardList className="w-4 h-4 mr-2 text-amber-600 shrink-0" />
                         Bajas de Inventario
                       </button>
@@ -156,8 +155,9 @@ export function StockView({ productos, userRole }: Readonly<StockViewProps>) {
                 </DropdownMenuContent>
               </DropdownMenu>
 
-              {/* Acción Principal */}
-              <CrearProductoModal />
+              <div className="[&_button]:h-10 [&_button]:w-10 sm:[&_button]:w-auto [&_button]:p-0 sm:[&_button]:px-4 [&_button_span]:hidden sm:[&_button_span]:inline [&_button_svg]:mr-0 sm:[&_button_svg]:mr-2 [&_button]:shrink-0">
+                <CrearProductoModal />
+              </div>
             </div>
           )}
         </div>

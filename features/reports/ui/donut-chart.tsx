@@ -98,14 +98,14 @@ export function DonutChart({
           {/* Texto Central (El KPI gigante de Rentabilidad) */}
           <text
             textAnchor="middle"
-            dy="-5"
-            className="fill-foreground font-black text-4xl"
+            dy="0"
+            className="fill-foreground font-bold text-4xl"
           >
             {Math.abs(margen).toFixed(0)}%
           </text>
           <text
             textAnchor="middle"
-            dy="20"
+            dy="25"
             className={`text-xs font-bold tracking-widest ${isEnPerdida ? "fill-rose-500" : "fill-emerald-600"}`}
           >
             {isEnPerdida ? "EN PÉRDIDA" : "DE MARGEN NETO"}
@@ -114,16 +114,16 @@ export function DonutChart({
       </svg>
 
       {/* Leyenda Inferior */}
-      <div className="absolute bottom-0 w-full flex justify-center gap-4 flex-wrap px-2">
+      <div className="w-full flex flex-col flex-wrap justify-center gap-x-4 gap-y-2 px-4 mt-2 border-t border-border/40 pt-4">
         {data
           .filter((d) => d.value > 0)
           .map((item) => (
             <div key={item.label} className="flex items-center gap-1.5">
               <div
-                className="w-3 h-3 rounded-full"
+                className="w-2.5 h-2.5 rounded-full shrink-0"
                 style={{ backgroundColor: item.color }}
               />
-              <span className="text-xs text-muted-foreground font-medium">
+              <span className="text-[11px] text-muted-foreground font-semibold uppercase tracking-wider">
                 {item.label} ({((item.value / totalIngresos) * 100).toFixed(0)}
                 %)
               </span>
@@ -134,13 +134,13 @@ export function DonutChart({
       {/* Tooltip Hover */}
       {hoveredData && (
         <div
-          className="absolute pointer-events-none z-10 bg-white border border-border shadow-xl rounded-xl p-3 transform -translate-x-1/2 -translate-y-[120%]"
+          className="absolute pointer-events-none z-10 bg-card border border-border shadow-xl rounded-xl p-3 transform -translate-x-1/2 -translate-y-[120%]"
           style={{ left: hoveredData.x, top: hoveredData.y }}
         >
-          <div className="text-xs text-muted-foreground font-semibold mb-1">
+          <div className="text-xs text-muted-foreground font-medium mb-1">
             {hoveredData.label}
           </div>
-          <div className="text-sm font-bold text-foreground">
+          <div className="text-sm font-semibold text-foreground">
             ${hoveredData.value.toLocaleString("es-AR")}
           </div>
         </div>

@@ -245,7 +245,7 @@ export function CreateSaleModal({ productos = [] }: Readonly<Props>) {
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-        <Button variant="outline" className="w-full h-10 sm:w-auto">
+        <Button className="w-full h-10 sm:w-auto bg-primary text-white">
           <Plus className="mr-2 h-4 w-4" /> Registrar Venta
         </Button>
       </DialogTrigger>
@@ -459,7 +459,7 @@ export function CreateSaleModal({ productos = [] }: Readonly<Props>) {
             />
             <Button
               type="submit"
-              className="w-full h-10 bg-green-600 hover:bg-green-700 text-white cursor-pointer"
+              className="w-full h-10 cursor-pointer"
               disabled={isPending || !hasItems}
             >
               {isPending ? (

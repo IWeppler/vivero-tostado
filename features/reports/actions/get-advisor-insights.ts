@@ -36,7 +36,12 @@ export interface AdvisorMetrics {
     ganancia: number;
   }[];
   ventasPorDia: { label: string; value: number }[];
-  ventasPorCategoria: { label: string; value: number }[];
+  ventasPorCategoria: {
+    label: string;
+    ingresos: number;
+    unidades: number;
+    tickets: number;
+  }[];
 }
 
 export function getAdvisorInsights(metrics: AdvisorMetrics): Insight[] {

@@ -39,6 +39,7 @@ import {
   CampoObjetivo,
   TipoRedondeo,
 } from "../actions/update-prices";
+import { formatearMoneda } from "@/shared/utils/formatters";
 
 export function UpdatePricesModal() {
   const [isOpen, setIsOpen] = useState(false);
@@ -125,13 +126,6 @@ export function UpdatePricesModal() {
       handleOpenChange(false);
     }
   };
-
-  const formatearMoneda = (m: number) =>
-    new Intl.NumberFormat("es-AR", {
-      style: "currency",
-      currency: "ARS",
-      maximumFractionDigits: 0,
-    }).format(m);
 
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>

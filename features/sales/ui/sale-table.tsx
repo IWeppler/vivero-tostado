@@ -9,6 +9,8 @@ import {
   getSupabaseRelation,
 } from "@/entities/ventas/types";
 import { Producto } from "@/entities/productos/types";
+import { ConfiguracionPOS } from "@/entities/config/types";
+import { createClient } from "@/shared/config/supabase/client";
 import {
   Table,
   TableBody,
@@ -18,7 +20,7 @@ import {
   TableRow,
 } from "@/shared/ui/table";
 import { Badge } from "@/shared/ui/badge";
-import { Download, Eye, Receipt, ShoppingBag, Search } from "lucide-react";
+import { Download, Eye, Receipt, Search } from "lucide-react";
 import { AnularVentaModal } from "./cancel-sale-modal";
 import { RegistrarVentaModal } from "./create-sale-modal";
 import { Button } from "@/shared/ui/button";
@@ -31,8 +33,7 @@ import {
   SelectValue,
 } from "@/shared/ui/select";
 import { TicketSheet } from "./ticket-sheet";
-import { ConfiguracionPOS } from "@/entities/config/types";
-import { createClient } from "@/shared/config/supabase/client";
+import { formatearFechaHora, formatearMoneda } from "@/shared/utils/formatters";
 
 interface VentasTableProps {
   ventas: Venta[];
@@ -40,22 +41,17 @@ interface VentasTableProps {
   userRole: string;
 }
 
-const formatearFecha = (fechaString: string) => {
-  return new Intl.DateTimeFormat("es-AR", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(new Date(fechaString));
-};
-
-const formatearMoneda = (monto: number) => {
-  return new Intl.NumberFormat("es-AR", {
-    style: "currency",
-    currency: "ARS",
-    maximumFractionDigits: 0,
-  }).format(monto);
+const getMetodoPagoColor = (metodo: string) => {
+  switch (metodo.toUpperCase()) {
+    case "EFECTIVO":
+      return "bg-emerald-50 dark:bg-emerald-500/30 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/50";
+    case "TRANSFERENCIA":
+      return "bg-blue-50 dark:bg-blue-500/30 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-500/50";
+    case "TARJETA":
+      return "bg-purple-50 dark:bg-purple-500/30 text-purple-700 dark:text-purple-400 border-purple-200 dark:border-purple-500/50";
+    default:
+      return "bg-muted/50 text-muted-foreground border-border/60";
+  }
 };
 
 export function VentasTable({
@@ -65,12 +61,13 @@ export function VentasTable({
 }: Readonly<VentasTableProps>) {
   const [filtroNombre, setFiltroNombre] = useState("");
   const [orden, setOrden] = useState("recientes");
-  const [branding, setBranding] = useState<ConfiguracionPOS | null>(null);
 
   const [ticketAbierto, setTicketAbierto] = useState<TicketData | null>(null);
+  const [branding, setBranding] = useState<ConfiguracionPOS | null>(null);
 
   const isAdmin = userRole === "ADMIN";
 
+  // Obtenemos la configuración de branding para los tickets
   useEffect(() => {
     const fetchConfig = async () => {
       const supabase = createClient();
@@ -157,7 +154,6 @@ export function VentasTable({
   }, [ventas, filtroNombre, orden]);
 
   const abrirTicket = (venta: Venta) => {
-    // Obtenemos el descuento de la cabecera si existe
     const descuento =
       venta.ventas_descuentos && venta.ventas_descuentos.length > 0
         ? venta.ventas_descuentos[0]
@@ -176,7 +172,7 @@ export function VentasTable({
       total: venta.total,
       metodoPago: venta.metodo_pago || "EFECTIVO",
       nroRecibo: venta.id.split("-")[0].toUpperCase(),
-      fecha: formatearFecha(venta.fecha_venta),
+      fecha: formatearFechaHora(venta.fecha_venta),
       vendedor: getSupabaseRelation(venta.perfiles)?.nombre || "Administrador",
       descuentoMonto: descuento
         ? Number(descuento.monto_descontado)
@@ -194,13 +190,13 @@ export function VentasTable({
       />
 
       {/* HEADER: Buscador, Ordenamiento y Acciones */}
-      <div className="flex flex-col lg:flex-row gap-4 justify-between items-start lg:items-center bg-card p-4 sm:p-5 rounded-2xl border border-border">
+      <div className="flex flex-col lg:flex-row gap-4 justify-between items-start lg:items-center bg-sidebar p-4 sm:p-5 rounded-2xl border border-border">
         {/* Buscador Integrado */}
-        <div className="relative flex-1 w-full lg:max-w-md">
+        <div className="relative flex-1 w-full lg:max-w-lg">
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
           <Input
-            placeholder="Buscar por producto o #recibo..."
-            className="pl-11 h-12 text-base rounded-xl border-border/60 bg-[#f5f4f4] shadow-none transition-colors"
+            placeholder="Buscar por nro. de recibo..."
+            className="pl-11 h-11 text-base rounded-xl border-border/60 bg-card shadow-none transition-colors"
             value={filtroNombre}
             onChange={(e) => setFiltroNombre(e.target.value)}
           />
@@ -210,7 +206,7 @@ export function VentasTable({
         <div className="flex flex-wrap sm:flex-nowrap items-center gap-3 w-full lg:w-auto">
           {/* Selector de Orden */}
           <Select value={orden} onValueChange={setOrden}>
-            <SelectTrigger className="h-12 w-full sm:w-[200px] rounded-xl border-border/60 bg-background shadow-none font-medium">
+            <SelectTrigger className="h-12 w-full sm:w-[200px] rounded-xl border-border/60 bg-card shadow-none font-medium">
               <SelectValue placeholder="Ordenar por..." />
             </SelectTrigger>
             <SelectContent className="rounded-xl">
@@ -227,7 +223,7 @@ export function VentasTable({
             {isAdmin && (
               <Button
                 variant="outline"
-                className="hidden sm:flex h-12 px-4 bg-background border-border/60 hover:bg-muted rounded-xl shadow-none font-semibold"
+                className="hidden sm:flex h-12 px-4 bg-card border-border/60 hover:bg-muted rounded-xl shadow-none font-semibold"
               >
                 <Download className="mr-2 h-4 w-4" /> CSV
               </Button>
@@ -248,168 +244,298 @@ export function VentasTable({
           </p>
         </div>
       ) : (
-        <div className="rounded-2xl border border-border bg-card overflow-hidden">
-          <div className="overflow-x-auto">
-            <Table className="w-full min-w-150">
-              <TableHeader>
-                <TableRow className="bg-muted/30 border-b border-border/60 hover:bg-muted/30">
-                  <TableHead className="w-28 pl-4 sm:pl-6">Recibo</TableHead>
-                  <TableHead>Resumen de Venta</TableHead>
-                  <TableHead className="hidden sm:table-cell">Fecha</TableHead>
-                  <TableHead className="hidden md:table-cell">
-                    Vendedor
-                  </TableHead>
-                  <TableHead className="hidden sm:table-cell">Pago</TableHead>
-                  <TableHead className="text-right font-bold">Total</TableHead>
-                  <TableHead className="text-right w-32 pr-4 sm:pr-6">
-                    Acciones
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {ventasFiltradasYOrdenadas.length > 0 ? (
-                  ventasFiltradasYOrdenadas.map((venta) => {
-                    const items = venta.ventas_items || [];
-                    const primerItem = items[0];
-
-                    if (!primerItem) return null;
-
-                    const producto = getSupabaseRelation(primerItem.producto);
-                    const isEliminado = !producto;
-                    const nombrePrincipal = isEliminado
-                      ? "Producto eliminado"
-                      : producto.nombre;
-                    const itemsExtra = items.length - 1;
-
-                    const gananciaNeta =
-                      venta.total - (venta.precio_costo || 0);
-                    const nombreVendedor =
-                      getSupabaseRelation(venta.perfiles)?.nombre ||
-                      "Administrador";
-                    const metodoPago = venta.metodo_pago || "EFECTIVO";
-
-                    return (
-                      <TableRow
-                        key={venta.id}
-                        className="hover:bg-muted/20 cursor-pointer transition-colors border-b border-border/40"
-                        onClick={() => abrirTicket(venta)}
-                      >
-                        <TableCell className="font-bold text-muted-foreground text-xs pl-4 sm:pl-6">
-                          #{venta.id.split("-")[0].toUpperCase()}
-                        </TableCell>
-
-                        <TableCell className="font-semibold text-foreground py-4">
-                          <div className="flex items-center gap-3">
-                            <div className="p-2 rounded-lg bg-primary/5 text-primary hidden sm:block">
-                              <ShoppingBag className="w-4 h-4 shrink-0" />
-                            </div>
-                            <span className="truncate max-w-50 sm:max-w-xs">
-                              {nombrePrincipal}
-                              {itemsExtra > 0 ? (
-                                <span className="text-muted-foreground font-normal ml-1">
-                                  y {itemsExtra} artículo
-                                  {itemsExtra > 1 ? "s" : ""} más
-                                </span>
-                              ) : (
-                                <span className="text-muted-foreground font-normal ml-1">
-                                  · Talle {primerItem.variante} · x
-                                  {primerItem.cantidad}
-                                </span>
-                              )}
-                            </span>
-                          </div>
-                        </TableCell>
-
-                        {/* ¡Agregamos suppressHydrationWarning aquí! */}
-                        <TableCell
-                          className="text-sm text-muted-foreground hidden sm:table-cell"
-                          suppressHydrationWarning
-                        >
-                          {formatearFecha(venta.fecha_venta)}
-                        </TableCell>
-
-                        <TableCell className="text-sm font-medium text-muted-foreground hidden md:table-cell">
-                          {nombreVendedor}
-                        </TableCell>
-
-                        <TableCell className="hidden sm:table-cell">
-                          <Badge
-                            variant="secondary"
-                            className="text-[10px] uppercase font-bold tracking-widest bg-muted/50 shadow-none border-border/60"
-                          >
-                            {metodoPago}
-                          </Badge>
-                        </TableCell>
-
-                        <TableCell className="text-right">
-                          <div className="font-semibold text-foreground text-base">
-                            {formatearMoneda(venta.total)}
-                          </div>
-                          {isAdmin && (
-                            <div
-                              className="text-xs font-bold text-emerald-600 mt-0.5"
-                              title="Ganancia neta del ticket"
-                            >
-                              +{formatearMoneda(gananciaNeta)}
-                            </div>
-                          )}
-                        </TableCell>
-
-                        <TableCell
-                          className="text-right pr-4 sm:pr-6"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <div className="flex items-center justify-end gap-1">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="text-muted-foreground font-medium h-9 w-9 p-0 hover:bg-muted hover:text-foreground rounded-md transition-colors shadow-none"
-                              onClick={() => abrirTicket(venta)}
-                              title="Ver recibo detallado"
-                            >
-                              <Eye className="w-4.5 h-4.5" />
-                            </Button>
-
-                            {isAdmin && (
-                              <AnularVentaModal
-                                id={venta.id}
-                                productoNombre={
-                                  itemsExtra > 0
-                                    ? "Ticket Completo"
-                                    : nombrePrincipal || "Varios artículos"
-                                }
-                                cantidad={
-                                  itemsExtra > 0
-                                    ? venta.cantidad
-                                    : primerItem.cantidad
-                                }
-                                variante={
-                                  itemsExtra > 0
-                                    ? "Varios artículos"
-                                    : primerItem.variante
-                                }
-                                isProductoEliminado={isEliminado}
-                              />
-                            )}
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })
-                ) : (
-                  <TableRow>
-                    <TableCell
-                      colSpan={7}
-                      className="h-32 text-center text-muted-foreground bg-card"
-                    >
-                      No se encontraron tickets que coincidan con la búsqueda.
-                    </TableCell>
+        <>
+          {/* VISTA DESKTOP (Tabla tradicional, oculta en móviles) */}
+          <div className="hidden md:block rounded-2xl border border-border bg-card overflow-hidden">
+            <div className="overflow-x-auto">
+              <Table className="w-full min-w-150">
+                <TableHeader>
+                  <TableRow className="bg-muted/30 border-b border-border/60 hover:bg-muted/30">
+                    <TableHead className="w-28 pl-4 sm:pl-6">Recibo</TableHead>
+                    <TableHead>Resumen de Venta</TableHead>
+                    <TableHead className="hidden sm:table-cell">
+                      Fecha
+                    </TableHead>
+                    <TableHead className="hidden md:table-cell">
+                      Vendedor
+                    </TableHead>
+                    <TableHead className="hidden sm:table-cell">Pago</TableHead>
+                    <TableHead className="text-right font-bold">
+                      Total
+                    </TableHead>
+                    <TableHead className="text-right w-32 pr-4 sm:pr-6">
+                      Acciones
+                    </TableHead>
                   </TableRow>
-                )}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {ventasFiltradasYOrdenadas.length > 0 ? (
+                    ventasFiltradasYOrdenadas.map((venta) => {
+                      const items = venta.ventas_items || [];
+                      const primerItem = items[0];
+
+                      if (!primerItem) return null;
+
+                      const producto = getSupabaseRelation(primerItem.producto);
+                      const isEliminado = !producto;
+                      const nombrePrincipal = isEliminado
+                        ? "Producto eliminado"
+                        : producto.nombre;
+                      const itemsExtra = items.length - 1;
+
+                      const gananciaNeta =
+                        venta.total - (venta.precio_costo || 0);
+                      const nombreVendedor =
+                        getSupabaseRelation(venta.perfiles)?.nombre ||
+                        "Administrador";
+                      const metodoPago = venta.metodo_pago || "EFECTIVO";
+
+                      return (
+                        <TableRow
+                          key={venta.id}
+                          className="hover:bg-muted/20 cursor-pointer transition-colors border-b border-border/40"
+                          onClick={() => abrirTicket(venta)}
+                        >
+                          <TableCell className="font-bold text-muted-foreground text-xs pl-4 sm:pl-6">
+                            #{venta.id.split("-")[0].toUpperCase()}
+                          </TableCell>
+
+                          <TableCell className="font-semibold text-foreground py-4">
+                            <div className="flex items-center">
+                              <span className="truncate max-w-[200px] sm:max-w-xs">
+                                {nombrePrincipal}
+                                {itemsExtra > 0 ? (
+                                  <span className="text-muted-foreground font-normal ml-1">
+                                    y {itemsExtra} artículo
+                                    {itemsExtra > 1 ? "s" : ""} más
+                                  </span>
+                                ) : (
+                                  <span className="text-muted-foreground font-normal ml-1">
+                                    · Talle {primerItem.variante} · x
+                                    {primerItem.cantidad}
+                                  </span>
+                                )}
+                              </span>
+                            </div>
+                          </TableCell>
+
+                          {/* ¡Agregamos suppressHydrationWarning aquí! */}
+                          <TableCell
+                            className="text-sm text-muted-foreground hidden sm:table-cell"
+                            suppressHydrationWarning
+                          >
+                            {formatearFechaHora(venta.fecha_venta)}
+                          </TableCell>
+
+                          <TableCell className="text-sm font-medium text-muted-foreground hidden md:table-cell">
+                            {nombreVendedor}
+                          </TableCell>
+
+                          <TableCell className="hidden sm:table-cell">
+                            <Badge
+                              variant="outline"
+                              className={`text-[10px] uppercase font-bold tracking-widest shadow-none ${getMetodoPagoColor(metodoPago)}`}
+                            >
+                              {metodoPago}
+                            </Badge>
+                          </TableCell>
+
+                          <TableCell className="text-right">
+                            <div className="font-semibold text-foreground text-base">
+                              {formatearMoneda(venta.total)}
+                            </div>
+                            {isAdmin && (
+                              <div
+                                className="text-[10px] font-bold text-emerald-600 mt-0.5"
+                                title="Ganancia neta del ticket"
+                              >
+                                +{formatearMoneda(gananciaNeta)}
+                              </div>
+                            )}
+                          </TableCell>
+
+                          <TableCell
+                            className="text-right pr-4 sm:pr-6"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <div className="flex items-center justify-end gap-1">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="text-muted-foreground font-medium h-9 w-9 p-0 hover:bg-muted hover:text-foreground rounded-md transition-colors shadow-none"
+                                onClick={() => abrirTicket(venta)}
+                                title="Ver recibo detallado"
+                              >
+                                <Eye className="w-4.5 h-4.5" />
+                              </Button>
+
+                              {isAdmin && (
+                                <AnularVentaModal
+                                  id={venta.id}
+                                  productoNombre={
+                                    itemsExtra > 0
+                                      ? "Ticket Completo"
+                                      : nombrePrincipal || "Varios artículos"
+                                  }
+                                  cantidad={
+                                    itemsExtra > 0
+                                      ? venta.cantidad
+                                      : primerItem.cantidad
+                                  }
+                                  variante={
+                                    itemsExtra > 0
+                                      ? "Varios artículos"
+                                      : primerItem.variante
+                                  }
+                                  isProductoEliminado={isEliminado}
+                                />
+                              )}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })
+                  ) : (
+                    <TableRow>
+                      <TableCell
+                        colSpan={7}
+                        className="h-32 text-center text-muted-foreground bg-card"
+                      >
+                        No se encontraron tickets que coincidan con la búsqueda.
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
           </div>
-        </div>
+
+          {/* VISTA MOBILE (Tarjetas apiladas, ocultas en desktop) */}
+          <div className="md:hidden flex flex-col gap-3">
+            {ventasFiltradasYOrdenadas.length > 0 ? (
+              ventasFiltradasYOrdenadas.map((venta) => {
+                const items = venta.ventas_items || [];
+                const primerItem = items[0];
+
+                if (!primerItem) return null;
+
+                const producto = getSupabaseRelation(primerItem.producto);
+                const isEliminado = !producto;
+                const nombrePrincipal = isEliminado
+                  ? "Producto eliminado"
+                  : producto.nombre;
+                const itemsExtra = items.length - 1;
+
+                const gananciaNeta = venta.total - (venta.precio_costo || 0);
+                const nombreVendedor =
+                  getSupabaseRelation(venta.perfiles)?.nombre ||
+                  "Administrador";
+                const metodoPago = venta.metodo_pago || "EFECTIVO";
+
+                return (
+                  <div
+                    key={venta.id}
+                    onClick={() => abrirTicket(venta)}
+                    className="bg-card border border-border rounded-xl p-4 active:scale-[0.98] transition-transform cursor-pointer"
+                  >
+                    <div className="flex justify-between items-start mb-3">
+                      <div className="flex flex-col pr-3">
+                        <span className="font-bold text-muted-foreground text-xs uppercase tracking-widest">
+                          #{venta.id.split("-")[0].toUpperCase()}
+                        </span>
+                        <span className="font-bold text-foreground text-sm mt-1 leading-tight line-clamp-2">
+                          {nombrePrincipal}
+                        </span>
+                        {itemsExtra > 0 ? (
+                          <span className="text-muted-foreground text-xs mt-0.5">
+                            y {itemsExtra} artículo{itemsExtra > 1 ? "s" : ""}{" "}
+                            más
+                          </span>
+                        ) : (
+                          <span className="text-muted-foreground text-xs mt-0.5">
+                            Talle {primerItem.variante} · x{primerItem.cantidad}
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-right shrink-0">
+                        <div className="font-semibold text-foreground text-lg">
+                          {formatearMoneda(venta.total)}
+                        </div>
+                        {isAdmin && (
+                          <div className="text-[10px] font-bold text-emerald-600 mt-0.5 text-right">
+                            +{formatearMoneda(gananciaNeta)}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between mb-3">
+                      <Badge
+                        variant="outline"
+                        className={`text-[10px] uppercase font-bold tracking-widest shadow-none ${getMetodoPagoColor(metodoPago)}`}
+                      >
+                        {metodoPago}
+                      </Badge>
+                      <span
+                        className="text-xs text-muted-foreground font-medium"
+                        suppressHydrationWarning
+                      >
+                        {formatearFechaHora(venta.fecha_venta)}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-between pt-3 border-t border-border/50">
+                      <span className="text-xs font-medium text-muted-foreground truncate pr-2">
+                        Vend: {nombreVendedor}
+                      </span>
+                      <div
+                        className="flex items-center gap-2"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          className="h-8 w-8 rounded-lg shadow-none hover:bg-muted"
+                          onClick={() => abrirTicket(venta)}
+                          title="Ver recibo detallado"
+                        >
+                          <Eye className="w-4 h-4 text-muted-foreground" />
+                        </Button>
+                        {isAdmin && (
+                          <div className="[&>button]:h-8 [&>button]:w-8 [&>button]:rounded-lg [&>button]:border [&>button]:border-transparent [&>button:hover]:border-rose-200">
+                            <AnularVentaModal
+                              id={venta.id}
+                              productoNombre={
+                                itemsExtra > 0
+                                  ? "Ticket Completo"
+                                  : nombrePrincipal || "Varios artículos"
+                              }
+                              cantidad={
+                                itemsExtra > 0
+                                  ? venta.cantidad
+                                  : primerItem.cantidad
+                              }
+                              variante={
+                                itemsExtra > 0
+                                  ? "Varios artículos"
+                                  : primerItem.variante
+                              }
+                              isProductoEliminado={isEliminado}
+                            />
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })
+            ) : (
+              <div className="py-12 text-center text-muted-foreground bg-card rounded-xl border border-border">
+                No se encontraron tickets que coincidan con la búsqueda.
+              </div>
+            )}
+          </div>
+        </>
       )}
     </div>
   );

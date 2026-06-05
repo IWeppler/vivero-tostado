@@ -36,24 +36,7 @@ import {
   Movimiento,
 } from "@/entities/caja/types";
 import { CajaHistoryTable } from "./caja-history-table";
-
-const formatearMoneda = (monto: number) => {
-  return new Intl.NumberFormat("es-AR", {
-    style: "currency",
-    currency: "ARS",
-    maximumFractionDigits: 0,
-  }).format(monto);
-};
-
-const formatearFechaHora = (fechaString: string | null) => {
-  if (!fechaString) return "-";
-  return new Intl.DateTimeFormat("es-AR", {
-    day: "2-digit",
-    month: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(new Date(fechaString));
-};
+import { formatearMoneda } from "@/shared/utils/formatters";
 
 export interface CajaDashboardProps {
   turno: TurnoCajaHistorial | null;

@@ -11,12 +11,12 @@ interface BarChartProps {
 
 export function BarChart({
   data,
-  color = "#3b82f6",
+  color = "#035dfd",
   valuePrefix = "$",
 }: Readonly<BarChartProps>) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(0);
-  const rowHeight = 45; // Altura fija por cada fila
+  const rowHeight = 45;
   const margin = { top: 10, right: 60, bottom: 10, left: 100 };
 
   useEffect(() => {

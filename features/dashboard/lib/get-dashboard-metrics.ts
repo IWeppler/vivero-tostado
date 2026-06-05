@@ -1,77 +1,98 @@
 import { Producto } from "@/entities/productos/types";
 import { EgresoCaja } from "@/entities/caja/types";
+import {
+  Venta,
+  VentaItem,
+  VentaProducto,
+  getSupabaseRelation,
+} from "@/entities/ventas/types";
+import { TIPO_OPTIONS } from "@/entities/productos/constants";
 
 export type PeriodoDashboard =
   | "hoy"
+  | "7dias"
+  | "30dias"
   | "mes"
-  | "trimestre"
-  | "semestre"
+  | "mes_anterior"
   | "anio"
+  | "personalizado"
   | "historico";
 
-// --- TIPOS ESTRICTOS PARA EL DASHBOARD ---
-
-export interface VentaItemDashboard {
-  cantidad: number;
-  precio_unitario: number;
-  precio_costo?: number;
-  variante?: string;
+type VentaItemExtended = VentaItem & {
+  precio_costo?: number | string;
   producto_id?: string;
-  producto?:
-    | { nombre: string; tipo?: string; imagen_url?: string }
-    | { nombre: string; tipo?: string; imagen_url?: string }[]
-    | any;
-}
+};
 
-export interface VentaDashboard {
-  id: string;
-  total: number;
-  precio_costo?: number;
-  cantidad: number;
-  fecha_venta: string;
-  metodo_pago?: string | null;
-  perfiles?: { nombre: string } | { nombre: string }[] | any;
-  ventas_items?: VentaItemDashboard[];
-  [key: string]: any;
-}
+type VentaProductoExtended = VentaProducto & {
+  tipo?: string;
+};
 
 export function getDashboardMetrics(
-  ventas: VentaDashboard[],
+  ventas: Venta[],
   productos: Producto[],
-  egresos: EgresoCaja[] = [],
+  egresos: EgresoCaja[] | any[] = [],
   bajas: any[] = [],
   periodo: PeriodoDashboard = "mes",
+  desde?: string,
+  hasta?: string,
 ) {
   const now = new Date();
   let startDate = new Date(0);
+  let endDate = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate(),
+    23,
+    59,
+    59,
+    999,
+  );
 
   if (periodo === "hoy") {
     startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  } else if (periodo === "7dias") {
+    startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    startDate.setHours(0, 0, 0, 0);
+  } else if (periodo === "30dias") {
+    startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    startDate.setHours(0, 0, 0, 0);
   } else if (periodo === "mes") {
     startDate = new Date(now.getFullYear(), now.getMonth(), 1);
-  } else if (periodo === "trimestre") {
-    startDate = new Date(now.getFullYear(), now.getMonth() - 3, 1);
-  } else if (periodo === "semestre") {
-    startDate = new Date(now.getFullYear(), now.getMonth() - 6, 1);
+  } else if (periodo === "mes_anterior") {
+    startDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    endDate = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999);
   } else if (periodo === "anio") {
-    startDate = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
+    startDate = new Date(now.getFullYear(), 0, 1);
+  } else if (periodo === "personalizado" && desde) {
+    startDate = new Date(desde + "T00:00:00");
+    if (hasta) {
+      endDate = new Date(hasta + "T23:59:59");
+    }
   }
 
-  // 1. Contextos Temporales
   const ventasFiltradas =
     periodo === "historico"
       ? ventas
-      : ventas.filter((v) => new Date(v.fecha_venta) >= startDate);
+      : ventas.filter((v) => {
+          const f = new Date(v.fecha_venta);
+          return f >= startDate && f <= endDate;
+        });
 
   const egresosFiltrados =
     periodo === "historico"
       ? egresos
-      : egresos.filter((e) => new Date(e.fecha) >= startDate);
+      : egresos.filter((e) => {
+          const f = new Date(e.fecha);
+          return f >= startDate && f <= endDate;
+        });
 
   const bajasFiltradas =
     periodo === "historico"
       ? bajas
-      : bajas.filter((m) => new Date(m.creado_en) >= startDate);
+      : bajas.filter((m) => {
+          const f = new Date(m.creado_en);
+          return f >= startDate && f <= endDate;
+        });
 
   // --- CORE KPIs FINANCIEROS ---
   let ingresosBrutos = 0;
@@ -79,9 +100,13 @@ export function getDashboardMetrics(
   let gananciaBrutaVentas = 0;
   let unidadesVendidas = 0;
 
-  const catMap = new Map<string, number>();
+  const catMap = new Map<
+    string,
+    { ingresos: number; unidades: number; tickets: Set<string> }
+  >();
   const rentabilidadCatMap = new Map<string, number>();
   const metodoPagoMap = new Map<string, number>();
+
   const diasSemana = [
     "Domingo",
     "Lunes",
@@ -94,13 +119,38 @@ export function getDashboardMetrics(
   const diaMap = new Map<string, number>();
   diasSemana.forEach((d) => diaMap.set(d, 0));
 
+  const heatmapMap = new Map<
+    string,
+    { ingresos: number; ventas: number; unidades: number }
+  >();
+  const franjasInicio = [8, 10, 12, 14, 16, 18, 20];
+  diasSemana.forEach((dia) => {
+    franjasInicio.forEach((franja) => {
+      heatmapMap.set(`${dia}-${franja}`, {
+        ingresos: 0,
+        ventas: 0,
+        unidades: 0,
+      });
+    });
+  });
+
+  const getFranja2Horas = (hora: number) => {
+    if (hora >= 8 && hora < 10) return 8;
+    if (hora >= 10 && hora < 12) return 10;
+    if (hora >= 12 && hora < 14) return 12;
+    if (hora >= 14 && hora < 16) return 14;
+    if (hora >= 16 && hora < 18) return 16;
+    if (hora >= 18 && hora < 20) return 18;
+    if (hora >= 20 && hora < 22) return 20;
+    return null;
+  };
+
   const productosConVentas = new Set<string>();
   const ventasPorProducto: Record<
     string,
     { nombre: string; ingresos: number; unidades: number; ganancia: number }
   > = {};
 
-  // 2. Escaneamos la Cabecera de la Venta (Tickets)
   ventasFiltradas.forEach((v) => {
     const totalTicket = Number(v.total || 0);
     const costoTicket = Number(v.precio_costo || 0);
@@ -109,50 +159,86 @@ export function getDashboardMetrics(
     costoMercaderiaVendida += costoTicket;
     gananciaBrutaVentas += totalTicket - costoTicket;
 
-    // Métodos de Pago
     const metodo = v.metodo_pago || "EFECTIVO";
     metodoPagoMap.set(metodo, (metodoPagoMap.get(metodo) || 0) + totalTicket);
 
-    // Días de mayor venta
     const date = new Date(v.fecha_venta);
     const diaName = diasSemana[date.getDay()];
     diaMap.set(diaName, (diaMap.get(diaName) || 0) + totalTicket);
 
-    // 3. Escaneamos los items dentro de cada Ticket (v.ventas_items)
-    const items = v.ventas_items || [];
+    const hora = date.getHours();
+    const franja = getFranja2Horas(hora);
 
-    items.forEach((item: VentaItemDashboard) => {
+    if (franja !== null) {
+      const heatKey = `${diaName}-${franja}`;
+      const current = heatmapMap.get(heatKey) || {
+        ingresos: 0,
+        ventas: 0,
+        unidades: 0,
+      };
+      const cantidadTicket = (v.ventas_items || []).reduce(
+        (acc: number, item: any) => acc + Number(item.cantidad || 0),
+        0,
+      );
+
+      heatmapMap.set(heatKey, {
+        ingresos: current.ingresos + totalTicket,
+        ventas: current.ventas + 1,
+        unidades: current.unidades + cantidadTicket,
+      });
+    }
+
+    const items = (v.ventas_items || []) as VentaItemExtended[];
+
+    items.forEach((item) => {
       const cantidadItem = Number(item.cantidad || 0);
       const precioUnitario = Number(item.precio_unitario || 0);
-      const costoUnitario = Number(item.precio_costo || 0);
 
+      const prodDataGuardado = getSupabaseRelation(
+        item.producto,
+      ) as VentaProductoExtended | null;
+      const prodCat = productos.find(
+        (p) =>
+          (item.producto_id && p.id === item.producto_id) ||
+          (prodDataGuardado?.nombre && p.nombre === prodDataGuardado.nombre),
+      );
+
+      const costoUnitario = Number(
+        item.precio_costo ?? prodCat?.precio_costo ?? 0,
+      );
       const itemIngreso = precioUnitario * cantidadItem;
       const itemGanancia = (precioUnitario - costoUnitario) * cantidadItem;
 
       unidadesVendidas += cantidadItem;
 
-      // Supabase a veces anida los joins 1:1 en arrays, esto lo previene extrayendo el primer elemento
-      const prodData = Array.isArray(item.producto)
-        ? item.producto[0]
-        : item.producto;
+      const catOriginal = prodCat?.tipo || "Sin categoría";
+      const catOption = TIPO_OPTIONS.find(
+        (opt) => opt.value.toLowerCase() === catOriginal.toLowerCase(),
+      );
+      const cat = catOption ? catOption.label : catOriginal;
 
-      // Categorías (Ingresos y Rentabilidad)
-      const catOriginal = prodData?.tipo || "Sin categoría";
-      const cat = catOriginal.charAt(0).toUpperCase() + catOriginal.slice(1);
+      if (!catMap.has(cat)) {
+        catMap.set(cat, { ingresos: 0, unidades: 0, tickets: new Set() });
+      }
 
-      catMap.set(cat, (catMap.get(cat) || 0) + itemIngreso);
+      const catData = catMap.get(cat)!;
+      catData.ingresos += itemIngreso;
+      catData.unidades += cantidadItem;
+      catData.tickets.add(v.id);
+
       rentabilidadCatMap.set(
         cat,
         (rentabilidadCatMap.get(cat) || 0) + itemGanancia,
       );
 
-      // Ranking de Productos
-      if (item.producto_id) productosConVentas.add(item.producto_id);
+      const pId = item.producto_id || prodCat?.id || "eliminado";
+      if (pId !== "eliminado") productosConVentas.add(pId);
 
-      const pId = item.producto_id || "eliminado";
       if (!ventasPorProducto[pId]) {
+        const nombreReal =
+          prodCat?.nombre || prodDataGuardado?.nombre || "Producto Eliminado";
         ventasPorProducto[pId] = {
-          nombre: prodData ? `${prodData.nombre}` : "Producto Eliminado",
+          nombre: nombreReal,
           ingresos: 0,
           unidades: 0,
           ganancia: 0,
@@ -193,7 +279,6 @@ export function getDashboardMetrics(
     );
   });
 
-  // Cálculo del Resultado Operativo (Ganancia Neta)
   const resultadoOperativo = gananciaBrutaVentas - totalEgresos;
   const margenPorcentaje =
     ingresosBrutos > 0 ? (resultadoOperativo / ingresosBrutos) * 100 : 0;
@@ -201,18 +286,44 @@ export function getDashboardMetrics(
   // --- OPERATIVO Y STOCK ---
   let stockTotalUnidades = 0;
   let stockValorizadoCosto = 0;
+  let stockValorizadoPotencial = 0; // NUEVO
   let productosCriticos = 0;
   const stockCriticoDetallado: any[] = [];
-  const productosSinMovimiento: Producto[] = [];
+  const productosSinMovimiento: any[] = [];
+
+  // Mapeamos la última fecha de venta de TODO el historial
+  const ultimaVentaMap = new Map<string, Date>();
+  ventas.forEach((v) => {
+    const f = new Date(v.fecha_venta);
+    const items = (v.ventas_items || []) as VentaItemExtended[];
+    items.forEach((item) => {
+      const prodDataGuardado = getSupabaseRelation(
+        item.producto,
+      ) as VentaProductoExtended | null;
+      const prodCat = productos.find(
+        (p) =>
+          (item.producto_id && p.id === item.producto_id) ||
+          (prodDataGuardado?.nombre && p.nombre === prodDataGuardado.nombre),
+      );
+      if (prodCat) {
+        const actual = ultimaVentaMap.get(prodCat.id);
+        if (!actual || f > actual) {
+          ultimaVentaMap.set(prodCat.id, f);
+        }
+      }
+    });
+  });
 
   productos.forEach((pro) => {
     const costo = Number(pro.precio_costo ?? 0);
+    const precio = Number(pro.precio ?? 0); // Extraemos el precio de venta público
     let stockTotalProducto = 0;
 
     pro.stock?.forEach((s) => {
       const cantidadStock = Number(s.cantidad);
       stockTotalUnidades += cantidadStock;
       stockValorizadoCosto += cantidadStock * costo;
+      stockValorizadoPotencial += cantidadStock * precio; // Acumulamos valor potencial
       stockTotalProducto += cantidadStock;
 
       if (cantidadStock > 0 && cantidadStock <= 3) {
@@ -225,12 +336,25 @@ export function getDashboardMetrics(
       }
     });
 
-    if (stockTotalProducto > 0 && !productosConVentas.has(pro.id)) {
-      productosSinMovimiento.push(pro);
+    if (stockTotalProducto > 0) {
+      // Calculamos la antigüedad de estancamiento usando los datos limpios
+      const ultimaVenta = ultimaVentaMap.get(pro.id);
+      const diasSinVender = ultimaVenta
+        ? Math.floor(
+            (now.getTime() - ultimaVenta.getTime()) / (1000 * 3600 * 24),
+          )
+        : 9999;
+
+      productosSinMovimiento.push({
+        ...pro,
+        diasSinVender,
+      });
     }
   });
 
-  // --- RESULTADOS DE INTELIGENCIA DE CATÁLOGO ---
+  const stockGananciaPotencial =
+    stockValorizadoPotencial - stockValorizadoCosto;
+
   const topProductos = Object.values(ventasPorProducto)
     .sort((a, b) => b.unidades - a.unidades)
     .slice(0, 10);
@@ -244,7 +368,6 @@ export function getDashboardMetrics(
     .sort((a, b) => a.ganancia - b.ganancia)
     .slice(0, 5);
 
-  // --- FORMATEO FINAL DE GRÁFICOS ---
   const donutData = [
     {
       label: "Costo Mercadería",
@@ -260,8 +383,13 @@ export function getDashboardMetrics(
   ];
 
   const ventasPorCategoria = Array.from(catMap.entries())
-    .map(([label, value]) => ({ label, value }))
-    .sort((a, b) => b.value - a.value);
+    .map(([label, data]) => ({
+      label,
+      ingresos: data.ingresos,
+      unidades: data.unidades,
+      tickets: data.tickets.size,
+    }))
+    .sort((a, b) => b.ingresos - a.ingresos);
 
   const rentabilidadPorCategoria = Array.from(rentabilidadCatMap.entries())
     .map(([label, value]) => ({ label, value }))
@@ -280,6 +408,27 @@ export function getDashboardMetrics(
     .map(([label, value]) => ({ label, value }))
     .sort((a, b) => b.value - a.value);
 
+  const ventasHeatmap = Array.from(heatmapMap.entries()).map(([key, stats]) => {
+    const [dia, franja] = key.split("-");
+    const horaInicio = parseInt(franja);
+    const horaFin = horaInicio + 2;
+    const ticketPromedio = stats.ventas > 0 ? stats.ingresos / stats.ventas : 0;
+
+    return {
+      dia,
+      horaInicio,
+      horaFin,
+      horaTexto: `${horaInicio.toString().padStart(2, "0")}:00 - ${horaFin.toString().padStart(2, "0")}:00`,
+      ...stats,
+      ticketPromedio,
+    };
+  });
+
+  const topFranjas = [...ventasHeatmap]
+    .sort((a, b) => b.ingresos - a.ingresos)
+    .filter((f) => f.ingresos > 0)
+    .slice(0, 3);
+
   return {
     ingresos: ingresosBrutos,
     ordenes,
@@ -293,6 +442,8 @@ export function getDashboardMetrics(
     margenPorcentaje,
     stockTotalUnidades,
     stockValorizadoCosto,
+    stockValorizadoPotencial,
+    stockGananciaPotencial,
     productosCriticos,
     stockCriticoDetallado,
     productosSinMovimiento,
@@ -305,5 +456,7 @@ export function getDashboardMetrics(
     ventasPorDia,
     ventasPorMetodo,
     bajasPorMotivo,
+    ventasHeatmap,
+    topFranjas,
   };
 }

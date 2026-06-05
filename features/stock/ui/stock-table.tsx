@@ -34,19 +34,12 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/shared/ui/dropdown-menu";
+import { formatearMoneda } from "@/shared/utils/formatters";
 
 interface StockTableProps {
   productos: Producto[];
   userRole: string;
 }
-
-const formatearMoneda = (monto: number) => {
-  return new Intl.NumberFormat("es-AR", {
-    style: "currency",
-    currency: "ARS",
-    maximumFractionDigits: 0,
-  }).format(monto);
-};
 
 const capitalizar = (str: string) => {
   if (!str) return "";
@@ -116,244 +109,272 @@ export function StockTable({ productos, userRole }: Readonly<StockTableProps>) {
   }
 
   return (
-    <Table className="w-full">
-      <TableHeader>
-        <TableRow className="bg-muted/30 border-b border-border/60 hover:bg-muted/30">
-          <TableHead className="w-14 sm:w-20 pl-4 sm:pl-6 text-muted-foreground">
-            Imagen
-          </TableHead>
-          <TableHead className="text-muted-foreground">Producto</TableHead>
-          <TableHead className="text-center hidden sm:table-cell text-muted-foreground">
-            Stock Total
-          </TableHead>
-          {isAdmin && (
-            <TableHead className="text-right hidden md:table-cell text-muted-foreground">
-              Costo
+    <div className="overflow-hidden">
+      <Table className="w-full">
+        <TableHeader>
+          <TableRow className="bg-muted/30 border-b border-border/60 hover:bg-muted/30">
+            {/* Columna de imagen optimizada y más estrecha */}
+            <TableHead className="w-16 pl-4 sm:pl-6 text-muted-foreground text-left">
+              Foto
             </TableHead>
-          )}
-          <TableHead className="text-right text-muted-foreground">
-            Precio Ref.
-          </TableHead>
-          <TableHead className="text-right w-44 sm:w-56 pr-4 sm:pr-6 text-muted-foreground">
-            Acciones
-          </TableHead>
-        </TableRow>
-      </TableHeader>
+            <TableHead className="text-muted-foreground">Producto</TableHead>
+            <TableHead className="text-center hidden sm:table-cell text-muted-foreground w-32">
+              Stock Total
+            </TableHead>
+            {isAdmin && (
+              <TableHead className="text-right hidden md:table-cell text-muted-foreground w-28">
+                Costo
+              </TableHead>
+            )}
+            <TableHead className="text-right text-muted-foreground w-28">
+              Precio
+            </TableHead>
+            <TableHead className="text-right w-24 sm:w-56 pr-4 sm:pr-6 text-muted-foreground">
+              Acciones
+            </TableHead>
+          </TableRow>
+        </TableHeader>
 
-      <TableBody>
-        {productos.map((producto) => {
-          const primeraImagen = obtenerPrimeraImagen(producto.imagen_url);
-          const stockOrdenado = producto.stock
-            ? [...producto.stock].sort((a, b) => {
-                const indexA = TODAS_LAS_VARIANTES.indexOf(
-                  a.variante.toUpperCase(),
-                );
-                const indexB = TODAS_LAS_VARIANTES.indexOf(
-                  b.variante.toUpperCase(),
-                );
-                return (
-                  (indexA === -1 ? 99 : indexA) - (indexB === -1 ? 99 : indexB)
-                );
-              })
-            : [];
-          const totalUnidades = stockOrdenado.reduce(
-            (acc, curr) => acc + (curr.cantidad > 0 ? curr.cantidad : 0),
-            0,
-          );
-          const variantesDisponibles = stockOrdenado.filter(
-            (variante) => variante.cantidad > 0,
-          );
-          const sinStock = totalUnidades <= 0;
-          const variantesEstanAbiertas = variantesAbiertas[producto.id];
+        <TableBody>
+          {productos.map((producto) => {
+            const primeraImagen = obtenerPrimeraImagen(producto.imagen_url);
 
-          return (
-            <Fragment key={producto.id}>
-              <TableRow
-                className={`group transition-colors bg-card border-b border-border/40 ${
-                  variantesEstanAbiertas ? "bg-muted/10" : "hover:bg-muted/20"
-                }`}
-              >
-                <TableCell className="pl-4 sm:pl-6 py-3">
-                  <ProductDetailSheet producto={producto} userRole={userRole}>
-                    <button className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-muted flex items-center justify-center overflow-hidden border border-border/60 cursor-pointer hover:opacity-80 transition-opacity">
-                      {primeraImagen ? (
-                        <Image
-                          src={primeraImagen}
-                          alt={producto.nombre}
-                          width={48}
-                          height={48}
-                          className="object-cover w-full h-full"
-                          priority={false}
-                        />
-                      ) : (
-                        <ImageIcon className="w-5 h-5 text-muted-foreground opacity-50" />
-                      )}
-                    </button>
-                  </ProductDetailSheet>
-                </TableCell>
+            const stockOrdenado = producto.stock
+              ? [...producto.stock].sort((a, b) => {
+                  const indexA = TODAS_LAS_VARIANTES.indexOf(
+                    a.variante.toUpperCase(),
+                  );
+                  const indexB = TODAS_LAS_VARIANTES.indexOf(
+                    b.variante.toUpperCase(),
+                  );
+                  return (
+                    (indexA === -1 ? 99 : indexA) -
+                    (indexB === -1 ? 99 : indexB)
+                  );
+                })
+              : [];
 
-                <TableCell className="py-3">
-                  <ProductDetailSheet producto={producto} userRole={userRole}>
-                    <button className="font-semibold text-foreground text-sm sm:text-base hover:text-primary transition-colors text-left truncate max-w-50 sm:max-w-xs cursor-pointer">
-                      {producto.nombre}
-                    </button>
-                  </ProductDetailSheet>
-                  <div className="flex items-center gap-1.5 mt-0.5 text-xs text-muted-foreground">
-                    <span className="capitalize">
-                      {capitalizar(producto.tipo)}
-                    </span>
-                    <span>·</span>
-                    <span>
-                      {variantesDisponibles.length}{" "}
-                      {variantesDisponibles.length === 1
-                        ? "variante"
-                        : "variantes"}
-                    </span>
-                  </div>
-                </TableCell>
+            const totalUnidades = stockOrdenado.reduce(
+              (acc, curr) => acc + (curr.cantidad > 0 ? curr.cantidad : 0),
+              0,
+            );
 
-                <TableCell className="text-center font-bold hidden sm:table-cell py-3">
-                  <span
-                    className={sinStock ? "text-destructive" : "text-foreground"}
-                  >
-                    {totalUnidades}{" "}
-                    <span className="text-[10px] font-normal text-muted-foreground uppercase tracking-widest">
-                      unid.
-                    </span>
-                  </span>
-                </TableCell>
+            const variantesDisponibles = stockOrdenado.filter(
+              (variante) => variante.cantidad > 0,
+            );
 
-                {isAdmin && (
-                  <TableCell className="text-right font-medium text-muted-foreground hidden md:table-cell py-3">
-                    {formatearMoneda(producto.precio_costo ?? 0)}
+            const sinStock = totalUnidades <= 0;
+            const variantesEstanAbiertas = variantesAbiertas[producto.id];
+
+            return (
+              <Fragment key={producto.id}>
+                <TableRow
+                  className={`group transition-colors border-b border-border/40 ${
+                    variantesEstanAbiertas ? "bg-muted/15" : "hover:bg-muted/20"
+                  }`}
+                >
+                  {/* Celda de Imagen Compacta y Nítida */}
+                  <TableCell className="pl-1 sm:pl-4 py-2.5">
+                    <ProductDetailSheet producto={producto} userRole={userRole}>
+                      <button className="w-10 h-10 sm:w-11 sm:h-11 rounded-lg bg-muted/60 flex items-center justify-center overflow-hidden border border-border/80 cursor-pointer hover:opacity-85 transition-opacity shrink-0 shadow-none">
+                        {primeraImagen ? (
+                          <Image
+                            src={primeraImagen}
+                            alt={producto.nombre}
+                            width={44}
+                            height={44}
+                            className="object-cover w-full h-full"
+                            priority={false}
+                          />
+                        ) : (
+                          <ImageIcon className="w-4.5 h-4.5 text-muted-foreground/60" />
+                        )}
+                      </button>
+                    </ProductDetailSheet>
                   </TableCell>
-                )}
 
-                <TableCell className="text-right font-semibold text-sm sm:text-base py-3">
-                  {formatearMoneda(producto.precio)}
-                </TableCell>
-
-                <TableCell className="text-right pr-4 sm:pr-6 py-3">
-                  <div className="flex items-center justify-end gap-1">
-                    <div
-                      className={`flex items-center justify-end gap-1 overflow-hidden transition-all duration-200 ease-out ${
-                        variantesEstanAbiertas
-                          ? "max-w-48 opacity-100 translate-x-0"
-                          : "max-w-0 opacity-0 translate-x-3 pointer-events-none"
-                      }`}
-                    >
-                      {variantesDisponibles.length === 0 ? (
-                        <span className="px-2 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground whitespace-nowrap">
-                          Sin stock
+                  {/* Nombre y Detalles de la planta */}
+                  <TableCell className="py-2.5 px-0 mx-0">
+                    <div className="flex flex-col">
+                      <ProductDetailSheet
+                        producto={producto}
+                        userRole={userRole}
+                      >
+                        <button className="font-semibold text-foreground text-sm sm:text-base hover:text-primary transition-colors text-left truncate max-w-30 sm:max-w-55 cursor-pointer">
+                          {producto.nombre}
+                        </button>
+                      </ProductDetailSheet>
+                      <div className="flex items-center gap-0.5 md:gap-1.5 mt-0.5 text-xs text-muted-foreground">
+                        <span className="capitalize">
+                          {capitalizar(producto.tipo)}
                         </span>
-                      ) : (
-                        variantesDisponibles.map((variante, index) => (
-                          <button
-                            key={variante.id}
-                            type="button"
-                            onClick={() =>
-                              handleAgregarAlCarrito(
-                                producto,
-                                variante.variante,
-                                variante.cantidad,
-                              )
-                            }
-                            className="h-8 px-2.5 min-w-9 rounded-md border border-border bg-background text-[11px] font-bold uppercase tracking-wide text-foreground hover:bg-primary hover:text-background hover:border-primary transition-all cursor-pointer"
-                            style={{
-                              transitionDelay: variantesEstanAbiertas
-                                ? `${index * 25}ms`
-                                : "0ms",
-                            }}
+                        <span>·</span>
+                        <span>
+                          {variantesDisponibles.length}{" "}
+                          {variantesDisponibles.length === 1
+                            ? "variante"
+                            : "variantes"}
+                        </span>
+                      </div>
+                    </div>
+                  </TableCell>
+
+                  {/* Stock Total */}
+                  <TableCell className="text-center font-bold hidden sm:table-cell py-2.5">
+                    <span
+                      className={
+                        sinStock ? "text-destructive" : "text-foreground"
+                      }
+                    >
+                      {totalUnidades}{" "}
+                      <span className="text-[10px] font-normal text-muted-foreground uppercase tracking-widest">
+                        u.
+                      </span>
+                    </span>
+                  </TableCell>
+
+                  {/* Costo (Solo Admin) */}
+                  {isAdmin && (
+                    <TableCell className="text-right font-medium text-muted-foreground hidden md:table-cell py-2.5">
+                      {formatearMoneda(producto.precio_costo ?? 0)}
+                    </TableCell>
+                  )}
+
+                  {/* Precio de venta */}
+                  <TableCell className="text-right font-bold text-sm sm:text-base px-0 py-2.5">
+                    {formatearMoneda(producto.precio)}
+                  </TableCell>
+
+                  {/* Acciones Responsivas y Fluidas */}
+                  <TableCell className="text-right pl-0.5 sm:pr-6 py-2.5">
+                    <div className="flex items-center justify-end gap-0.5 md:gap-1.5">
+                      {/* Deslizador Horizontal Compacto de Variantes */}
+                      <div
+                        className={`flex items-center justify-end gap-1 overflow-hidden transition-all duration-300 ease-out ${
+                          variantesEstanAbiertas
+                            ? "max-w-45 sm:max-w-65 opacity-100 translate-x-0"
+                            : "max-w-0 opacity-0 translate-x-4 pointer-events-none"
+                        }`}
+                      >
+                        {variantesDisponibles.length === 0 ? (
+                          <span className="px-2 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground whitespace-nowrap">
+                            Sin stock
+                          </span>
+                        ) : (
+                          variantesDisponibles.map((variante, index) => (
+                            <button
+                              key={variante.id}
+                              type="button"
+                              onClick={() =>
+                                handleAgregarAlCarrito(
+                                  producto,
+                                  variante.variante,
+                                  variante.cantidad,
+                                )
+                              }
+                              className="h-8 px-1 sm:px-2.5 min-w-8 rounded-md border border-border bg-background text-[10px] sm:text-xs font-bold uppercase tracking-wide text-foreground hover:bg-primary hover:text-primary-foreground hover:border-primary transition-all cursor-pointer shadow-none shrink-0"
+                              style={{
+                                transitionDelay: variantesEstanAbiertas
+                                  ? `${index * 30}ms`
+                                  : "0ms",
+                              }}
+                            >
+                              {variante.variante}
+                            </button>
+                          ))
+                        )}
+                      </div>
+
+                      {/* Botón de Agregar (+) */}
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => toggleVariantes(producto.id)}
+                        className={`h-8 w-8 text-primary shrink-0 shadow-none rounded-md transition-transform ${
+                          variantesEstanAbiertas
+                            ? "bg-primary/20 hover:bg-primary/30 rotate-45"
+                            : "bg-primary/10 hover:bg-primary/20"
+                        }`}
+                        title="Elegir variante"
+                      >
+                        <Plus className="w-4 h-4" />
+                      </Button>
+
+                      {/* Acciones de administración (Solo Admin) */}
+                      {isAdmin && (
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-muted-foreground hover:text-foreground cursor-pointer shrink-0 rounded-md hover:bg-muted"
+                            >
+                              <MoreVertical className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent
+                            align="end"
+                            className="w-52 p-1.5 rounded-xl border-border/60 shadow-md bg-card z-40"
                           >
-                            {variante.variante}
-                          </button>
-                        ))
+                            <div className="flex flex-col gap-0.5">
+                              <div className="flex items-center justify-between px-2.5 py-2 text-sm hover:bg-muted rounded-lg transition-colors">
+                                <span className="font-semibold text-muted-foreground text-xs uppercase tracking-wider">
+                                  Catálogo web:
+                                </span>
+                                <TogglePublicado
+                                  id={producto.id}
+                                  publicadoInicial={producto.publicado ?? true}
+                                />
+                              </div>
+                              <DropdownMenuSeparator className="my-1 bg-border/60" />
+
+                              <EditarProductoModal producto={producto}>
+                                <Button
+                                  variant="ghost"
+                                  className="w-full justify-start h-9 px-2 text-sm font-medium cursor-pointer rounded-lg hover:bg-muted transition-colors"
+                                >
+                                  <Edit2 className="w-4 h-4 mr-2.5 text-emerald-600" />
+                                  Editar producto
+                                </Button>
+                              </EditarProductoModal>
+
+                              <BajaModal producto={producto}>
+                                <Button
+                                  variant="ghost"
+                                  className="w-full justify-start h-9 px-2 text-sm font-medium cursor-pointer rounded-lg hover:bg-muted transition-colors"
+                                >
+                                  <MinusCircle className="w-4 h-4 mr-2.5 text-amber-500" />
+                                  Registrar baja
+                                </Button>
+                              </BajaModal>
+
+                              <DropdownMenuSeparator className="my-1 bg-border/60" />
+
+                              <EliminarProductoModal
+                                id={producto.id}
+                                nombre={producto.nombre}
+                                tipo={producto.tipo}
+                              >
+                                <Button
+                                  variant="ghost"
+                                  className="w-full justify-start h-9 px-2 text-sm font-medium cursor-pointer text-destructive hover:bg-destructive/10 rounded-lg transition-colors"
+                                >
+                                  <Trash2 className="w-4 h-4 mr-2.5 text-destructive" />
+                                  Eliminar producto
+                                </Button>
+                              </EliminarProductoModal>
+                            </div>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       )}
                     </div>
-
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => toggleVariantes(producto.id)}
-                      className={`h-8 w-8 text-primary shrink-0 shadow-none rounded-md ${
-                        variantesEstanAbiertas
-                          ? "bg-primary/20"
-                          : "bg-primary/20 dark:text-blue-400 hover:bg-primary/20"
-                      }`}
-                      title="Elegir variante"
-                    >
-                      <Plus className="w-4 h-4 " />
-                    </Button>
-
-                    {isAdmin && (
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 sm:h-9 sm:w-9 text-muted-foreground hover:text-foreground cursor-pointer shrink-0 rounded-md"
-                          >
-                            <MoreVertical className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent
-                          align="end"
-                          className="w-56 p-1 rounded-xl border-border/60"
-                        >
-                          <div className="flex flex-col gap-1">
-                            <div className="flex items-center justify-between px-2 py-2 text-sm hover:bg-muted rounded-md transition-colors">
-                              <span className="font-medium text-muted-foreground">
-                                Catalogo web:
-                              </span>
-                              <TogglePublicado
-                                id={producto.id}
-                                publicadoInicial={producto.publicado ?? true}
-                              />
-                            </div>
-                            <DropdownMenuSeparator className="bg-border/60" />
-                            <EditarProductoModal producto={producto}>
-                              <Button
-                                variant="ghost"
-                                className="w-full justify-start h-9 px-2 text-sm font-medium cursor-pointer rounded-md"
-                              >
-                                <Edit2 className="w-4 h-4 mr-2 text-emerald-600" />
-                                Editar producto
-                              </Button>
-                            </EditarProductoModal>
-                            <BajaModal producto={producto}>
-                              <Button
-                                variant="ghost"
-                                className="w-full justify-start h-9 px-2 text-sm font-medium cursor-pointer text-amber-700 hover:bg-amber-50 rounded-md"
-                              >
-                                <MinusCircle className="w-4 h-4 mr-2 text-amber-500" />
-                                Registrar baja
-                              </Button>
-                            </BajaModal>
-                            <DropdownMenuSeparator className="bg-border/60" />
-                            <EliminarProductoModal
-                              id={producto.id}
-                              nombre={producto.nombre}
-                              tipo={producto.tipo}
-                            >
-                              <Button
-                                variant="ghost"
-                                className="w-full justify-start h-9 px-2 text-sm font-medium cursor-pointer text-destructive hover:bg-destructive/10 rounded-md"
-                              >
-                                <Trash2 className="w-4 h-4 mr-2" />
-                                Eliminar producto
-                              </Button>
-                            </EliminarProductoModal>
-                          </div>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    )}
-                  </div>
-                </TableCell>
-              </TableRow>
-            </Fragment>
-          );
-        })}
-      </TableBody>
-    </Table>
+                  </TableCell>
+                </TableRow>
+              </Fragment>
+            );
+          })}
+        </TableBody>
+      </Table>
+    </div>
   );
 }

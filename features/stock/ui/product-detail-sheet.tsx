@@ -23,6 +23,7 @@ import { EditarProductoModal } from "./edit-modal";
 import { EliminarProductoModal } from "./delete-modal";
 import { useCartStore } from "@/shared/store/cart-store";
 import { Button } from "@/shared/ui/button";
+import { formatearMoneda } from "@/shared/utils/formatters";
 
 interface ProductDetailSheetProps {
   producto: Producto;
@@ -31,14 +32,6 @@ interface ProductDetailSheetProps {
 }
 
 // --- HELPERS ---
-const formatearMoneda = (monto: number) => {
-  return new Intl.NumberFormat("es-AR", {
-    style: "currency",
-    currency: "ARS",
-    maximumFractionDigits: 0,
-  }).format(monto);
-};
-
 const capitalizar = (str: string) => {
   if (!str) return "";
   return str.charAt(0).toUpperCase() + str.slice(1).replace("_", " ");
@@ -130,14 +123,14 @@ export function ProductDetailSheet({
           </div>
         )}
 
-        <SheetHeader className="pb-4 border-b border-border/50 text-left mt-2 sm:mt-0">
+        <SheetHeader className="pb-4 border-b border-border/50 text-left mt-0">
           <SheetTitle className="text-xl flex items-center gap-2">
             <Leaf className="w-5 h-5 text-emerald-600" />
             Ficha de la Planta
           </SheetTitle>
         </SheetHeader>
 
-        <div className="space-y-6 pt-6 pb-8">
+        <div className="space-y-2 md:space-y-4 pt-1 md:pt-6 pb-1 md:pb-8">
           <div className="flex gap-4 items-start">
             <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-xl bg-muted flex items-center justify-center overflow-hidden border border-border shrink-0 ">
               {primeraImagen ? (
@@ -220,7 +213,7 @@ export function ProductDetailSheet({
                     <Button
                       onClick={handleAñadirAlCarrito}
                       disabled={!varianteSeleccionada}
-                      className="w-full bg-emerald-600 hover:bg-emerald-700 text-white h-12 text-base font-semibold"
+                      className="w-full h-12"
                     >
                       <ShoppingCart className="w-5 h-5 mr-2" />
                       Agregar al Carrito

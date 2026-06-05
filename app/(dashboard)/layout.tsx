@@ -5,6 +5,7 @@ import { Sidebar } from "@/shared/components/sidebar";
 import { CartSidebar } from "@/shared/components/cart-sidebar";
 import { DashboardNavbar } from "@/shared/components/dashboard-navbar";
 import { ConfiguracionPOS } from "@/entities/config/types";
+import { TooltipProvider } from "@/shared/ui/tooltip";
 
 export default async function DashboardLayout({
   children,
@@ -56,7 +57,9 @@ export default async function DashboardLayout({
         <div className="flex-1 flex flex-col bg-background md:border md:border-border md:rounded-xl md:shadow-sm overflow-hidden relative">
           <DashboardNavbar />
 
-          <main className="flex-1 p-2 lg:p-4 overflow-y-auto">{children}</main>
+          <main className="flex-1 p-2 lg:p-4 overflow-y-auto">
+            <TooltipProvider>{children}</TooltipProvider>
+          </main>
         </div>
       </div>
 

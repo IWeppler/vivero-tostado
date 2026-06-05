@@ -9,19 +9,12 @@ import { Button } from "@/shared/ui/button";
 import { useCartStore } from "@/shared/store/cart-store";
 import { toast } from "sonner";
 import { ProductDetailSheet } from "./product-detail-sheet";
+import { formatearMoneda } from "@/shared/utils/formatters";
 
 interface StockGridProps {
   productos: Producto[];
   userRole: string; // Para saber si es admin y puede vender sin stock
 }
-
-const formatearMoneda = (monto: number) => {
-  return new Intl.NumberFormat("es-AR", {
-    style: "currency",
-    currency: "ARS",
-    maximumFractionDigits: 0,
-  }).format(monto);
-};
 
 const capitalizar = (str: string) => {
   if (!str) return "";

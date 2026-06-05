@@ -14,6 +14,7 @@ import {
   Settings2,
   Wallet,
   ChartArea,
+  Settings,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { ConfiguracionPOS } from "@/entities/config/types";
@@ -30,7 +31,7 @@ const ALL_NAV_ITEMS = [
   {
     name: "Configuración",
     href: "/configuracion",
-    icon: Settings2,
+    icon: Settings,
     adminOnly: true,
   },
 ];

@@ -21,19 +21,12 @@ import {
 import { getDetallesTurnoAction } from "../actions/get-details";
 import { TurnoCajaHistorial } from "@/entities/caja/types";
 import { ScrollArea } from "@/shared/ui/scroll-area";
+import { formatearMoneda } from "@/shared/utils/formatters";
 
 interface CajaDetailSheetProps {
   turno: TurnoCajaHistorial | null;
   onClose: () => void;
 }
-
-const formatearMoneda = (monto: number) => {
-  return new Intl.NumberFormat("es-AR", {
-    style: "currency",
-    currency: "ARS",
-    maximumFractionDigits: 0,
-  }).format(monto);
-};
 
 export function CajaDetailSheet({
   turno,

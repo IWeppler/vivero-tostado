@@ -594,7 +594,7 @@ export function CartSidebar({
               <Button
                 onClick={handleConfirmarVentaPOS}
                 disabled={isPending}
-                className="w-full h-12 flex items-center justify-center gap-2 bg-foreground hover:bg-foreground/90 text-background font-bold text-sm uppercase tracking-wide transition-colors cursor-pointer rounded-lg shadow-none"
+                className="w-full h-12 flex items-center justify-center gap-2 bg-foreground hover:bg-foreground/90 text-background transition-colors shadow-none"
               >
                 {isPending ? (
                   <Loader2 className="w-5 h-5 animate-spin" />
@@ -625,7 +625,7 @@ export function CartSidebar({
             <button
               onClick={clearCart}
               disabled={isPending}
-              className="w-full mt-4 text-[10px] uppercase tracking-widest text-muted-foreground hover:text-destructive transition-colors font-semibold disabled:opacity-50 cursor-pointer"
+              className="w-full mt-4 text-xs tracking-wide text-muted-foreground hover:text-destructive transition-colors font-medium disabled:opacity-50 cursor-pointer"
             >
               Vaciar {isPOSMode ? "venta" : "carrito"}
             </button>
