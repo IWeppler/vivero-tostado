@@ -20,39 +20,20 @@ import {
   TableRow,
 } from "@/shared/ui/table";
 import { Badge } from "@/shared/ui/badge";
-import { Download, Eye, Receipt, Search } from "lucide-react";
+import { Download, Eye, Receipt } from "lucide-react";
 import { AnularVentaModal } from "./cancel-sale-modal";
 import { RegistrarVentaModal } from "./create-sale-modal";
 import { Button } from "@/shared/ui/button";
-import { Input } from "@/shared/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/shared/ui/select";
 import { TicketSheet } from "./ticket-sheet";
 import { formatearFechaHora, formatearMoneda } from "@/shared/utils/formatters";
+import { getMetodoPagoColor } from "@/shared/utils/payment-methods";
+import { SaleTableHeader } from "./sale-table-header";
 
 interface VentasTableProps {
   ventas: Venta[];
   productos: Producto[];
   userRole: string;
 }
-
-const getMetodoPagoColor = (metodo: string) => {
-  switch (metodo.toUpperCase()) {
-    case "EFECTIVO":
-      return "bg-emerald-50 dark:bg-emerald-500/30 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/50";
-    case "TRANSFERENCIA":
-      return "bg-blue-50 dark:bg-blue-500/30 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-500/50";
-    case "TARJETA":
-      return "bg-purple-50 dark:bg-purple-500/30 text-purple-700 dark:text-purple-400 border-purple-200 dark:border-purple-500/50";
-    default:
-      return "bg-muted/50 text-muted-foreground border-border/60";
-  }
-};
 
 export function VentasTable({
   ventas = [],
@@ -154,9 +135,15 @@ export function VentasTable({
   }, [ventas, filtroNombre, orden]);
 
   const abrirTicket = (venta: Venta) => {
+    // Obtenemos el descuento de la cabecera si existe
     const descuento =
       venta.ventas_descuentos && venta.ventas_descuentos.length > 0
         ? venta.ventas_descuentos[0]
+        : null;
+
+    const pagoInfo =
+      venta.venta_pagos && venta.venta_pagos.length > 0
+        ? venta.venta_pagos[0]
         : null;
 
     setTicketAbierto({
@@ -170,7 +157,7 @@ export function VentasTable({
         }),
       ),
       total: venta.total,
-      metodoPago: venta.metodo_pago || "EFECTIVO",
+      metodoPago: pagoInfo?.metodo_nombre || venta.metodo_pago || "EFECTIVO",
       nroRecibo: venta.id.split("-")[0].toUpperCase(),
       fecha: formatearFechaHora(venta.fecha_venta),
       vendedor: getSupabaseRelation(venta.perfiles)?.nombre || "Administrador",
@@ -178,6 +165,9 @@ export function VentasTable({
         ? Number(descuento.monto_descontado)
         : undefined,
       promocionNombre: descuento ? descuento.promocion_nombre : undefined,
+      comisionMonto: pagoInfo ? Number(pagoInfo.comision_monto) : 0,
+      montoNeto: pagoInfo ? Number(pagoInfo.monto_neto) : venta.total,
+      acreditacionDias: pagoInfo ? Number(pagoInfo.acreditacion_dias) : 0,
     });
   };
 
@@ -189,51 +179,28 @@ export function VentasTable({
         onClose={() => setTicketAbierto(null)}
       />
 
-      {/* HEADER: Buscador, Ordenamiento y Acciones */}
-      <div className="flex flex-col lg:flex-row gap-4 justify-between items-start lg:items-center bg-sidebar p-4 sm:p-5 rounded-2xl border border-border">
-        {/* Buscador Integrado */}
-        <div className="relative flex-1 w-full lg:max-w-lg">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-          <Input
-            placeholder="Buscar por nro. de recibo..."
-            className="pl-11 h-11 text-base rounded-xl border-border/60 bg-card shadow-none transition-colors"
-            value={filtroNombre}
-            onChange={(e) => setFiltroNombre(e.target.value)}
-          />
-        </div>
-
-        {/* Controles y Botonera Admin */}
-        <div className="flex flex-wrap sm:flex-nowrap items-center gap-3 w-full lg:w-auto">
-          {/* Selector de Orden */}
-          <Select value={orden} onValueChange={setOrden}>
-            <SelectTrigger className="h-12 w-full sm:w-[200px] rounded-xl border-border/60 bg-card shadow-none font-medium">
-              <SelectValue placeholder="Ordenar por..." />
-            </SelectTrigger>
-            <SelectContent className="rounded-xl">
-              {ordenOptions.map((opt) => (
-                <SelectItem key={opt.value} value={opt.value}>
-                  {opt.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          {/* Botones Admin */}
-          <div className="flex flex-1 sm:flex-none justify-end gap-2 sm:ml-2 sm:pl-4 sm:border-l sm:border-border">
+      <SaleTableHeader
+        searchValue={filtroNombre}
+        onSearchChange={setFiltroNombre}
+        orderValue={orden}
+        onOrderChange={setOrden}
+        orderOptions={ordenOptions}
+        actions={
+          <>
             {isAdmin && (
               <Button
                 variant="outline"
-                className="hidden sm:flex h-12 px-4 bg-card border-border/60 hover:bg-muted rounded-xl shadow-none font-semibold"
+                className="hidden sm:flex h-12 px-4 bg-white border-border/60 hover:bg-muted rounded-xl shadow-none font-semibold"
               >
                 <Download className="mr-2 h-4 w-4" /> CSV
               </Button>
             )}
-            <div className="w-full sm:w-auto [&>button]:h-12 [&>button]:rounded-xl">
+            <div className="w-full sm:w-auto [&>button]:h-12 [&>button]:rounded-xl [&>button]:shadow-sm">
               <RegistrarVentaModal productos={productos} />
             </div>
-          </div>
-        </div>
-      </div>
+          </>
+        }
+      />
 
       {/* TABLA O EMPTY STATE */}
       {ventas.length === 0 ? (
@@ -301,7 +268,7 @@ export function VentasTable({
                           </TableCell>
 
                           <TableCell className="font-semibold text-foreground py-4">
-                            <div className="flex items-center">
+                            <div className="flex items-center gap-3">
                               <span className="truncate max-w-[200px] sm:max-w-xs">
                                 {nombrePrincipal}
                                 {itemsExtra > 0 ? (
@@ -346,7 +313,7 @@ export function VentasTable({
                             </div>
                             {isAdmin && (
                               <div
-                                className="text-[10px] font-bold text-emerald-600 mt-0.5"
+                                className="text-[11px] font-medium text-emerald-600 mt-0.5"
                                 title="Ganancia neta del ticket"
                               >
                                 +{formatearMoneda(gananciaNeta)}
@@ -436,7 +403,7 @@ export function VentasTable({
                   <div
                     key={venta.id}
                     onClick={() => abrirTicket(venta)}
-                    className="bg-card border border-border rounded-xl p-4 active:scale-[0.98] transition-transform cursor-pointer"
+                    className="bg-card border border-border rounded-xl p-4 shadow-sm active:scale-[0.98] transition-transform cursor-pointer"
                   >
                     <div className="flex justify-between items-start mb-3">
                       <div className="flex flex-col pr-3">
@@ -462,7 +429,7 @@ export function VentasTable({
                           {formatearMoneda(venta.total)}
                         </div>
                         {isAdmin && (
-                          <div className="text-[10px] font-bold text-emerald-600 mt-0.5 text-right">
+                          <div className="text-[11px] font-medium text-emerald-600 mt-0.5 text-right">
                             +{formatearMoneda(gananciaNeta)}
                           </div>
                         )}
@@ -472,7 +439,7 @@ export function VentasTable({
                     <div className="flex items-center justify-between mb-3">
                       <Badge
                         variant="outline"
-                        className={`text-[10px] uppercase font-bold tracking-widest shadow-none ${getMetodoPagoColor(metodoPago)}`}
+                        className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-semibold tracking-tight shadow-sm ${getMetodoPagoColor(metodoPago)}`}
                       >
                         {metodoPago}
                       </Badge>

@@ -99,13 +99,19 @@ export function getDashboardMetrics(
   let costoMercaderiaVendida = 0;
   let gananciaBrutaVentas = 0;
   let unidadesVendidas = 0;
+  let totalComisiones = 0; // NUEVO: Fuga de capital por comisiones
 
   const catMap = new Map<
     string,
     { ingresos: number; unidades: number; tickets: Set<string> }
   >();
   const rentabilidadCatMap = new Map<string, number>();
-  const metodoPagoMap = new Map<string, number>();
+
+  // NUEVO: Análisis profundo de Métodos de Pago
+  const metodoPagoMap = new Map<
+    string,
+    { bruto: number; comision: number; neto: number }
+  >();
 
   const diasSemana = [
     "Domingo",
@@ -159,8 +165,41 @@ export function getDashboardMetrics(
     costoMercaderiaVendida += costoTicket;
     gananciaBrutaVentas += totalTicket - costoTicket;
 
-    const metodo = v.metodo_pago || "EFECTIVO";
-    metodoPagoMap.set(metodo, (metodoPagoMap.get(metodo) || 0) + totalTicket);
+    // --- NUEVO: Procesamiento de Pagos Mixtos y Comisiones ---
+    if (v.venta_pagos && v.venta_pagos.length > 0) {
+      v.venta_pagos.forEach((pago) => {
+        const metodo = pago.metodo_nombre;
+        const bruto = Number(pago.monto_bruto || 0);
+        const comision = Number(pago.comision_monto || 0);
+        const neto = Number(pago.monto_neto || 0);
+
+        const current = metodoPagoMap.get(metodo) || {
+          bruto: 0,
+          comision: 0,
+          neto: 0,
+        };
+        metodoPagoMap.set(metodo, {
+          bruto: current.bruto + bruto,
+          comision: current.comision + comision,
+          neto: current.neto + neto,
+        });
+
+        totalComisiones += comision;
+      });
+    } else {
+      // Fallback retrocompatibilidad para tickets antiguos
+      const metodo = v.metodo_pago || "EFECTIVO";
+      const current = metodoPagoMap.get(metodo) || {
+        bruto: 0,
+        comision: 0,
+        neto: 0,
+      };
+      metodoPagoMap.set(metodo, {
+        bruto: current.bruto + totalTicket,
+        comision: current.comision + 0,
+        neto: current.neto + totalTicket,
+      });
+    }
 
     const date = new Date(v.fecha_venta);
     const diaName = diasSemana[date.getDay()];
@@ -279,19 +318,20 @@ export function getDashboardMetrics(
     );
   });
 
-  const resultadoOperativo = gananciaBrutaVentas - totalEgresos;
+  // 🚀 NUEVA FÓRMULA MADRE: Ganancia Neta Real
+  const resultadoOperativo =
+    gananciaBrutaVentas - totalEgresos - totalComisiones;
   const margenPorcentaje =
     ingresosBrutos > 0 ? (resultadoOperativo / ingresosBrutos) * 100 : 0;
 
   // --- OPERATIVO Y STOCK ---
   let stockTotalUnidades = 0;
   let stockValorizadoCosto = 0;
-  let stockValorizadoPotencial = 0; // NUEVO
+  let stockValorizadoPotencial = 0;
   let productosCriticos = 0;
   const stockCriticoDetallado: any[] = [];
   const productosSinMovimiento: any[] = [];
 
-  // Mapeamos la última fecha de venta de TODO el historial
   const ultimaVentaMap = new Map<string, Date>();
   ventas.forEach((v) => {
     const f = new Date(v.fecha_venta);
@@ -316,14 +356,14 @@ export function getDashboardMetrics(
 
   productos.forEach((pro) => {
     const costo = Number(pro.precio_costo ?? 0);
-    const precio = Number(pro.precio ?? 0); // Extraemos el precio de venta público
+    const precio = Number(pro.precio ?? 0);
     let stockTotalProducto = 0;
 
     pro.stock?.forEach((s) => {
       const cantidadStock = Number(s.cantidad);
       stockTotalUnidades += cantidadStock;
       stockValorizadoCosto += cantidadStock * costo;
-      stockValorizadoPotencial += cantidadStock * precio; // Acumulamos valor potencial
+      stockValorizadoPotencial += cantidadStock * precio;
       stockTotalProducto += cantidadStock;
 
       if (cantidadStock > 0 && cantidadStock <= 3) {
@@ -337,18 +377,13 @@ export function getDashboardMetrics(
     });
 
     if (stockTotalProducto > 0) {
-      // Calculamos la antigüedad de estancamiento usando los datos limpios
       const ultimaVenta = ultimaVentaMap.get(pro.id);
       const diasSinVender = ultimaVenta
         ? Math.floor(
             (now.getTime() - ultimaVenta.getTime()) / (1000 * 3600 * 24),
           )
         : 9999;
-
-      productosSinMovimiento.push({
-        ...pro,
-        diasSinVender,
-      });
+      productosSinMovimiento.push({ ...pro, diasSinVender });
     }
   });
 
@@ -368,18 +403,20 @@ export function getDashboardMetrics(
     .sort((a, b) => a.ganancia - b.ganancia)
     .slice(0, 5);
 
+  // 🚀 COMPOSICIÓN FINANCIERA RENOVADA
   const donutData = [
     {
       label: "Costo Mercadería",
       value: costoMercaderiaVendida,
       color: "#f59e0b",
-    },
-    { label: "Egresos", value: totalEgresos, color: "#f43f5e" },
+    }, // Ambar
+    { label: "Egresos Físicos", value: totalEgresos, color: "#f43f5e" }, // Rose
+    { label: "Comisiones Dig.", value: totalComisiones, color: "#8b5cf6" }, // Violeta
     {
       label: "Result. Operativo",
       value: resultadoOperativo > 0 ? resultadoOperativo : 0,
       color: "#10b981",
-    },
+    }, // Esmeralda
   ];
 
   const ventasPorCategoria = Array.from(catMap.entries())
@@ -400,9 +437,15 @@ export function getDashboardMetrics(
     .filter((d) => d.value > 0)
     .sort((a, b) => b.value - a.value);
 
+  // 🚀 MAPEAMOS EL NUEVO OBJETO MULTIDIMENSIONAL DE PAGOS
   const ventasPorMetodo = Array.from(metodoPagoMap.entries())
-    .map(([label, value]) => ({ label, value }))
-    .sort((a, b) => b.value - a.value);
+    .map(([label, data]) => ({
+      label,
+      bruto: data.bruto,
+      comision: data.comision,
+      neto: data.neto,
+    }))
+    .sort((a, b) => b.bruto - a.bruto);
 
   const bajasPorMotivo = Array.from(bajasMotivoMap.entries())
     .map(([label, value]) => ({ label, value }))
@@ -437,6 +480,7 @@ export function getDashboardMetrics(
     gananciaBrutaVentas,
     gananciaNeta: resultadoOperativo,
     totalEgresos,
+    totalComisiones, // Exportado
     costoPerdidoBajas,
     unidadesBajas,
     margenPorcentaje,

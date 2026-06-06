@@ -81,7 +81,7 @@ export function StockView({ productos, userRole }: Readonly<StockViewProps>) {
   return (
     <div className="space-y-4">
       {/* 1. BARRA SUPERIOR: Buscador y Acciones */}
-      <div className="flex flex-row gap-2 sm:gap-4 justify-between items-center bg-sidebar p-2 sm:p-4 rounded-xl border border-border">
+      <div className="flex flex-row gap-2 sm:gap-4 justify-between items-center bg-card p-2 sm:p-4 rounded-xl border border-border">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
@@ -140,7 +140,6 @@ export function StockView({ productos, userRole }: Readonly<StockViewProps>) {
                   align="end"
                   className="w-48 p-1.5 rounded-xl border-border/60 shadow-lg bg-card z-50"
                 >
-                  {/* CSS Hack para que los botones de los modales hereden el diseño de menú */}
                   <div className="flex flex-col gap-0.5 [&_button]:w-full [&_button]:justify-start [&_button]:h-9 [&_button]:px-2 [&_button]:bg-transparent [&_button]:border-0 [&_button]:shadow-none [&_button]:font-medium [&_button]:text-sm [&_button:hover]:bg-muted [&_button]:rounded-md [&_button_span.hidden]:!inline-block [&_button_svg]:mr-2 [&_button_svg]:w-4 [&_button_svg]:h-4 [&_button_svg]:shrink-0">
                     <UpdatePricesModal />
                     <ImportarPedidoModal />

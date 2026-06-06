@@ -8,6 +8,7 @@ export async function getVentasAction() {
     const cookieStore = await cookies();
     const supabase = createClient(cookieStore);
 
+    // 🚀 Ahora pedimos la tabla venta_pagos para armar el resumen financiero
     const { data, error } = await supabase
       .from("ventas")
       .select(
@@ -31,6 +32,15 @@ export async function getVentasAction() {
         ventas_descuentos (
           monto_descontado,
           promocion_nombre
+        ),
+        venta_pagos (
+          metodo_nombre,
+          metodo_tipo,
+          monto_bruto,
+          comision_porcentaje,
+          comision_monto,
+          monto_neto,
+          acreditacion_dias
         )
       `,
       )

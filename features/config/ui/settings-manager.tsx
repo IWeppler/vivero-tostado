@@ -21,6 +21,7 @@ import {
 import { ConfigForm } from "./config-form";
 import { PromotionsPanel } from "@/features/promotions/ui/promotions-panel";
 import { PreferencesPanel } from "@/features/preferences/ui/preferences-panel";
+import { PaymentsPanel } from "@/features/payments/ui/payments-panel";
 
 const SECTIONS = [
   {
@@ -70,11 +71,13 @@ const SECTIONS = [
 interface SettingsManagerProps {
   config: ConfiguracionPOS;
   promociones: any[];
+  pagos: any[];
 }
 
 export function SettingsManager({
   config,
   promociones,
+  pagos,
 }: Readonly<SettingsManagerProps>) {
   const [activeSection, setActiveSection] = useState("comercio");
 
@@ -87,8 +90,9 @@ export function SettingsManager({
         return <PromotionsPanel promociones={promociones} />;
       case "preferencias":
         return <PreferencesPanel />;
+      case "pagos":
+        return <PaymentsPanel pagos={pagos} />;
       default:
-        // Placeholder para las secciones vacías
         return (
           <div className="bg-card text-card-foreground p-6 rounded-2xl border border-border flex flex-col items-center justify-center py-24 text-center">
             <Settings className="w-16 h-16 text-muted-foreground/20 mb-4 animate-spin-slow" />

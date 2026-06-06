@@ -33,16 +33,14 @@ export function InventarioTab({ metrics }: Readonly<InventarioTabProps>) {
       value="inventario"
       className="space-y-6 outline-none animate-in fade-in-50 pt-2"
     >
-      {/* ======================= */}
       {/* SECCIÓN SUPERIOR DE KPIs */}
-      {/* ======================= */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Capital Inmovilizado Analítico (Ocupa 2/3 de la pantalla) */}
         <Card className="border-border shadow-none lg:col-span-2">
           <CardHeader className="flex flex-row items-center justify-between pb-2 border-b border-border/40">
-            <CardTitle className="text-lg font-bold flex items-center gap-2">
-              <Package className="w-5 h-5 text-orange-500" /> Capital en
-              Inventario
+            <CardTitle className="text-lg font-medium flex items-center gap-2">
+              <Package className="w-5 h-5 text-orange-500" />
+              Capital en Inventario
             </CardTitle>
           </CardHeader>
           <CardContent className="pt-4">

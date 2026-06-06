@@ -1,0 +1,152 @@
+"use client";
+
+import { useActionState } from "react";
+import { Button } from "@/shared/ui/button";
+import { Input } from "@/shared/ui/input";
+import { Label } from "@/shared/ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/shared/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/shared/ui/select";
+import { CreditCard, Percent, Clock, Loader2 } from "lucide-react";
+import { editPaymentAction } from "../actions/manage-payment";
+import { toast } from "sonner";
+import { MetodoPago } from "@/entities/payments/types";
+
+export function EditPaymentModal({
+  pago,
+  open,
+  onOpenChange,
+}: {
+  pago: MetodoPago;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
+  const [, formAction, isPending] = useActionState(
+    async (
+      previousState: { error: string | null; success: boolean },
+      formData: FormData,
+    ) => {
+      formData.append("id", pago.id);
+      const result = await editPaymentAction(previousState, formData);
+
+      if (result.success) {
+        toast.success("Método actualizado correctamente.");
+        onOpenChange(false);
+      } else if (result.error) {
+        toast.error(result.error);
+      }
+      return result;
+    },
+    { error: null, success: false },
+  );
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[425px] bg-card border-border rounded-xl">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <CreditCard className="w-5 h-5 text-primary" />
+            Editar Método de Pago
+          </DialogTitle>
+        </DialogHeader>
+        <form action={formAction} className="space-y-5 pt-4">
+          <div className="space-y-2">
+            <Label htmlFor="nombre">Nombre a mostrar en caja</Label>
+            <Input
+              id="nombre"
+              name="nombre"
+              defaultValue={pago.nombre}
+              required
+              className="rounded-lg shadow-none"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label>Tipo de Pago</Label>
+            <Select name="tipo" defaultValue={pago.tipo}>
+              <SelectTrigger className="rounded-lg shadow-none">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="EFECTIVO">Efectivo / Cash</SelectItem>
+                <SelectItem value="TRANSFERENCIA">
+                  Transferencia Bancaria
+                </SelectItem>
+                <SelectItem value="BILLETERA_VIRTUAL">
+                  Billetera Virtual (MP, MODO)
+                </SelectItem>
+                <SelectItem value="TARJETA">
+                  Tarjeta (Débito/Crédito)
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label className="flex items-center gap-1.5">
+                <Percent className="w-3.5 h-3.5 text-muted-foreground" />{" "}
+                Comisión (%)
+              </Label>
+              <Input
+                name="comision"
+                type="number"
+                min="0"
+                step="any"
+                defaultValue={pago.comision}
+                required
+                className="rounded-lg shadow-none"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="flex items-center gap-1.5">
+                <Clock className="w-3.5 h-3.5 text-muted-foreground" />{" "}
+                Acreditación (Días)
+              </Label>
+              <Input
+                name="acreditacion_dias"
+                type="number"
+                min="0"
+                defaultValue={pago.acreditacion_dias}
+                required
+                className="rounded-lg shadow-none"
+              />
+              <p className="text-[10px] text-muted-foreground leading-tight">
+                0 = Inmediata
+              </p>
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-2 pt-2 border-t border-border">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              disabled={isPending}
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="submit"
+              className="cursor-pointer"
+              disabled={isPending}
+            >
+              {isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+              Actualizar
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}

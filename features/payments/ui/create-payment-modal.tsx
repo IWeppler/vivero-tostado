@@ -1,0 +1,157 @@
+"use client";
+
+import { useActionState, useState } from "react";
+import { Button } from "@/shared/ui/button";
+import { Input } from "@/shared/ui/input";
+import { Label } from "@/shared/ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/shared/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/shared/ui/select";
+import { CreditCard, Plus, Percent, Clock, Loader2 } from "lucide-react";
+import { createPaymentAction } from "../actions/manage-payment";
+import { toast } from "sonner";
+import { TipoMetodo } from "@/entities/payments/types";
+
+export function CreatePaymentModal() {
+  const [isOpen, setIsOpen] = useState(false);
+  const [tipo, setTipo] = useState<TipoMetodo>("BILLETERA_VIRTUAL");
+
+  const handleOpenChange = (open: boolean) => {
+    setIsOpen(open);
+    if (!open) setTipo("BILLETERA_VIRTUAL");
+  };
+
+  const [, formAction, isPending] = useActionState(
+    async (previousState: any, formData: FormData) => {
+      formData.append("tipo", tipo);
+      const result = await createPaymentAction(previousState, formData);
+
+      if (result.success) {
+        toast.success("Método de pago creado correctamente.");
+        setIsOpen(false);
+        setTipo("BILLETERA_VIRTUAL");
+      } else if (result.error) {
+        toast.error(result.error);
+      }
+      return result;
+    },
+    { error: null, success: false },
+  );
+
+  return (
+    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
+      <DialogTrigger asChild>
+        <Button className="bg-primary text-primary-foreground hover:bg-primary/90 shadow-none">
+          <Plus className="w-4 h-4 mr-2" />
+          Nuevo Método
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-[425px] bg-card border-border rounded-xl">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <CreditCard className="w-5 h-5 text-primary" />
+            Configurar Método de Pago
+          </DialogTitle>
+        </DialogHeader>
+        <form action={formAction} className="space-y-5 pt-4">
+          <div className="space-y-2">
+            <Label htmlFor="nombre">Nombre a mostrar en caja</Label>
+            <Input
+              id="nombre"
+              name="nombre"
+              placeholder="Ej: Mercado Pago QR, MODO..."
+              required
+              className="rounded-lg shadow-none"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label>Tipo de Pago</Label>
+            <Select
+              value={tipo}
+              onValueChange={(val) => setTipo(val as TipoMetodo)}
+            >
+              <SelectTrigger className="rounded-lg shadow-none">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="EFECTIVO">Efectivo</SelectItem>
+                <SelectItem value="TRANSFERENCIA">
+                  Transferencia Bancaria
+                </SelectItem>
+                <SelectItem value="BILLETERA_VIRTUAL">
+                  Billetera Virtual
+                </SelectItem>
+                <SelectItem value="TARJETA">
+                  Tarjeta (Débito/Crédito)
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label className="flex items-center gap-1.5">
+                <Percent className="w-3.5 h-3.5 text-muted-foreground" />{" "}
+                Comisión (%)
+              </Label>
+              <Input
+                name="comision"
+                type="number"
+                min="0"
+                step="any"
+                defaultValue="0"
+                required
+                className="rounded-lg shadow-none"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="flex items-center gap-1.5">
+                <Clock className="w-3.5 h-3.5 text-muted-foreground" />{" "}
+                Acreditación (Días)
+              </Label>
+              <Input
+                name="acreditacion_dias"
+                type="number"
+                min="0"
+                defaultValue="0"
+                required
+                className="rounded-lg shadow-none"
+              />
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-2 pt-2 border-t border-border">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => handleOpenChange(false)}
+              disabled={isPending}
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="submit"
+              className="cursor-pointer"
+              disabled={isPending}
+            >
+              {isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+              Guardar Método
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}

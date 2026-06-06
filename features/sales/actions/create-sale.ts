@@ -9,13 +9,24 @@ export async function registrarVentaAction(
   formData: FormData,
 ) {
   const cartData = formData.get("cart_items") as string;
-  const metodoPago = (formData.get("metodo_pago") as string) || "EFECTIVO";
+  const metodoPagoId = formData.get("metodo_pago_id") as string;
 
   const promocionId = formData.get("promocion_id") as string | null;
   const descuentoMonto = Number(formData.get("descuento_monto") || 0);
 
+  console.log("\n=========================================");
+  console.log("🛠️ INICIANDO REGISTRO DE VENTA");
+  console.log("=========================================");
+  console.log("Payload items:", cartData);
+  console.log("Metodo Pago ID:", metodoPagoId);
+  console.log("Promocion ID:", promocionId, "| Descuento:", descuentoMonto);
+
   if (!cartData) {
     return { error: "El carrito de ventas está vacío.", success: false };
+  }
+
+  if (!metodoPagoId) {
+    return { error: "Debes seleccionar un método de pago.", success: false };
   }
 
   const items = JSON.parse(cartData) as any[];
@@ -32,29 +43,57 @@ export async function registrarVentaAction(
   } = await supabase.auth.getUser();
 
   if (authError || !user) {
+    console.error("❌ Auth Error:", authError);
     return {
       error: "Debes iniciar sesión para realizar una venta.",
       success: false,
     };
   }
 
+  console.log("✅ Usuario autenticado:", user.id);
+
   // --- BLOQUEO ESTRICTO DE CAJA ---
-  const { data: turnoAbierto } = await supabase
+  const { data: turnoAbierto, error: turnoError } = await supabase
     .from("turnos_caja")
     .select("id")
     .eq("estado", "ABIERTO")
     .limit(1)
     .single();
 
-  if (!turnoAbierto) {
+  if (turnoError || !turnoAbierto) {
+    console.error("❌ Error verificando caja:", turnoError);
     return { error: "CAJA_CERRADA", success: false };
   }
 
-  // --- PRE-CARGA DE PROMOCIÓN (Para distribuir el descuento correctamente) ---
+  console.log("✅ Caja abierta confirmada:", turnoAbierto.id);
+
+  // --- FETCH DEL MÉTODO DE PAGO ---
+  const { data: metodoData, error: metodoError } = await supabase
+    .from("metodos_pago")
+    .select("*")
+    .eq("id", metodoPagoId)
+    .single();
+
+  if (metodoError || !metodoData) {
+    console.error("❌ Error buscando método de pago:", metodoError);
+    return {
+      error: "El método de pago seleccionado no existe en la base de datos.",
+      success: false,
+    };
+  }
+
+  console.log(
+    "✅ Método de pago encontrado:",
+    metodoData.nombre,
+    "| Comisión:",
+    metodoData.comision,
+  );
+
+  // --- PRE-CARGA DE PROMOCIÓN ---
   let promoData = null;
   let categoriasPromo: string[] = [];
 
-  if (promocionId && descuentoMonto > 0) {
+  if (promocionId && promocionId !== "ninguna" && descuentoMonto > 0) {
     const { data: promo } = await supabase
       .from("promociones")
       .select(
@@ -73,6 +112,7 @@ export async function registrarVentaAction(
         if (cats)
           categoriasPromo = cats.map((c) => c.categoria_nombre.toLowerCase());
       }
+      console.log("✅ Promoción aplicada:", promo.nombre);
     }
   }
 
@@ -92,7 +132,7 @@ export async function registrarVentaAction(
     }
   });
 
-  // --- 1. Validar Stock, Costos y Prorratear Descuentos ---
+  // --- 1. Validar Stock y Prorratear ---
   const itemsProcesados = [];
   let totalVenta = 0;
   let costoTotalVenta = 0;
@@ -108,6 +148,10 @@ export async function registrarVentaAction(
       .single();
 
     if (stockError || !stockActual) {
+      console.error(
+        `❌ Error de stock para ${item.nombre} (${item.variante}):`,
+        stockError,
+      );
       return { error: `Error de stock para ${item.variante}.`, success: false };
     }
 
@@ -117,7 +161,6 @@ export async function registrarVentaAction(
     const precioUnitario = Number(item.precioUnitario ?? item.precio ?? 0);
     const cantidadFinal = Number(item.cantidad ?? 1);
 
-    // Lógica de Descuento por Línea (Prorrateo Matemático)
     let elegible = false;
     if (!promoData || promoData.tipo_regla !== "CATEGORIA") elegible = true;
     else elegible = categoriasPromo.includes((item.tipo || "").toLowerCase());
@@ -155,25 +198,80 @@ export async function registrarVentaAction(
     totalSeguro - (isNaN(descuentoMonto) ? 0 : descuentoMonto),
   );
 
-  // --- 2. CREAR LA CABECERA (ventas) ---
+  // --- 2. CÁLCULO FINANCIERO DEL PAGO ---
+  const montoBruto = totalConDescuento;
+  const comisionPorcentaje = Number(metodoData.comision || 0);
+  const comisionMonto = (montoBruto * comisionPorcentaje) / 100;
+  const montoNeto = montoBruto - comisionMonto;
+
+  // 💡 Mapeo seguro para la columna antigua
+  let metodoPagoSafe = "EFECTIVO";
+  if (metodoData.tipo === "TRANSFERENCIA") metodoPagoSafe = "TRANSFERENCIA";
+  if (metodoData.tipo === "TARJETA" || metodoData.tipo === "BILLETERA_VIRTUAL")
+    metodoPagoSafe = "TARJETA";
+
+  const payloadVentas = {
+    vendedor_id: user.id,
+    metodo_pago: metodoPagoSafe,
+    total: montoBruto,
+    precio_costo: costoSeguro,
+    cantidad: items.length,
+  };
+
+  console.log("🚀 Payload a insertar en 'ventas':", payloadVentas);
+
+  // --- 3. CREAR LA CABECERA (ventas) ---
   const { data: nuevaVenta, error: ventaError } = await supabase
     .from("ventas")
-    .insert({
-      vendedor_id: user.id,
-      metodo_pago: metodoPago,
-      total: totalConDescuento,
-      precio_costo: costoSeguro,
-      cantidad: items.length,
-    })
+    .insert(payloadVentas)
     .select("id")
     .single();
 
   if (ventaError || !nuevaVenta) {
-    return { error: "No se pudo crear el ticket de venta.", success: false };
+    console.error("❌ ERROR BD 'ventas':", ventaError);
+    // Devolvemos el mensaje exacto de Postgres
+    return {
+      error: `Fallo en BD (Ventas): ${ventaError?.message || JSON.stringify(ventaError)}`,
+      success: false,
+    };
   }
 
-  // --- 3. REGISTRAR TRAZABILIDAD DEL DESCUENTO ---
-  if (promocionId && descuentoMonto > 0 && promoData) {
+  console.log("✅ Venta cabecera creada con ID:", nuevaVenta.id);
+
+  // --- 4. REGISTRAR LA TRAZABILIDAD DEL PAGO (venta_pagos) ---
+  const payloadPagos = {
+    venta_id: nuevaVenta.id,
+    metodo_pago_id: metodoData.id,
+    metodo_nombre: metodoData.nombre,
+    metodo_tipo: metodoData.tipo,
+    monto_bruto: montoBruto,
+    comision_porcentaje: comisionPorcentaje,
+    comision_monto: comisionMonto,
+    monto_neto: montoNeto,
+    acreditacion_dias: metodoData.acreditacion_dias || 0,
+  };
+
+  console.log("🚀 Payload a insertar en 'venta_pagos':", payloadPagos);
+
+  const { error: pagoError } = await supabase
+    .from("venta_pagos")
+    .insert(payloadPagos);
+
+  if (pagoError) {
+    console.error("❌ ERROR BD 'venta_pagos':", pagoError);
+    return {
+      error: `Fallo en BD (Venta Pagos): ${pagoError.message}`,
+      success: false,
+    };
+  }
+
+  // --- 5. REGISTRAR TRAZABILIDAD DEL DESCUENTO ---
+  if (
+    promocionId &&
+    promocionId !== "ninguna" &&
+    descuentoMonto > 0 &&
+    promoData
+  ) {
     const { error: descError } = await supabase
       .from("ventas_descuentos")
       .insert({
@@ -184,20 +282,18 @@ export async function registrarVentaAction(
         monto_descontado: descuentoMonto,
       });
 
-    if (descError) console.error("Fallo insertando trazabilidad:", descError);
+    if (descError)
+      console.error("⚠️ Fallo insertando trazabilidad:", descError);
 
-    const { error: updatePromoError } = await supabase
+    await supabase
       .from("promociones")
       .update({
         usos_actuales: (promoData.usos_actuales || 0) + 1,
       })
       .eq("id", promocionId);
-
-    if (updatePromoError)
-      console.error("Fallo sumando uso de promo:", updatePromoError);
   }
 
-  // --- 4. CREAR LOS DETALLES (ventas_items) ---
+  // --- 6. CREAR LOS DETALLES (ventas_items) ---
   const insertItems = itemsProcesados.map((item) => ({
     venta_id: nuevaVenta.id,
     producto_id: item.productoId,
@@ -212,24 +308,34 @@ export async function registrarVentaAction(
       promoData && item.descuentoMonto > 0 ? promoData.nombre : null,
   }));
 
+  console.log(
+    "🚀 Insertando items en 'ventas_items':",
+    insertItems.length,
+    "items.",
+  );
+
   const { error: itemsError } = await supabase
     .from("ventas_items")
     .insert(insertItems);
 
   if (itemsError) {
+    console.error("❌ ERROR BD 'ventas_items':", itemsError);
     return {
-      error: "Error al guardar los productos en el ticket.",
+      error: `Fallo en BD (Ventas Items): ${itemsError.message}`,
       success: false,
     };
   }
 
-  // --- 5. DESCONTAR STOCK ---
+  // --- 7. DESCONTAR STOCK ---
   for (const item of itemsProcesados) {
     await supabase
       .from("productos_stock")
       .update({ cantidad: item.stockOriginal - item.cantidad })
       .eq("id", item.stockId);
   }
+
+  console.log("🎉 VENTA COMPLETADA EXITOSAMENTE");
+  console.log("=========================================\n");
 
   revalidatePath("/", "layout");
   return { error: null, success: true };

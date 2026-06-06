@@ -16,7 +16,6 @@ export async function getDetallesTurnoAction(
     const [ventasRes, egresosRes] = await Promise.all([
       supabase
         .from("ventas")
-        // AQUI CORREGIMOS EL JOIN HACIA VENTAS_ITEMS
         .select(
           `
           id, 
@@ -24,7 +23,8 @@ export async function getDetallesTurnoAction(
           metodo_pago, 
           fecha_venta, 
           perfiles(nombre),
-          ventas_items(producto:productos(nombre)) 
+          ventas_items(producto:productos(nombre)),
+          venta_pagos(metodo_nombre, metodo_tipo, monto_bruto, comision_porcentaje, comision_monto, monto_neto, acreditacion_dias)
         `,
         )
         .gte("fecha_venta", fechaInicio)

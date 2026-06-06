@@ -106,7 +106,7 @@ export function DonutChart({
           <text
             textAnchor="middle"
             dy="25"
-            className={`text-xs font-bold tracking-widest ${isEnPerdida ? "fill-rose-500" : "fill-emerald-600"}`}
+            className={`text-xs font-bold tracking-widest ${isEnPerdida ? "fill-destructive" : "fill-accent-blue"}`}
           >
             {isEnPerdida ? "EN PÉRDIDA" : "DE MARGEN NETO"}
           </text>

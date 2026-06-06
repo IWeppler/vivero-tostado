@@ -8,7 +8,6 @@ export const dynamic = "force-dynamic";
 export default async function ConfiguracionPage() {
   const { data: config, error: configError } = await getConfiguracionAction();
 
-  // Agregamos el fetch de promociones directamente aquí
   const cookieStore = await cookies();
   const supabase = createClient(cookieStore);
 
@@ -19,6 +18,11 @@ export default async function ConfiguracionPage() {
     )
     .order("creado_en", { ascending: false });
 
+  const { data: pagos } = await supabase
+    .from("metodos_pago")
+    .select("*")
+    .order("nombre", { ascending: true });
+
   return (
     <div className="space-y-6 mx-auto">
       {configError || !config ? (
@@ -27,7 +31,11 @@ export default async function ConfiguracionPage() {
             "No se encontró la configuración en la base de datos."}
         </div>
       ) : (
-        <SettingsManager config={config} promociones={promociones ?? []} />
+        <SettingsManager
+          config={config}
+          promociones={promociones || []}
+          pagos={pagos || []}
+        />
       )}
     </div>
   );

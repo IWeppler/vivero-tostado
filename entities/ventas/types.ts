@@ -7,28 +7,43 @@ export const getSupabaseRelation = <T>(
   return Array.isArray(relation) ? (relation[0] ?? null) : relation;
 };
 
-export interface VentaProducto {
-  nombre: string;
-  imagen_url: string | null;
-}
-
-export interface VentaPerfil {
-  nombre: string;
-}
-
 export interface VentaItem {
+  id: string;
+  venta_id: string;
+  producto_id?: string | null;
+  variante: string;
   cantidad: number;
   precio_unitario: number;
-  variante: string;
+  precio_costo?: number;
   descuento_monto?: number;
   precio_final?: number;
   promocion_nombre?: string | null;
-  producto?: SupabaseRelation<VentaProducto>;
+  producto?: VentaProducto | null;
+}
+
+export interface VentaProducto {
+  nombre?: string;
+  tipo?: string;
+  precio_costo?: number;
 }
 
 export interface VentaDescuento {
   monto_descontado: number;
   promocion_nombre: string;
+}
+
+export interface VentaPago {
+  id?: string;
+  venta_id?: string;
+  metodo_pago_id?: string | null;
+  metodo_nombre: string;
+  metodo_tipo: string;
+  monto_bruto: number;
+  comision_porcentaje: number;
+  comision_monto: number;
+  monto_neto: number;
+  acreditacion_dias: number;
+  creado_en?: string;
 }
 
 export interface Venta {
@@ -38,9 +53,12 @@ export interface Venta {
   cantidad: number;
   fecha_venta: string;
   metodo_pago?: string | null;
-  perfiles?: SupabaseRelation<VentaPerfil>;
+  perfiles?: {
+    nombre: string;
+  } | null;
   ventas_items?: VentaItem[];
   ventas_descuentos?: VentaDescuento[];
+  venta_pagos?: VentaPago[];
 }
 
 export interface TicketItemData {
@@ -60,4 +78,7 @@ export interface TicketData {
   vendedor?: string;
   descuentoMonto?: number;
   promocionNombre?: string;
+  comisionMonto?: number;
+  montoNeto?: number;
+  acreditacionDias?: number;
 }

@@ -17,22 +17,34 @@ import {
   ArrowDownRight,
   Wallet,
   Clock,
+  CreditCard,
 } from "lucide-react";
 import { getDetallesTurnoAction } from "../actions/get-details";
-import { TurnoCajaHistorial } from "@/entities/caja/types";
 import { ScrollArea } from "@/shared/ui/scroll-area";
-import { formatearMoneda } from "@/shared/utils/formatters";
 
 interface CajaDetailSheetProps {
-  turno: TurnoCajaHistorial | null;
+  turno: any;
   onClose: () => void;
 }
+
+const formatearMoneda = (monto: number) => {
+  return new Intl.NumberFormat("es-AR", {
+    style: "currency",
+    currency: "ARS",
+    maximumFractionDigits: 0,
+  }).format(monto);
+};
 
 export function CajaDetailSheet({
   turno,
   onClose,
 }: Readonly<CajaDetailSheetProps>) {
   const [movimientos, setMovimientos] = useState<any[]>([]);
+  const [totalesDigitales, setTotalesDigitales] = useState({
+    bruto: 0,
+    neto: 0,
+    comision: 0,
+  });
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
@@ -46,22 +58,56 @@ export function CajaDetailSheet({
       );
 
       if (res.data) {
-        const ventasMapeadas = res.data.ventas.map((v: any) => ({
-          id: v.id,
-          tipo: "INGRESO",
-          concepto: `Venta: ${v.producto?.nombre || "Varios"}`,
-          metodo: v.metodo_pago || "EFECTIVO",
-          monto: Number(v.total),
-          fecha: v.fecha_venta,
-          usuario: v.perfiles?.nombre || "Vendedor",
-        }));
+        const ventasMapeadas = res.data.ventas.flatMap((v: any) => {
+          const primerProducto = v.ventas_items?.[0]?.producto?.nombre;
+          const itemsExtra = (v.ventas_items?.length || 1) - 1;
+          const conceptoNombre = primerProducto
+            ? `${primerProducto} ${itemsExtra > 0 ? `+ ${itemsExtra} art.` : ""}`
+            : "Varios/Eliminado";
+
+          const pagos = v.venta_pagos || [];
+
+          if (pagos.length > 0) {
+            return pagos.map((pago: any) => ({
+              id: `${v.id}-${pago.id || Math.random()}`,
+              tipo: "INGRESO",
+              concepto: `Venta: ${conceptoNombre}`,
+              metodo: pago.metodo_nombre,
+              metodo_tipo: pago.metodo_tipo,
+              monto: Number(pago.monto_bruto),
+              comision: Number(pago.comision_monto),
+              neto: Number(pago.monto_neto),
+              fecha: v.fecha_venta,
+              usuario: v.perfiles?.nombre || "Vendedor",
+            }));
+          } else {
+            const isEfectivo = v.metodo_pago === "EFECTIVO";
+            return [
+              {
+                id: v.id,
+                tipo: "INGRESO",
+                concepto: `Venta: ${conceptoNombre}`,
+                metodo: v.metodo_pago || "EFECTIVO",
+                metodo_tipo: isEfectivo ? "EFECTIVO" : "TARJETA",
+                monto: Number(v.total),
+                comision: 0,
+                neto: Number(v.total),
+                fecha: v.fecha_venta,
+                usuario: v.perfiles?.nombre || "Vendedor",
+              },
+            ];
+          }
+        });
 
         const egresosMapeados = res.data.egresos.map((e: any) => ({
           id: e.id,
           tipo: "EGRESO",
           concepto: `Gasto: ${e.concepto}`,
-          metodo: "EFECTIVO",
+          metodo: "CAJA FÍSICA",
+          metodo_tipo: "EFECTIVO",
           monto: Number(e.monto),
+          comision: 0,
+          neto: Number(e.monto),
           fecha: e.fecha,
           usuario: e.perfiles?.nombre || "Usuario",
         }));
@@ -71,6 +117,16 @@ export function CajaDetailSheet({
         );
 
         setMovimientos(todos);
+
+        // Precalculamos totales digitales para el Cierre Z
+        const digitales = ventasMapeadas.filter(
+          (m) => m.metodo_tipo !== "EFECTIVO",
+        );
+        setTotalesDigitales({
+          bruto: digitales.reduce((acc, m) => acc + m.monto, 0),
+          comision: digitales.reduce((acc, m) => acc + m.comision, 0),
+          neto: digitales.reduce((acc, m) => acc + m.neto, 0),
+        });
       }
       setIsLoading(false);
     };
@@ -96,10 +152,10 @@ export function CajaDetailSheet({
     >
       <SheetContent
         side="right"
-        className="w-full sm:max-w-md p-0 flex flex-col"
+        className="w-full sm:max-w-md p-0 flex flex-col bg-card"
       >
-        <SheetHeader className="p-6 border-b border-border bg-background z-10 shrink-0">
-          <SheetTitle className="flex items-center gap-3 text-xl font-bold text-foreground">
+        <SheetHeader className="p-6 border-b border-border z-10 shrink-0">
+          <SheetTitle className="flex items-center gap-3 text-xl font-semi text-foreground">
             <div className="p-2 bg-muted rounded-full">
               <FileText className="w-5 h-5 text-muted-foreground" />
             </div>
@@ -114,11 +170,12 @@ export function CajaDetailSheet({
             </p>
           </div>
 
-          {/* Tarjeta de Resumen Financiero */}
-          <div className="bg-background p-5 rounded-2xl border border-border mb-6">
+          {/* ARQUEO FÍSICO */}
+          <div className="bg-card p-5 rounded-2xl border border-border mb-4">
             <div className="flex justify-between items-start mb-4">
-              <span className="text-sm text-muted-foreground font-medium flex items-center gap-2">
-                <Wallet className="w-4 h-4" /> Resultado del Arqueo
+              <span className="text-sm text-foreground font-semibold flex items-center gap-2">
+                <Wallet className="w-4 h-4 text-emerald-600" /> Arqueo Físico
+                (Cajón)
               </span>
               {isAbierto ? (
                 <Badge
@@ -141,7 +198,7 @@ export function CajaDetailSheet({
               <div className="flex items-center justify-between pb-4 border-b border-border/50 mb-4">
                 <div>
                   <p className="text-xs text-muted-foreground uppercase tracking-widest font-semibold mb-1">
-                    Diferencia
+                    Diferencia de Efectivo
                   </p>
                   {diferencia === 0 ? (
                     <span className="text-xl font-black text-emerald-600">
@@ -182,11 +239,37 @@ export function CajaDetailSheet({
             </div>
           </div>
 
-          {/* Listado de Movimientos */}
+          {/* ARQUEO DIGITAL */}
+          <div className="bg-card p-5 rounded-2xl border border-border mb-6">
+            <div className="flex justify-between items-start mb-4 border-b border-blue-200/50 pb-3">
+              <span className="text-sm text-foreground font-semibold flex items-center gap-2">
+                <CreditCard className="w-4 h-4 text-blue-600" />
+                Cobros Digitales
+              </span>
+            </div>
+            <div className="space-y-2 text-sm">
+              <div className="flex justify-between items-center text-muted-foreground">
+                <span>Monto Bruto:</span>
+                <span className="font-medium text-foreground">
+                  {formatearMoneda(totalesDigitales.bruto)}
+                </span>
+              </div>
+              <div className="flex justify-between items-center text-rose-600/80">
+                <span>Comisiones Retenidas:</span>
+                <span className="font-medium text-rose-600">
+                  -{formatearMoneda(totalesDigitales.comision)}
+                </span>
+              </div>
+              <div className="flex justify-between items-center text-blue-900 font-bold pt-1">
+                <span>Acreditación Neta:</span>
+                <span>{formatearMoneda(totalesDigitales.neto)}</span>
+              </div>
+            </div>
+          </div>
+
           <div className="space-y-3 pb-8">
             <h3 className="font-bold text-foreground flex items-center gap-2">
-              <Clock className="w-4 h-4 text-muted-foreground" /> Línea de
-              Tiempo
+              <Clock className="w-4 h-4 text-muted-foreground" /> Movimientos
             </h3>
 
             {isLoading ? (
@@ -194,11 +277,11 @@ export function CajaDetailSheet({
                 <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
               </div>
             ) : movimientos.length === 0 ? (
-              <div className="bg-background border border-border rounded-xl p-8 text-center text-sm text-muted-foreground">
+              <div className="bg-card border border-border rounded-xl p-8 text-center text-sm text-muted-foreground">
                 No hubo movimientos de dinero en este turno.
               </div>
             ) : (
-              <div className="bg-background border border-border rounded-xl p-2 divide-y divide-border/60">
+              <div className="bg-card border border-border rounded-xl p-2 divide-y divide-border/60">
                 {movimientos.map((mov) => (
                   <div
                     key={`${mov.tipo}-${mov.id}`}
@@ -215,7 +298,7 @@ export function CajaDetailSheet({
                         )}
                       </div>
                       <div>
-                        <p className="font-semibold text-sm text-foreground max-w-[140px] truncate">
+                        <p className="font-semibold text-sm text-foreground max-w-[130px] truncate">
                           {mov.concepto}
                         </p>
                         <p className="text-[10px] text-muted-foreground uppercase tracking-widest mt-0.5">
@@ -228,15 +311,17 @@ export function CajaDetailSheet({
                       </div>
                     </div>
                     <div className="text-right">
-                      <p
-                        className={`font-semibold text-sm ${mov.tipo === "INGRESO" ? "text-emerald-600" : "text-destructive"}`}
+                      <div
+                        className={`font-bold text-sm ${mov.tipo === "INGRESO" ? "text-emerald-600" : "text-rose-600"}`}
                       >
                         {mov.tipo === "INGRESO" ? "+" : "-"}
                         {formatearMoneda(mov.monto)}
-                      </p>
-                      <p className="text-[10px] text-muted-foreground mt-0.5 font-medium">
-                        {mov.usuario}
-                      </p>
+                      </div>
+                      {mov.comision > 0 && (
+                        <div className="text-[10px] text-rose-500 font-medium leading-none mt-1">
+                          Comisión: -{formatearMoneda(mov.comision)}
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -245,9 +330,8 @@ export function CajaDetailSheet({
           </div>
         </ScrollArea>
 
-        {/* Botonera Flotante (Imprimir) */}
         {!isAbierto && (
-          <div className="p-4 bg-background border-t border-border flex justify-center z-10 shrink-0">
+          <div className="p-4 bg-card border-t border-border flex justify-center shadow-md z-10 shrink-0">
             <Button
               variant="ghost"
               className="w-full flex h-12 gap-2 text-foreground font-bold hover:bg-muted border border-border"

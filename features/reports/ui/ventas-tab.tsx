@@ -118,7 +118,7 @@ export function VentasTab({ metrics }: Readonly<VentasTabProps>) {
         <Card className="lg:col-span-3 border-border shadow-none">
           <CardHeader className=" border-b border-border/50 pb-4 mb-2">
             <CardTitle className="text-lg flex items-center gap-2">
-              <CalendarDays className="w-5 h-5 text-emerald-500" /> 
+              <CalendarDays className="w-5 h-5 text-emerald-500" />
               Densidad Operativa
             </CardTitle>
           </CardHeader>
@@ -160,7 +160,7 @@ export function VentasTab({ metrics }: Readonly<VentasTabProps>) {
           </CardContent>
         </Card>
 
-        {/* 🚀 Fila Inferior: Categoría Interactiva */}
+        {/* 🚀 Fila Inferior 1/2: Categorías (2 columnas) */}
         <Card className="lg:col-span-2 border-border shadow-none">
           <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-3 gap-4">
             <CardTitle className="text-lg flex items-center gap-2">
@@ -199,7 +199,7 @@ export function VentasTab({ metrics }: Readonly<VentasTabProps>) {
           </CardContent>
         </Card>
 
-        {/* Métodos de Pago */}
+        {/* 🚀 Fila Inferior 2/2: Métodos de Pago Progress Bar (1 columna) */}
         <Card className="lg:col-span-1 border-border flex flex-col shadow-none">
           <CardHeader>
             <CardTitle className="text-lg flex items-center gap-2">
@@ -209,26 +209,30 @@ export function VentasTab({ metrics }: Readonly<VentasTabProps>) {
           <CardContent className="flex-1 flex flex-col justify-center">
             {metrics.ventasPorMetodo.length > 0 ? (
               <div className="space-y-4 w-full">
-                {metrics.ventasPorMetodo.map((metodo: any, idx: number) => (
-                  <div key={idx} className="flex flex-col gap-1">
-                    <div className="flex justify-between items-center">
-                      <span className="font-semibold text-sm uppercase text-muted-foreground">
-                        {metodo.label}
-                      </span>
-                      <span className="font-bold text-foreground">
-                        {formatearMoneda(metodo.value)}
-                      </span>
+                {metrics.ventasPorMetodo.map((metodo: any, idx: number) => {
+                  const porcentaje =
+                    metrics.ingresos > 0
+                      ? (metodo.bruto / metrics.ingresos) * 100
+                      : 0;
+                  return (
+                    <div key={idx} className="flex flex-col gap-1">
+                      <div className="flex justify-between items-center">
+                        <span className="font-semibold text-sm uppercase text-muted-foreground">
+                          {metodo.label}
+                        </span>
+                        <span className="font-bold text-foreground">
+                          {formatearMoneda(metodo.bruto)}
+                        </span>
+                      </div>
+                      <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
+                        <div
+                          className="bg-indigo-500 h-full rounded-full transition-all duration-500"
+                          style={{ width: `${porcentaje}%` }}
+                        />
+                      </div>
                     </div>
-                    <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
-                      <div
-                        className="bg-indigo-500 h-full rounded-full transition-all duration-500"
-                        style={{
-                          width: `${(metodo.value / metrics.ingresos) * 100}%`,
-                        }}
-                      />
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             ) : (
               <div className="text-center text-muted-foreground text-sm py-8">

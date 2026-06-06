@@ -3,6 +3,7 @@ import { getStockAction } from "@/features/stock/actions/get-product";
 import { VentasTable } from "@/features/sales/ui/sale-table";
 import { createClient } from "@/shared/config/supabase/server";
 import { cookies } from "next/headers";
+import { Venta } from "@/entities/ventas/types";
 
 export const dynamic = "force-dynamic";
 
@@ -31,7 +32,7 @@ export default async function VentasPage() {
     getStockAction(),
   ]);
 
-  const ventas = ventasResponse.data;
+  const ventas = (ventasResponse.data || []) as unknown as Venta[];
   const error = ventasResponse.error;
   const productos = productosResponse.data;
 

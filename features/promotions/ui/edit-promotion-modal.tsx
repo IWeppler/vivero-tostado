@@ -6,7 +6,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/shared/ui/dialog";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
@@ -18,83 +17,85 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/shared/ui/select";
-import { Loader2, Plus, Tag } from "lucide-react";
+import { Loader2, Tag } from "lucide-react";
 import { ScrollArea } from "@/shared/ui/scroll-area";
 import { TIPO_OPTIONS } from "@/entities/productos/constants";
-import { createPromotionAction } from "../actions/create-promotion";
+import { editPromotionAction } from "../actions/manage-promotions";
+import { Promotion } from "./promotions-panel";
 import { toast } from "sonner";
 
-type PromotionActionState = {
-  error: string | null;
-  success: boolean;
-};
+// --- CONSTANTES PARA LOS SELECTS ---
+const TIPO_REGLA_OPTIONS = [
+  { value: "METODO_PAGO", label: "Por Método de Pago" },
+  { value: "CATEGORIA", label: "Por Categoría de Producto" },
+  { value: "MONTO_MINIMO", label: "Por Monto Mínimo de Compra" },
+] as const;
 
-const initialState: PromotionActionState = {
-  error: null,
-  success: false,
-};
+const METODO_PAGO_OPTIONS = [
+  { value: "EFECTIVO", label: "Efectivo" },
+  { value: "TRANSFERENCIA", label: "Transferencia" },
+  { value: "TARJETA", label: "Tarjeta" },
+] as const;
 
-export function CreatePromotionModal() {
-  const [isOpen, setIsOpen] = useState(false);
-  const [tipoRegla, setTipoRegla] = useState("METODO_PAGO");
-  const [tipoDescuento, setTipoDescuento] = useState("PORCENTAJE");
-  const [metodoPago, setMetodoPago] = useState("");
-  const [categoria, setCategoria] = useState("");
+const TIPO_DESCUENTO_OPTIONS = [
+  { value: "PORCENTAJE", label: "Porcentaje (%)" },
+  { value: "MONTO_FIJO", label: "Monto fijo ($)" },
+] as const;
 
-  const resetForm = () => {
-    setTipoRegla("METODO_PAGO");
-    setTipoDescuento("PORCENTAJE");
-    setMetodoPago("");
-    setCategoria("");
-  };
+type TipoRegla = (typeof TIPO_REGLA_OPTIONS)[number]["value"];
+type TipoDescuento = (typeof TIPO_DESCUENTO_OPTIONS)[number]["value"];
 
-  const handleOpenChange = (open: boolean) => {
-    setIsOpen(open);
-    if (!open) resetForm();
-  };
+export function EditPromotionModal({
+  promo,
+  open,
+  onOpenChange,
+}: {
+  promo: Promotion;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
+  const [tipoRegla, setTipoRegla] = useState<TipoRegla>(promo.tipo_regla);
+  const [tipoDescuento, setTipoDescuento] = useState<TipoDescuento>(
+    promo.tipo_descuento,
+  );
+  const [metodoPago, setMetodoPago] = useState(
+    promo.promociones_metodos_pago?.[0]?.metodo_pago || "",
+  );
+  const [categoria, setCategoria] = useState(
+    promo.promociones_categorias?.[0]?.categoria_nombre || "",
+  );
 
   const [, formAction, isPending] = useActionState(
-    async (previousState: PromotionActionState, formData: FormData) => {
+    async (previousState: any, formData: FormData) => {
+      formData.append("id", promo.id);
       formData.append("tipo_regla", tipoRegla);
       formData.append("tipo_descuento", tipoDescuento);
 
-      if (tipoRegla === "METODO_PAGO") {
+      if (tipoRegla === "METODO_PAGO")
         formData.append("metodo_pago", metodoPago);
-      }
-
-      if (tipoRegla === "CATEGORIA") {
+      if (tipoRegla === "CATEGORIA")
         formData.append("categoria_nombre", categoria);
-      }
 
-      const result = await createPromotionAction(previousState, formData);
+      const result = await editPromotionAction(previousState, formData);
 
       if (result.success) {
-        toast.success("Promoción creada correctamente");
-        setIsOpen(false);
-        resetForm();
+        toast.success("Promoción actualizada correctamente");
+        onOpenChange(false);
       } else if (result.error) {
         toast.error(result.error);
       }
-
       return result;
     },
-    initialState,
+    { error: null, success: false },
   );
 
   return (
-    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
-      <DialogTrigger asChild>
-        <Button variant="outline" className="flex items-center gap-2">
-          <Plus className="w-4 h-4" />
-          Nueva Promoción
-        </Button>
-      </DialogTrigger>
-
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md w-[95vw] rounded-xl p-0 overflow-hidden bg-card border-border">
         <DialogHeader className="p-6 pb-4 border-b border-border">
           <DialogTitle className="flex items-center gap-2 text-xl font-bold">
             <Tag className="w-5 h-5 text-primary" />
-            Crear Regla de Descuento
+            Editar Regla de Descuento
           </DialogTitle>
         </DialogHeader>
 
@@ -106,7 +107,7 @@ export function CreatePromotionModal() {
                 <Input
                   id="nombre"
                   name="nombre"
-                  placeholder="Ej: Especial 10% Efectivo"
+                  defaultValue={promo.nombre}
                   required
                 />
               </div>
@@ -119,20 +120,20 @@ export function CreatePromotionModal() {
 
               <div className="space-y-2">
                 <Label>Tipo de condición</Label>
-                <Select value={tipoRegla} onValueChange={setTipoRegla} required>
+                <Select
+                  value={tipoRegla}
+                  onValueChange={(val) => setTipoRegla(val as TipoRegla)}
+                  required
+                >
                   <SelectTrigger className="w-full bg-background border-border">
-                    <SelectValue placeholder="Selecciona la condición..." />
+                    <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="METODO_PAGO">
-                      Por Método de Pago
-                    </SelectItem>
-                    <SelectItem value="CATEGORIA">
-                      Por Categoría de Producto
-                    </SelectItem>
-                    <SelectItem value="MONTO_MINIMO">
-                      Por Monto Mínimo de Compra
-                    </SelectItem>
+                    {TIPO_REGLA_OPTIONS.map((opt) => (
+                      <SelectItem key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -146,14 +147,14 @@ export function CreatePromotionModal() {
                     required
                   >
                     <SelectTrigger className="w-full bg-background border-border">
-                      <SelectValue placeholder="Ej: EFECTIVO" />
+                      <SelectValue placeholder="Selecciona el método" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="EFECTIVO">Efectivo</SelectItem>
-                      <SelectItem value="TRANSFERENCIA">
-                        Transferencia
-                      </SelectItem>
-                      <SelectItem value="TARJETA">Tarjeta</SelectItem>
+                      {METODO_PAGO_OPTIONS.map((opt) => (
+                        <SelectItem key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -191,7 +192,7 @@ export function CreatePromotionModal() {
                     name="monto_minimo"
                     type="number"
                     min="0"
-                    placeholder="Ej: 50000"
+                    defaultValue={promo.monto_minimo}
                     required
                   />
                 </div>
@@ -208,14 +209,19 @@ export function CreatePromotionModal() {
                   <Label>Tipo de rebaja</Label>
                   <Select
                     value={tipoDescuento}
-                    onValueChange={setTipoDescuento}
+                    onValueChange={(val) =>
+                      setTipoDescuento(val as TipoDescuento)
+                    }
                   >
                     <SelectTrigger className="w-full bg-background border-border">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="PORCENTAJE">Porcentaje (%)</SelectItem>
-                      <SelectItem value="MONTO_FIJO">Monto fijo ($)</SelectItem>
+                      {TIPO_DESCUENTO_OPTIONS.map((opt) => (
+                        <SelectItem key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -229,9 +235,7 @@ export function CreatePromotionModal() {
                     type="number"
                     min="1"
                     step="any"
-                    placeholder={
-                      tipoDescuento === "PORCENTAJE" ? "Ej: 15" : "Ej: 2000"
-                    }
+                    defaultValue={promo.valor_descuento}
                     required
                   />
                 </div>
@@ -241,11 +245,25 @@ export function CreatePromotionModal() {
             <div className="grid grid-cols-2 gap-4 pt-4 border-t border-border">
               <div className="space-y-2">
                 <Label htmlFor="fecha_inicio">Válido desde (Opcional)</Label>
-                <Input type="date" id="fecha_inicio" name="fecha_inicio" />
+                <Input
+                  type="date"
+                  id="fecha_inicio"
+                  name="fecha_inicio"
+                  defaultValue={
+                    promo.fecha_inicio ? promo.fecha_inicio.split("T")[0] : ""
+                  }
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="fecha_fin">Válido hasta (Opcional)</Label>
-                <Input type="date" id="fecha_fin" name="fecha_fin" />
+                <Input
+                  type="date"
+                  id="fecha_fin"
+                  name="fecha_fin"
+                  defaultValue={
+                    promo.fecha_fin ? promo.fecha_fin.split("T")[0] : ""
+                  }
+                />
               </div>
             </div>
 
@@ -253,7 +271,7 @@ export function CreatePromotionModal() {
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => handleOpenChange(false)}
+                onClick={() => onOpenChange(false)}
                 disabled={isPending}
               >
                 Cancelar
@@ -266,7 +284,7 @@ export function CreatePromotionModal() {
                 {isPending ? (
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                 ) : null}
-                Guardar Regla
+                Actualizar
               </Button>
             </div>
           </form>

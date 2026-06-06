@@ -18,12 +18,13 @@ import {
   Package,
   ShoppingCart,
 } from "lucide-react";
-import { BajasTab } from "../../../features/reports/ui/bajas-tab";
-import { InventarioTab } from "../../../features/reports/ui/inventario-tab";
-import { RentabilidadTab } from "../../../features/reports/ui/rentabilidad-tab";
-import { ResumenTab } from "../../../features/reports/ui/resumen-tab";
-import { BajaAprobadaReporte } from "../../../entities/reportes/types";
-import { VentasTab } from "../../../features/reports/ui/ventas-tab";
+import { BajasTab } from "@/features/reports/ui/bajas-tab";
+import { InventarioTab } from "@/features/reports/ui/inventario-tab";
+import { RentabilidadTab } from "@/features/reports/ui/rentabilidad-tab";
+import { ResumenTab } from "@/features/reports/ui/resumen-tab";
+import { BajaAprobadaReporte } from "@/entities/reportes/types";
+import { VentasTab } from "@/features/reports/ui/ventas-tab";
+import { Venta } from "@/entities/ventas/types";
 
 export const dynamic = "force-dynamic";
 
@@ -55,7 +56,7 @@ export default async function ReportesPage({
         .eq("estado", "APROBADA"),
     ]);
 
-  const ventas = ventasResponse.data || [];
+  const ventas = (ventasResponse.data || []) as unknown as Venta[];
   const productos = productosResponse.data || [];
   const egresos = egresosResponse.data || [];
   const bajasAprobadas = (bajasResponse.data || []) as BajaAprobadaReporte[];

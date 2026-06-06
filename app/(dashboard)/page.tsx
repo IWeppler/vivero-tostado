@@ -6,7 +6,7 @@ import { EgresoModal } from "@/features/caja/ui/egreso-modal";
 import { createClient } from "@/shared/config/supabase/server";
 import { cookies } from "next/headers";
 import { getDashboardMetrics } from "@/features/dashboard/lib/get-dashboard-metrics";
-import { getSupabaseRelation } from "@/entities/ventas/types";
+import { getSupabaseRelation, Venta } from "@/entities/ventas/types";
 import Link from "next/link";
 import {
   TrendingDown,
@@ -49,7 +49,7 @@ export default async function DashboardPage() {
       .single(),
   ]);
 
-  const ventas = ventasResponse.data || [];
+  const ventas = (ventasResponse.data || []) as unknown as Venta[];
   const productos = productosResponse.data || [];
   const egresos = egresosResponse.data || [];
   const bajas = bajasResponse.data || [];
@@ -329,7 +329,7 @@ export default async function DashboardPage() {
             <div className="flex-1 space-y-2">
               {metricasHoy.productosCriticos > 0 ? (
                 <div className="flex items-center gap-2 text-xs bg-muted/40 border border-border rounded-lg px-3 py-2 text-foreground">
-                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500 flex-shrink-0" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
                   {metricasHoy.productosCriticos} productos con stock bajo (≤ 3)
                 </div>
               ) : (
@@ -339,7 +339,7 @@ export default async function DashboardPage() {
               )}
               {cantidadBajasPendientes > 0 && (
                 <div className="flex items-center gap-2 text-xs bg-muted/40 border border-border rounded-lg px-3 py-2 text-foreground">
-                  <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground flex-shrink-0" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground shrink-0" />
                   {cantidadBajasPendientes} mermas pendientes de revisión
                 </div>
               )}
@@ -409,7 +409,7 @@ export default async function DashboardPage() {
                     className="flex items-center justify-between px-4 py-3"
                   >
                     <div className="flex items-center gap-3 overflow-hidden">
-                      <span className="text-[11px] text-muted-foreground/50 w-4 flex-shrink-0">
+                      <span className="text-[11px] text-muted-foreground/50 w-4 shrink-0">
                         {idx + 1}
                       </span>
                       <p
@@ -419,7 +419,7 @@ export default async function DashboardPage() {
                         {producto.nombre}
                       </p>
                     </div>
-                    <span className="text-xs text-muted-foreground ml-3 flex-shrink-0 bg-muted/50 border border-border rounded px-2 py-0.5">
+                    <span className="text-xs text-muted-foreground ml-3 shrink-0 bg-muted/50 border border-border rounded px-2 py-0.5">
                       {producto.unidades} u.
                     </span>
                   </div>
@@ -450,7 +450,7 @@ export default async function DashboardPage() {
                       className="flex items-center justify-between px-4 py-3"
                     >
                       <div className="flex items-center gap-3 overflow-hidden">
-                        <span className="text-[11px] text-muted-foreground/50 w-4 flex-shrink-0">
+                        <span className="text-[11px] text-muted-foreground/50 w-4 shrink-0">
                           {idx + 1}
                         </span>
                         <p
@@ -460,7 +460,7 @@ export default async function DashboardPage() {
                           {producto.nombre}
                         </p>
                       </div>
-                      <span className="text-xs font-medium text-foreground ml-3 flex-shrink-0">
+                      <span className="text-xs font-medium text-foreground ml-3 shrink-0">
                         +{formatearMoneda(producto.ganancia)}
                       </span>
                     </div>
@@ -505,7 +505,7 @@ export default async function DashboardPage() {
                         {formatearHora(venta.fecha_venta)} · {venta.cantidad} u.
                       </p>
                     </div>
-                    <p className="text-sm font-medium text-foreground ml-4 flex-shrink-0">
+                    <p className="text-sm font-medium text-foreground ml-4 shrink-0">
                       {formatearMoneda(venta.total)}
                     </p>
                   </div>

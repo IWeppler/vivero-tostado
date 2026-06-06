@@ -34,6 +34,7 @@ export default async function CajaPage() {
     .order("fecha_apertura", { ascending: false })
     .limit(30);
 
+  // Tipamos el historial correctamente
   const turnos = (turnosHistorial || []) as TurnoCajaHistorial[];
 
   // 3. Identificamos si hay uno abierto
@@ -48,7 +49,7 @@ export default async function CajaPage() {
       supabase
         .from("ventas")
         .select(
-          "id, total, metodo_pago, fecha_venta, perfiles(nombre), ventas_items(producto:productos(nombre))",
+          "id, total, metodo_pago, fecha_venta, perfiles(nombre), ventas_items(producto:productos(nombre)), venta_pagos(metodo_nombre, metodo_tipo, monto_bruto, comision_monto, monto_neto, acreditacion_dias)",
         )
         .gte("fecha_venta", turnoAbierto.fecha_apertura)
         .order("fecha_venta", { ascending: false }),
@@ -59,13 +60,13 @@ export default async function CajaPage() {
         .order("fecha", { ascending: false }),
     ]);
 
-    // Casteamos la respuesta de Supabase a nuestras interfaces fuertes
+    // Casteamos la respuesta de Supabase
     ventas = (ventasRes.data || []) as unknown as VentaCaja[];
     egresos = (egresosRes.data || []) as unknown as EgresoCaja[];
   }
 
   return (
-    <div className="space-y-6 mx-auto pb-12">
+    <div className="space-y-6 max-w-7xl mx-auto pb-12">
       <CajaDashboard
         turno={turnoAbierto}
         ventas={ventas}

@@ -14,6 +14,10 @@ export async function createPromotionAction(
     const tipo_descuento = formData.get("tipo_descuento") as string;
     const valor_descuento = Number(formData.get("valor_descuento"));
 
+    // Fechas de vigencia (opcionales)
+    const fecha_inicio = formData.get("fecha_inicio") as string;
+    const fecha_fin = formData.get("fecha_fin") as string;
+
     // Campos dinámicos
     const metodo_pago = formData.get("metodo_pago") as string;
     const categoria_nombre = formData.get("categoria_nombre") as string;
@@ -40,8 +44,10 @@ export async function createPromotionAction(
         tipo_descuento,
         valor_descuento,
         monto_minimo: tipo_regla === "MONTO_MINIMO" ? monto_minimo : 0,
+        fecha_inicio: fecha_inicio ? fecha_inicio : null,
+        fecha_fin: fecha_fin ? fecha_fin : null,
         creado_por: user.id,
-        activa: true, // Nace activa por defecto
+        activa: true,
       })
       .select("id")
       .single();

@@ -6,7 +6,6 @@ import { Badge } from "@/shared/ui/badge";
 import {
   ArrowUpRight,
   ArrowDownRight,
-  Wallet,
   Banknote,
   CreditCard,
   Lock,
@@ -14,6 +13,7 @@ import {
   Loader2,
   Info,
   Clock,
+  Percent,
 } from "lucide-react";
 import { EgresoModal } from "./egreso-modal";
 import { Button } from "@/shared/ui/button";
@@ -33,17 +33,37 @@ import {
   VentaCaja,
   EgresoCaja,
   CajaActionState,
-  Movimiento,
 } from "@/entities/caja/types";
 import { CajaHistoryTable } from "./caja-history-table";
-import { formatearMoneda } from "@/shared/utils/formatters";
+
+const formatearMoneda = (monto: number) => {
+  return new Intl.NumberFormat("es-AR", {
+    style: "currency",
+    currency: "ARS",
+    maximumFractionDigits: 0,
+  }).format(monto);
+};
 
 export interface CajaDashboardProps {
   turno: TurnoCajaHistorial | null;
-  ventas: VentaCaja[];
+  ventas: any[];
   egresos: EgresoCaja[];
   historial: TurnoCajaHistorial[];
 }
+
+// Interfaz local extendida para soportar comisiones
+type MovimientoExtendido = {
+  id: string;
+  tipo: "INGRESO" | "EGRESO";
+  concepto: string;
+  metodo: string;
+  metodo_tipo: string;
+  monto: number; // Bruto
+  comision: number;
+  neto: number;
+  fecha: string;
+  usuario: string;
+};
 
 export function CajaDashboard({
   turno,
@@ -53,7 +73,6 @@ export function CajaDashboard({
 }: Readonly<CajaDashboardProps>) {
   const [isCerrarOpen, setIsCerrarOpen] = useState(false);
 
-  // States para los actions
   const [, abrirAction, isAbrirPending] = useActionState(
     async (prevState: CajaActionState, formData: FormData) => {
       const res = await abrirTurnoAction(prevState, formData);
@@ -78,7 +97,7 @@ export function CajaDashboard({
     { error: null, success: false },
   );
 
-  // --- LÓGICA DE CÁLCULO DEL TURNO ABIERTO ---
+  // --- LÓGICA DE CÁLCULO DEL TURNO ABIERTO (PAGOS MIXTOS READY) ---
   const { movimientos, totales } = useMemo(() => {
     if (!turno)
       return {
@@ -86,60 +105,89 @@ export function CajaDashboard({
         totales: {
           fondoInicial: 0,
           ingresosEfectivo: 0,
-          ingresosDigitales: 0,
+          ingresosDigitalesBruto: 0,
+          comisionesRetenidas: 0,
+          ingresosDigitalesNeto: 0,
           totalEgresos: 0,
           efectivoEsperado: 0,
           totalFacturado: 0,
         },
       };
 
-    const ventasMapeadas: Movimiento[] = ventas.map((v) => {
-      const monto = Number(v.total);
-      return {
-        id: v.id,
-        tipo: "INGRESO",
-        concepto: `Venta: ${v.producto?.nombre || "Varios"}`,
-        metodo: v.metodo_pago || "EFECTIVO",
-        monto: monto,
-        fecha: v.fecha_venta,
-        usuario: v.perfiles?.nombre || "Vendedor",
-      };
+    const ventasMapeadas: MovimientoExtendido[] = ventas.flatMap((v) => {
+      const pagos = v.venta_pagos || [];
+      const conceptoVenta = `Venta: ${v.ventas_items?.[0]?.producto?.nombre || "Varios"}`;
+
+      if (pagos.length > 0) {
+        return pagos.map((pago: any) => ({
+          id: `${v.id}-${pago.id || Math.random()}`,
+          tipo: "INGRESO",
+          concepto: conceptoVenta,
+          metodo: pago.metodo_nombre,
+          metodo_tipo: pago.metodo_tipo,
+          monto: Number(pago.monto_bruto),
+          comision: Number(pago.comision_monto),
+          neto: Number(pago.monto_neto),
+          fecha: v.fecha_venta,
+          usuario: v.perfiles?.nombre || "Vendedor",
+        }));
+      } else {
+        // Fallback para ventas viejas que no usaron venta_pagos
+        const isEfectivo = v.metodo_pago === "EFECTIVO";
+        return [
+          {
+            id: v.id,
+            tipo: "INGRESO",
+            concepto: conceptoVenta,
+            metodo: v.metodo_pago || "EFECTIVO",
+            metodo_tipo: isEfectivo ? "EFECTIVO" : "TARJETA",
+            monto: Number(v.total),
+            comision: 0,
+            neto: Number(v.total),
+            fecha: v.fecha_venta,
+            usuario: v.perfiles?.nombre || "Vendedor",
+          },
+        ];
+      }
     });
 
-    const egresosMapeados: Movimiento[] = egresos.map((e) => {
-      const monto = Number(e.monto);
-      return {
-        id: e.id,
-        tipo: "EGRESO",
-        concepto: `Gasto: ${e.concepto}`,
-        metodo: "EFECTIVO", // Todo gasto sale del cajón
-        monto: monto,
-        fecha: e.fecha,
-        usuario: e.perfiles?.nombre || "Usuario",
-      };
-    });
+    const egresosMapeados: MovimientoExtendido[] = egresos.map((e) => ({
+      id: e.id,
+      tipo: "EGRESO",
+      concepto: `Gasto: ${e.concepto}`,
+      metodo: "CAJA FÍSICA",
+      metodo_tipo: "EFECTIVO",
+      monto: Number(e.monto),
+      comision: 0,
+      neto: Number(e.monto),
+      fecha: e.fecha,
+      usuario: e.perfiles?.nombre || "Usuario",
+    }));
 
     const todos = [...ventasMapeadas, ...egresosMapeados].sort(
       (a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime(),
     );
 
     const ingresosEfectivo = ventasMapeadas
-      .filter((movimiento) => movimiento.metodo === "EFECTIVO")
-      .reduce((total, movimiento) => total + movimiento.monto, 0);
+      .filter((m) => m.metodo_tipo === "EFECTIVO")
+      .reduce((acc, m) => acc + m.monto, 0);
 
-    const ingresosDigitales = ventasMapeadas
-      .filter((movimiento) => movimiento.metodo !== "EFECTIVO")
-      .reduce((total, movimiento) => total + movimiento.monto, 0);
-
-    const totalEgresos = egresosMapeados.reduce(
-      (total, movimiento) => total + movimiento.monto,
+    const digitales = ventasMapeadas.filter(
+      (m) => m.metodo_tipo !== "EFECTIVO",
+    );
+    const ingresosDigitalesBruto = digitales.reduce(
+      (acc, m) => acc + m.monto,
       0,
     );
+    const comisionesRetenidas = digitales.reduce(
+      (acc, m) => acc + m.comision,
+      0,
+    );
+    const ingresosDigitalesNeto = digitales.reduce((acc, m) => acc + m.neto, 0);
 
+    const totalEgresos = egresosMapeados.reduce((acc, m) => acc + m.monto, 0);
     const fondoInicial = Number(turno.monto_inicial);
 
-    // Solución: El dinero físico no puede ser negativo. Si el gasto supera lo que hay en caja,
-    // lo mínimo a esperar físicamente en el cajón son $0.
     const efectivoEsperado = Math.max(
       0,
       fondoInicial + ingresosEfectivo - totalEgresos,
@@ -150,10 +198,12 @@ export function CajaDashboard({
       totales: {
         fondoInicial,
         ingresosEfectivo,
-        ingresosDigitales,
+        ingresosDigitalesBruto,
+        comisionesRetenidas,
+        ingresosDigitalesNeto,
         totalEgresos,
         efectivoEsperado,
-        totalFacturado: ingresosEfectivo + ingresosDigitales,
+        totalFacturado: ingresosEfectivo + ingresosDigitalesBruto,
       },
     };
   }, [ventas, egresos, turno]);
@@ -344,66 +394,95 @@ export function CajaDashboard({
             </div>
           </div>
 
-          {/* Tarjetas de Métricas de Flujo */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <Card className="bg-emerald-50 dark:bg-emerald-100/10 border border-emerald-200 dark:border-emerald-200/20 shadow-none rounded-2xl">
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-xs font-bold uppercase tracking-widest text-emerald-800 dark:text-emerald-500">
-                  Efectivo Esperado
-                </CardTitle>
-                <Banknote className="w-4 h-4 text-emerald-600 dark:text-emerald-500" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-black text-emerald-700 tracking-tight dark:text-emerald-300">
-                  {formatearMoneda(totales.efectivoEsperado)}
-                </div>
-                <p className="text-xs mt-1 text-emerald-600/80 font-medium dark:text-emerald-500">
-                  Dinero físico en cajón
-                </p>
-              </CardContent>
-            </Card>
+          {/* 🚀 TARJETAS SEPARADAS: FÍSICO VS DIGITAL */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            {/* BLOQUE FÍSICO */}
+            <div className="grid grid-cols-2 gap-4 bg-muted/20 p-4 rounded-2xl border border-border/50">
+              <div className="col-span-2 flex items-center gap-2 mb-1">
+                <Banknote className="w-4 h-4 text-emerald-600" />
+                <h3 className="text-sm font-bold text-foreground">
+                  Flujo Físico (En Cajón)
+                </h3>
+              </div>
+              <Card className="bg-card border border-emerald-200 shadow-none">
+                <CardHeader className="pb-1 pt-4 px-4">
+                  <CardTitle className="text-[10px] font-bold uppercase tracking-widest text-emerald-800 dark:text-emerald-500">
+                    Efectivo Esperado
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="px-4 pb-4">
+                  <div className="text-2xl font-black text-emerald-700 tracking-tight">
+                    {formatearMoneda(totales.efectivoEsperado)}
+                  </div>
+                </CardContent>
+              </Card>
+              <div className="flex flex-col gap-2">
+                <Card className="bg-card border-border shadow-none flex-1">
+                  <CardContent className="p-3 flex justify-between items-center h-full">
+                    <span className="text-[10px] font-bold uppercase text-muted-foreground">
+                      Fondo Inicial
+                    </span>
+                    <span className="font-bold text-sm">
+                      {formatearMoneda(totales.fondoInicial)}
+                    </span>
+                  </CardContent>
+                </Card>
+                <Card className="bg-rose-50/50 border-rose-100 shadow-none flex-1">
+                  <CardContent className="p-3 flex justify-between items-center h-full">
+                    <span className="text-[10px] font-bold uppercase text-rose-800">
+                      Egresos
+                    </span>
+                    <span className="font-bold text-sm text-rose-700">
+                      -{formatearMoneda(totales.totalEgresos)}
+                    </span>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
 
-            <Card className="bg-card border-border shadow-none rounded-2xl">
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
-                  Fondo Inicial
-                </CardTitle>
-                <Wallet className="w-4 h-4 text-muted-foreground/50" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-foreground">
-                  {formatearMoneda(totales.fondoInicial)}
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-card border-border shadow-none rounded-2xl">
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
-                  Digital (Tarj/Transf)
-                </CardTitle>
-                <CreditCard className="w-4 h-4 text-blue-500" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-foreground">
-                  {formatearMoneda(totales.ingresosDigitales)}
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-rose-50/50 dark:bg-destructive/10 border-rose-100 dark:border-destructive shadow-none rounded-2xl">
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-xs font-bold uppercase tracking-widest text-rose-800 dark:text-destructive">
-                  Egresos Físicos
-                </CardTitle>
-                <ArrowDownRight className="w-4 h-4 text-rose-500 dark:text-destructive" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-rose-700 dark:text-destructive">
-                  {formatearMoneda(totales.totalEgresos)}
-                </div>
-              </CardContent>
-            </Card>
+            {/* BLOQUE DIGITAL */}
+            <div className="grid grid-cols-2 gap-4 bg-blue-50/30 p-4 rounded-2xl border border-blue-100/50">
+              <div className="col-span-2 flex items-center gap-2 mb-1">
+                <CreditCard className="w-4 h-4 text-blue-600" />
+                <h3 className="text-sm font-bold text-foreground">
+                  Cobros Digitales
+                </h3>
+              </div>
+              <Card className="bg-white border-blue-200 shadow-none">
+                <CardHeader className="pb-1 pt-4 px-4">
+                  <CardTitle className="text-[10px] font-bold uppercase tracking-widest text-blue-800">
+                    Neto Estimado
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="px-4 pb-4">
+                  <div className="text-2xl font-black text-blue-700 tracking-tight">
+                    {formatearMoneda(totales.ingresosDigitalesNeto)}
+                  </div>
+                </CardContent>
+              </Card>
+              <div className="flex flex-col gap-2">
+                <Card className="bg-card border-border shadow-none flex-1">
+                  <CardContent className="p-3 flex justify-between items-center h-full">
+                    <span className="text-[10px] font-bold uppercase text-muted-foreground">
+                      Bruto
+                    </span>
+                    <span className="font-bold text-sm">
+                      {formatearMoneda(totales.ingresosDigitalesBruto)}
+                    </span>
+                  </CardContent>
+                </Card>
+                <Card className="bg-card border-border shadow-none flex-1">
+                  <CardContent className="p-3 flex justify-between items-center h-full">
+                    <span className="text-[10px] font-bold uppercase text-muted-foreground flex items-center gap-1">
+                      <Percent className="w-3 h-3" /> Comisión
+                    </span>
+                    <span className="font-bold text-sm text-rose-600">
+                      -{formatearMoneda(totales.comisionesRetenidas)}
+                    </span>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
           </div>
 
           {/* Tabla de Movimientos del Turno Abierto */}
@@ -414,7 +493,7 @@ export function CajaDashboard({
                   Movimientos de Hoy
                 </div>
                 <div className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                  Total Facturado:{" "}
+                  Total Facturado (Bruto):{" "}
                   <Badge
                     variant="secondary"
                     className="bg-muted text-foreground font-bold text-sm shadow-none rounded-md px-2 py-0.5"
@@ -457,7 +536,7 @@ export function CajaDashboard({
                         key={`${mov.tipo}-${mov.id}`}
                         className="hover:bg-muted/50 transition-colors cursor-pointer"
                       >
-                        <td className="px-5 py-3.5 text-muted-foreground backgroundspace-nowrap text-xs font-medium">
+                        <td className="px-5 py-3.5 text-muted-foreground whitespace-nowrap text-xs font-medium">
                           {new Date(mov.fecha).toLocaleTimeString("es-AR", {
                             hour: "2-digit",
                             minute: "2-digit",
@@ -487,11 +566,22 @@ export function CajaDashboard({
                             {mov.metodo}
                           </Badge>
                         </td>
-                        <td
-                          className={`px-5 py-3.5 text-right font-bold tracking-tight ${mov.tipo === "INGRESO" ? "text-emerald-600" : "text-rose-600"}`}
-                        >
-                          {mov.tipo === "INGRESO" ? "+" : "-"}
-                          {formatearMoneda(mov.monto)}
+                        <td className="px-5 py-3.5 text-right font-bold tracking-tight">
+                          <div
+                            className={
+                              mov.tipo === "INGRESO"
+                                ? "text-emerald-600"
+                                : "text-rose-600"
+                            }
+                          >
+                            {mov.tipo === "INGRESO" ? "+" : "-"}
+                            {formatearMoneda(mov.monto)}
+                          </div>
+                          {mov.comision > 0 && (
+                            <div className="text-[10px] text-rose-500/80 font-medium mt-0.5">
+                              Comisión: -{formatearMoneda(mov.comision)}
+                            </div>
+                          )}
                         </td>
                         <td className="px-5 py-3.5 text-muted-foreground hidden sm:table-cell text-xs">
                           {mov.usuario}

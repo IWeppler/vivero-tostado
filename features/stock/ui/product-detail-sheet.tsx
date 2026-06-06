@@ -107,16 +107,12 @@ export function ProductDetailSheet({
   return (
     <Sheet>
       <SheetTrigger asChild>{children}</SheetTrigger>
-      {/* 3. Ajustamos el `side` y las clases dinámicamente según isMobile */}
       <SheetContent
         side={isMobile ? "bottom" : "right"}
         className={`overflow-y-auto px-4 sm:px-6 outline-none ${
-          isMobile
-            ? "max-h-[90vh] rounded-t-3xl pb-10" // Diseño Bottom Sheet (Celular)
-            : "w-full sm:max-w-md" // Diseño Lateral (PC)
+          isMobile ? "max-h-[90vh] rounded-t-3xl pb-10" : "w-full sm:max-w-lg"
         }`}
       >
-        {/* Pequeña "píldora" superior decorativa (solo en mobile) para indicar que se puede deslizar hacia abajo */}
         {isMobile && (
           <div className="w-full flex justify-center pt-2 pb-4">
             <div className="w-12 h-1.5 bg-muted-foreground/20 rounded-full" />
@@ -131,8 +127,8 @@ export function ProductDetailSheet({
         </SheetHeader>
 
         <div className="space-y-2 md:space-y-4 pt-1 md:pt-6 pb-1 md:pb-8">
-          <div className="flex gap-4 items-start">
-            <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-xl bg-muted flex items-center justify-center overflow-hidden border border-border shrink-0 ">
+          <div className="flex flex-col gap-4 items-start">
+            <div className="w-24 h-24 sm:w-auto sm:h-64 rounded-xl bg-muted flex items-center justify-center overflow-hidden border border-border shrink-0 ">
               {primeraImagen ? (
                 <Image
                   src={primeraImagen}
@@ -145,11 +141,16 @@ export function ProductDetailSheet({
                 <ImageIcon className="w-8 h-8 text-muted-foreground opacity-50" />
               )}
             </div>
-            <div className="pt-1">
-              <h3 className="text-xl sm:text-2xl font-semibold text-foreground leading-tight">
-                {producto.nombre}
-              </h3>
-              <div className="flex flex-col gap-2 mt-3">
+            <div className="pt-1 w-full">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xl sm:text-2xl font-semibold text-foreground leading-tight">
+                  {producto.nombre}
+                </h3>
+                <div className="text-2xl font-semibold">
+                  {formatearMoneda(producto.precio)}
+                </div>
+              </div>
+              <div className="flex flex-col gap-2 mt-1">
                 <div className="flex items-center">
                   <Badge
                     variant="secondary"
@@ -157,9 +158,6 @@ export function ProductDetailSheet({
                   >
                     {capitalizar(producto.tipo)}
                   </Badge>
-                </div>
-                <div className="text-2xl font-semibold">
-                  {formatearMoneda(producto.precio)}
                 </div>
               </div>
             </div>
