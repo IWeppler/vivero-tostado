@@ -5,4 +5,29 @@ export interface ConfiguracionPOS {
   whatsapp: string;
   direccion: string;
   mensaje_ticket: string;
+
+  // Catálogo y E-commerce
+  catalogo_activo?: boolean;
+  mostrar_precios?: boolean;
+  mostrar_sin_stock?: boolean;
+  pedidos_whatsapp?: boolean;
+  direccion_visible?: boolean;
+  horario_visible?: boolean;
+
+  // Redes y Horarios
+  instagram?: string;
+  facebook?: string;
+  horario_texto?: string;
+
+  // Banner Promocional
+  banner_activo?: boolean;
+  banner_imagen?: string;
+  banner_titulo?: string;
+  banner_subtitulo?: string;
+  banner_boton_texto?: string;
+  banner_link?: string;
+
+  // Marquee
+  marquee_activo?: boolean;
+  marquee_texto?: string;
 }

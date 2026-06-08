@@ -4,59 +4,23 @@ import { useCartStore } from "@/shared/store/cart-store";
 import { createClient } from "@/shared/config/supabase/client";
 import { useShallow } from "zustand/react/shallow";
 import {
-  X,
-  Plus,
-  Minus,
-  ShoppingBag,
-  Loader2,
-  CheckCircle2,
-  Banknote,
-  CreditCard,
-  Smartphone,
-  Tag,
-  Wallet,
-} from "lucide-react";
-import {
   useEffect,
+  useMemo,
   useState,
   useSyncExternalStore,
   useTransition,
-  useMemo,
 } from "react";
 import { useRouter } from "next/navigation";
-import { Button } from "@/shared/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/shared/ui/select";
-import Image from "next/image";
 import { toast } from "sonner";
 import { registrarVentaAction } from "@/features/sales/actions/create-sale";
 import { TicketSheet } from "@/features/sales/ui/ticket-sheet";
-import { TicketData } from "@/entities/ventas/types";
+import { TicketData, CreateSalePaymentInput } from "@/entities/ventas/types";
 import { ConfiguracionPOS } from "@/entities/config/types";
-
-// --- TIPOS DE DB ---
-interface PromocionDB {
-  id: string;
-  nombre: string;
-  tipo_regla: string;
-  tipo_descuento: string;
-  valor_descuento: number;
-  monto_minimo: number;
-  promociones_metodos_pago?: { metodo_pago: string }[];
-  promociones_categorias?: { categoria_nombre: string }[];
-}
-
-interface MetodoPagoDB {
-  id: string;
-  nombre: string;
-  tipo: string;
-  comision: number;
-}
+import { MetodoPago } from "@/entities/payments/types";
+import { CartSidebarBody } from "./cart-sidebar/cart-sidebar-body";
+import { CartSidebarFooter } from "./cart-sidebar/cart-sidebar-footer";
+import { CartSidebarHeader } from "./cart-sidebar/cart-sidebar-header";
+import { PromocionDB } from "./cart-sidebar/types";
 
 const subscribeToClientMount = () => () => {};
 const getClientSnapshot = () => true;
@@ -84,7 +48,28 @@ export function CartSidebar({
       clearCart: state.clearCart,
     })),
   );
+
+  const router = useRouter();
+  const mounted = useSyncExternalStore(
+    subscribeToClientMount,
+    getClientSnapshot,
+    getServerSnapshot,
+  );
+  const [isPending, startTransition] = useTransition();
+
   const [branding, setBranding] = useState<ConfiguracionPOS | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [metodosPagoDB, setMetodosPagoDB] = useState<MetodoPago[]>([]);
+
+  // 🚀 ESTADO: SOPORTE PARA PAGOS MÚLTIPLES
+  const [pagos, setPagos] = useState<CreateSalePaymentInput[]>([]);
+
+  const [promocionesDB, setPromocionesDB] = useState<PromocionDB[]>([]);
+  const [promocionId, setPromocionId] = useState("ninguna");
+  const [ventaExitosa, setVentaExitosa] = useState<TicketData | null>(null);
+
+  const isPOSMode = isAdmin;
+  const totalCarrito = getTotalPrice();
 
   useEffect(() => {
     const fetchConfig = async () => {
@@ -102,26 +87,6 @@ export function CartSidebar({
     fetchConfig();
   }, []);
 
-  const mounted = useSyncExternalStore(
-    subscribeToClientMount,
-    getClientSnapshot,
-    getServerSnapshot,
-  );
-  const [isPending, startTransition] = useTransition();
-  const [isAdmin, setIsAdmin] = useState(false);
-
-  // --- ESTADOS DINÁMICOS ---
-  const [metodosPagoDB, setMetodosPagoDB] = useState<MetodoPagoDB[]>([]);
-  const [metodoPagoId, setMetodoPagoId] = useState<string>("");
-
-  const [promocionesDB, setPromocionesDB] = useState<PromocionDB[]>([]);
-  const [promocionId, setPromocionId] = useState<string>("ninguna");
-
-  const [ventaExitosa, setVentaExitosa] = useState<TicketData | null>(null);
-  const router = useRouter();
-  const isPOSMode = isAdmin;
-
-  // 1. Verificación de Usuario y Fetch de Promociones/Métodos Activos
   useEffect(() => {
     const supabase = createClient();
     let isMounted = true;
@@ -131,34 +96,32 @@ export function CartSidebar({
         data: { session },
       } = await supabase.auth.getSession();
 
-      if (isMounted) {
-        setIsAdmin(!!session);
+      if (!isMounted) return;
 
-        // Si es Admin (POS Mode), traemos las configuraciones
-        if (session) {
-          const { data: promos } = await supabase
-            .from("promociones")
-            .select(
-              `
+      setIsAdmin(!!session);
+
+      if (session) {
+        const { data: promos } = await supabase
+          .from("promociones")
+          .select(
+            `
               *,
               promociones_metodos_pago ( metodo_pago ),
               promociones_categorias ( categoria_nombre )
             `,
-            )
-            .eq("activa", true);
+          )
+          .eq("activa", true);
 
-          if (promos) setPromocionesDB(promos as unknown as PromocionDB[]);
+        if (promos) setPromocionesDB(promos as unknown as PromocionDB[]);
 
-          const { data: metodos } = await supabase
-            .from("metodos_pago")
-            .select("id, nombre, tipo, comision")
-            .eq("activo", true)
-            .order("comision", { ascending: true });
+        const { data: metodos } = await supabase
+          .from("metodos_pago")
+          .select("id, nombre, tipo, comision")
+          .eq("activo", true)
+          .order("comision", { ascending: true });
 
-          if (metodos) {
-            setMetodosPagoDB(metodos);
-            if (metodos.length > 0) setMetodoPagoId(metodos[0].id);
-          }
+        if (metodos) {
+          setMetodosPagoDB(metodos as unknown as MetodoPago[]);
         }
       }
     };
@@ -177,29 +140,32 @@ export function CartSidebar({
     };
   }, []);
 
-  // 2. Lógica de Elegibilidad (Se recalcula si cambian items o método de pago)
-  const totalCarrito = getTotalPrice();
-
+  // 🚀 LÓGICA DE PROMOCIONES ADAPTADA A PAGOS MIXTOS
   const promocionesElegibles = useMemo(() => {
     return promocionesDB.filter((promo) => {
-      // Regla: Monto Mínimo
-      if (promo.monto_minimo && totalCarrito < promo.monto_minimo) return false;
+      if (promo.monto_minimo && totalCarrito < promo.monto_minimo) {
+        return false;
+      }
 
-      // Regla: Método de Pago (Comparamos el Tipo)
       if (promo.tipo_regla === "METODO_PAGO") {
         const metodosPromo =
           promo.promociones_metodos_pago?.map((m) => m.metodo_pago) || [];
-        const selectedMetodoObj = metodosPagoDB.find(
-          (m) => m.id === metodoPagoId,
+
+        // Obtenemos los 'tipos' (EFECTIVO, TARJETA) de todos los métodos seleccionados actualmente
+        const selectedTipos = pagos.map(
+          (p) => metodosPagoDB.find((m) => m.id === p.metodoPagoId)?.tipo,
         );
-        if (
-          !selectedMetodoObj ||
-          !metodosPromo.includes(selectedMetodoObj.tipo)
-        )
-          return false;
+
+        if (selectedTipos.length === 0) return false;
+
+        // ESTRICTO: Para aplicar una promo de pago, TODOS los métodos divididos deben cumplir la regla
+        const allValid = selectedTipos.every(
+          (t) => t && metodosPromo.includes(t),
+        );
+
+        if (!allValid) return false;
       }
 
-      // Regla: Categoría
       if (promo.tipo_regla === "CATEGORIA") {
         const categorias =
           promo.promociones_categorias?.map((c) =>
@@ -208,31 +174,31 @@ export function CartSidebar({
         const hasCategory = items.some((item) =>
           categorias.includes(item.tipo.toLowerCase()),
         );
+
         if (!hasCategory) return false;
       }
 
       return true;
     });
-  }, [promocionesDB, totalCarrito, metodoPagoId, items, metodosPagoDB]);
+  }, [promocionesDB, totalCarrito, pagos, items, metodosPagoDB]);
 
-  // 3. Auto-deseleccionar si la promo actual deja de ser elegible
   const promocionActivaId = useMemo(() => {
     if (promocionId === "ninguna") return "ninguna";
-    return promocionesElegibles.some((p) => p.id === promocionId)
+    return promocionesElegibles.some((promo) => promo.id === promocionId)
       ? promocionId
       : "ninguna";
   }, [promocionesElegibles, promocionId]);
 
-  // 4. Cálculo del Descuento Final
   const descuentoDetalle = useMemo(() => {
     if (promocionActivaId === "ninguna") return { monto: 0, nombre: "" };
 
-    const promo = promocionesElegibles.find((p) => p.id === promocionActivaId);
+    const promo = promocionesElegibles.find(
+      (item) => item.id === promocionActivaId,
+    );
     if (!promo) return { monto: 0, nombre: "" };
 
     let montoBase = totalCarrito;
 
-    // Si es por categoría, calculamos el descuento SOLO sobre esas plantas
     if (promo.tipo_regla === "CATEGORIA") {
       const categorias =
         promo.promociones_categorias?.map((c) =>
@@ -250,16 +216,27 @@ export function CartSidebar({
     if (promo.tipo_descuento === "PORCENTAJE") {
       descuento = (montoBase * promo.valor_descuento) / 100;
     } else {
-      descuento = promo.valor_descuento; // Monto Fijo
+      descuento = promo.valor_descuento;
     }
 
-    // Tope: No podemos descontar más del total del carrito
     if (descuento > totalCarrito) descuento = totalCarrito;
 
     return { monto: Math.round(descuento), nombre: promo.nombre };
   }, [promocionActivaId, promocionesElegibles, totalCarrito, items]);
 
   const totalFinal = totalCarrito - descuentoDetalle.monto;
+
+  const pagosConTotal = useMemo(() => {
+    if (metodosPagoDB.length === 0) return pagos;
+    if (pagos.length > 1) return pagos;
+
+    return [
+      {
+        metodoPagoId: pagos[0]?.metodoPagoId || metodosPagoDB[0].id,
+        montoAsignado: totalFinal,
+      },
+    ];
+  }, [pagos, metodosPagoDB, totalFinal]);
 
   if (!mounted) return null;
 
@@ -271,15 +248,21 @@ export function CartSidebar({
   const generarLinkWhatsApp = () => {
     if (!numeroWhatsApp) return "#";
     let mensaje =
-      "¡Hola Vivero Tostado! 🥷\nQuiero realizar el siguiente pedido:\n\n";
+      "Hola Vivero Tostado!\nQuiero realizar el siguiente pedido:\n\n";
 
     items.forEach((item) => {
       mensaje += `${item.cantidad}x ${item.nombre} (${item.tipo})\n`;
-      mensaje += ` └ Talle: ${item.variante} - $${(item.precio * item.cantidad).toLocaleString("es-AR")}\n`;
+      mensaje += ` - Talle: ${item.variante} - $${(
+        item.precio * item.cantidad
+      ).toLocaleString("es-AR")}\n`;
     });
 
-    mensaje += `\n*TOTAL: $${getTotalPrice().toLocaleString("es-AR")}*\n\n¿Tienen stock disponible para confirmar?`;
-    return `https://wa.me/${numeroWhatsApp}?text=${encodeURIComponent(mensaje)}`;
+    mensaje += `\nTOTAL: $${getTotalPrice().toLocaleString(
+      "es-AR",
+    )}\n\nTienen stock disponible para confirmar?`;
+    return `https://wa.me/${numeroWhatsApp}?text=${encodeURIComponent(
+      mensaje,
+    )}`;
   };
 
   const handleEnviarPedidoWhatsApp = () => {
@@ -290,6 +273,19 @@ export function CartSidebar({
   };
 
   const handleConfirmarVentaPOS = () => {
+    // 🚀 VALIDACIÓN MATEMÁTICA FRONTEND
+    const sumaPagos = pagos.reduce(
+      (acc, p) => acc + Number(p.montoAsignado),
+      0,
+    );
+    if (Math.abs(sumaPagos - totalFinal) > 0.05) {
+      toast.error("La suma de los pagos no coincide con el total.", {
+        description:
+          "Asegúrate de asignar el dinero exacto para poder cerrar la caja correctamente.",
+      });
+      return;
+    }
+
     startTransition(async () => {
       try {
         if (!items.length) {
@@ -299,7 +295,11 @@ export function CartSidebar({
 
         const formData = new FormData();
         formData.append("cart_items", JSON.stringify(items));
-        formData.append("metodo_pago_id", metodoPagoId);
+
+        // 🚀 PASAMOS EL ARRAY DE PAGOS AL SERVER ACTION
+        formData.append("pagos", JSON.stringify(pagos));
+        // Fallback por las dudas si create-sale falla
+        formData.append("metodo_pago_id", pagos[0].metodoPagoId);
 
         if (promocionActivaId !== "ninguna" && descuentoDetalle.monto > 0) {
           formData.append("promocion_id", promocionActivaId);
@@ -326,29 +326,31 @@ export function CartSidebar({
             });
           } else {
             toast.error("No se pudo registrar la venta.", {
-              description: result.error ?? "Intentá nuevamente.",
+              description: result.error ?? "Intenta nuevamente.",
             });
           }
           return;
         }
 
-        toast.success("¡Venta registrada con éxito!");
+        toast.success("Venta registrada con éxito!");
 
-        const selectedMetodoObj = metodosPagoDB.find(
-          (m) => m.id === metodoPagoId,
-        );
+        // Preparar el ticket visual con soporte para nombre mixto
+        const nombreMetodoMostrar =
+          pagos.length > 1
+            ? `Pago mixto (${pagos.map((p) => metodosPagoDB.find((m) => m.id === p.metodoPagoId)?.nombre).join(" + ")})`
+            : metodosPagoDB.find((m) => m.id === pagos[0].metodoPagoId)
+                ?.nombre || "Efectivo";
 
         setVentaExitosa({
           items: [...items],
           total: totalFinal,
-          metodoPago: selectedMetodoObj?.nombre || "Efectivo",
+          metodoPago: nombreMetodoMostrar,
           nroRecibo: Math.random().toString().slice(2, 8).toUpperCase(),
           descuentoMonto: descuentoDetalle.monto,
           promocionNombre: descuentoDetalle.nombre,
         });
 
         clearCart();
-        if (metodosPagoDB.length > 0) setMetodoPagoId(metodosPagoDB[0].id);
         setPromocionId("ninguna");
         setIsOpen(false);
       } catch (error) {
@@ -372,295 +374,39 @@ export function CartSidebar({
           isOpen ? "translate-x-0" : "translate-x-full"
         }`}
       >
-        {/* 1. HEADER FIJO */}
-        <div className="shrink-0 flex items-center justify-between p-2 border-b border-border bg-muted/20">
-          <h2 className="text-sm font-bold uppercase tracking-wide flex items-center gap-2">
-            <ShoppingBag className="w-4 h-4" />
-            {isPOSMode ? "Venta en Curso" : "Tu Carrito"}
-          </h2>
-          <button
-            onClick={() => setIsOpen(false)}
-            className="p-1 hover:bg-muted text-muted-foreground hover:text-foreground transition-colors cursor-pointer rounded-md"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
+        <CartSidebarHeader
+          isPOSMode={isPOSMode}
+          onClose={() => setIsOpen(false)}
+        />
 
-        {/* 2. ÁREA SCROLLEABLE (Productos + Configuración de Venta) */}
-        <div className="flex-1 overflow-y-auto flex flex-col">
-          {items.length === 0 ? (
-            <div className="h-full flex flex-col items-center justify-center p-5 text-muted-foreground/70 space-y-4">
-              <ShoppingBag className="w-16 h-16" strokeWidth={1} />
-              <p className="text-sm uppercase tracking-widest font-medium text-center">
-                {isPOSMode
-                  ? "No hay productos en la venta"
-                  : "El carrito está vacío"}
-              </p>
-              <Button
-                variant="outline"
-                className="mt-4 uppercase tracking-widest text-xs font-semibold cursor-pointer shadow-none"
-                onClick={handleContinueShopping}
-              >
-                {isPOSMode ? "Volver al inventario" : "Seguir comprando"}
-              </Button>
-            </div>
-          ) : (
-            <div className="flex flex-col flex-1">
-              {/* Lista de Productos */}
-              <div className="p-5 space-y-6">
-                {items.map((item) => (
-                  <div
-                    key={`${item.productoId}-${item.variante}`}
-                    className="flex gap-4 relative group"
-                  >
-                    <button
-                      onClick={() => removeItem(item.productoId, item.variante)}
-                      className="absolute -left-2 -top-2 w-6 h-6 bg-background border border-border flex items-center justify-center text-muted-foreground hover:text-destructive hover:border-destructive transition-colors z-10 opacity-0 group-hover:opacity-100 cursor-pointer rounded-full"
-                      title="Eliminar producto"
-                    >
-                      <X className="w-3 h-3" />
-                    </button>
+        <CartSidebarBody
+          items={items}
+          isPOSMode={isPOSMode}
+          isPending={isPending}
+          metodosPagoDB={metodosPagoDB}
+          pagos={pagos}
+          onPagosChange={setPagos}
+          totalFinal={totalFinal}
+          promocionesElegibles={promocionesElegibles}
+          promocionActivaId={promocionActivaId}
+          onContinueShopping={handleContinueShopping}
+          onRemoveItem={removeItem}
+          onUpdateQuantity={updateQuantity}
+          onPromocionChange={setPromocionId}
+        />
 
-                    <div className="w-20 h-24 bg-muted/30 rounded-md border border-border/50 shrink-0 flex items-center justify-center overflow-hidden">
-                      {item.imagenUrl ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={item.imagenUrl}
-                          alt={item.nombre}
-                          className="object-cover w-full h-full"
-                        />
-                      ) : (
-                        <ShoppingBag className="w-6 h-6 text-muted-foreground/30" />
-                      )}
-                    </div>
-
-                    <div className="flex flex-col flex-1 justify-between py-1">
-                      <div>
-                        <h3 className="font-bold text-sm uppercase tracking-wide leading-tight line-clamp-2">
-                          {item.nombre}
-                        </h3>
-                        <p className="text-[10px] text-muted-foreground uppercase tracking-widest mt-1">
-                          {item.tipo} • Talle {item.variante}
-                        </p>
-                      </div>
-
-                      <div className="flex items-center justify-between mt-3">
-                        <div className="flex items-center border border-border rounded-md overflow-hidden h-8">
-                          <button
-                            onClick={() =>
-                              updateQuantity(
-                                item.productoId,
-                                item.variante,
-                                item.cantidad - 1,
-                              )
-                            }
-                            className="w-8 h-full flex items-center justify-center hover:bg-muted text-muted-foreground transition-colors cursor-pointer"
-                            disabled={item.cantidad <= 1 || isPending}
-                          >
-                            <Minus className="w-3 h-3" />
-                          </button>
-                          <span className="w-8 text-center text-xs font-semibold">
-                            {item.cantidad}
-                          </span>
-                          <button
-                            onClick={() =>
-                              updateQuantity(
-                                item.productoId,
-                                item.variante,
-                                item.cantidad + 1,
-                              )
-                            }
-                            className="w-8 h-full flex items-center justify-center hover:bg-muted text-muted-foreground transition-colors cursor-pointer"
-                            disabled={isPending}
-                          >
-                            <Plus className="w-3 h-3" />
-                          </button>
-                        </div>
-
-                        <span className="font-bold text-sm">
-                          $
-                          {(item.precio * item.cantidad).toLocaleString(
-                            "es-AR",
-                          )}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {/* MÉTODOS DE PAGO Y DESCUENTOS DINÁMICOS */}
-              {isPOSMode && (
-                <div className="mt-auto p-5 border-t border-border/50 bg-muted/10 space-y-6">
-                  <div>
-                    <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-3">
-                      Métodos de Pago
-                    </p>
-                    {metodosPagoDB.length === 0 ? (
-                      <div className="text-xs text-muted-foreground italic text-center">
-                        Cargando métodos de pago...
-                      </div>
-                    ) : (
-                      <div className="grid grid-cols-2 sm:grid-cols-3 p-1 bg-muted/50 rounded-xl gap-1">
-                        {metodosPagoDB.map((metodo) => {
-                          let Icon = Banknote;
-                          if (metodo.tipo === "TRANSFERENCIA")
-                            Icon = Smartphone;
-                          if (metodo.tipo === "BILLETERA_VIRTUAL")
-                            Icon = Wallet;
-                          if (metodo.tipo === "TARJETA") Icon = CreditCard;
-
-                          const isSelected = metodoPagoId === metodo.id;
-
-                          let selectedClass =
-                            "text-muted-foreground hover:text-foreground cursor-pointer";
-                          if (isSelected) {
-                            if (metodo.tipo === "EFECTIVO")
-                              selectedClass =
-                                "bg-white text-emerald-600 ring-1 ring-black/5 dark:bg-emerald-950 dark:text-emerald-400";
-                            else if (metodo.tipo === "TRANSFERENCIA")
-                              selectedClass =
-                                "bg-white text-[#a8a1f2] ring-1 ring-black/5 dark:bg-blue-950 dark:text-blue-400";
-                            else if (metodo.tipo === "BILLETERA_VIRTUAL")
-                              selectedClass =
-                                "bg-white text-[#2f96fe] ring-1 ring-black/5 dark:bg-indigo-950 dark:text-indigo-400";
-                            else if (metodo.tipo === "TARJETA")
-                              selectedClass =
-                                "bg-white text-[#f97d47] ring-1 ring-black/5 dark:bg-purple-950 dark:text-purple-400";
-                            else
-                              selectedClass =
-                                "bg-white text-foreground ring-1 ring-black/5 dark:bg-muted dark:text-foreground";
-                          }
-
-                          return (
-                            <button
-                              key={metodo.id}
-                              onClick={() => setMetodoPagoId(metodo.id)}
-                              className={`flex flex-col items-center justify-center gap-1.5 py-2.5 rounded-lg text-[10px] sm:text-xs font-bold transition-all ${selectedClass}`}
-                            >
-                              <Icon className="w-4 h-4" />
-                              <span className="truncate w-full px-1">
-                                {metodo.nombre}
-                              </span>
-                            </button>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* SELECTOR DE PROMOCIONES */}
-                  <div className="pt-4 border-t border-border/50">
-                    <div className="flex items-center gap-2 mb-3 text-xs font-bold text-muted-foreground uppercase tracking-widest">
-                      <Tag className="w-3.5 h-3.5" /> Descuentos
-                    </div>
-
-                    {promocionesElegibles.length > 0 ? (
-                      <Select
-                        value={promocionActivaId || "ninguna"}
-                        onValueChange={setPromocionId}
-                      >
-                        <SelectTrigger className="w-full text-sm bg-background border-border h-10">
-                          <SelectValue placeholder="Aplicar descuento..." />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem
-                            value="ninguna"
-                            className="text-muted-foreground italic"
-                          >
-                            No aplicar descuento
-                          </SelectItem>
-                          {promocionesElegibles.map((promo) => (
-                            <SelectItem
-                              key={promo.id}
-                              value={promo.id}
-                              className="font-medium"
-                            >
-                              {promo.nombre}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    ) : (
-                      <div className="w-full text-xs text-muted-foreground bg-muted/50 p-2.5 rounded-md border border-border/50 flex items-center justify-center italic">
-                        No hay descuentos aplicables a este carrito.
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* 3. FOOTER FIJO (Minimalista) */}
         {items.length > 0 && (
-          <div className="shrink-0 border-t border-border bg-card p-5 shadow-[0_-10px_40px_rgba(0,0,0,0.03)] z-10">
-            {/* DESGLOSE TOTAL */}
-            {descuentoDetalle.monto > 0 && (
-              <div className="space-y-1.5 mb-3">
-                <div className="flex items-center justify-between text-muted-foreground text-sm">
-                  <span>Subtotal</span>
-                  <span>${totalCarrito.toLocaleString("es-AR")}</span>
-                </div>
-                <div className="flex items-center justify-between text-emerald-600 dark:text-emerald-400 font-semibold text-sm">
-                  <span>Promo: {descuentoDetalle.nombre}</span>
-                  <span>
-                    -${descuentoDetalle.monto.toLocaleString("es-AR")}
-                  </span>
-                </div>
-              </div>
-            )}
-
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-semibold uppercase text-muted-foreground tracking-wide">
-                Total a cobrar
-              </span>
-              <span className="text-2xl font-semibold text-foreground">
-                ${totalFinal.toLocaleString("es-AR")}
-              </span>
-            </div>
-
-            {isPOSMode ? (
-              <Button
-                onClick={handleConfirmarVentaPOS}
-                disabled={isPending}
-                className="w-full h-12 flex items-center justify-center gap-2 bg-foreground hover:bg-foreground/90 text-background transition-colors shadow-none"
-              >
-                {isPending ? (
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                ) : (
-                  <>
-                    <CheckCircle2 className="w-5 h-5" /> Confirmar Venta
-                  </>
-                )}
-              </Button>
-            ) : (
-              <a
-                href={generarLinkWhatsApp()}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={handleEnviarPedidoWhatsApp}
-                className="w-full flex items-center justify-center gap-3 h-12 rounded-lg bg-[#25D366] hover:bg-[#1EBE57] text-white font-bold text-sm uppercase tracking-widest shadow-none"
-              >
-                <Image
-                  src="/whatsappp.png"
-                  alt="Whatsapp"
-                  width={20}
-                  height={20}
-                />
-                Enviar Pedido
-              </a>
-            )}
-
-            <button
-              onClick={clearCart}
-              disabled={isPending}
-              className="w-full mt-4 text-xs tracking-wide text-muted-foreground hover:text-destructive transition-colors font-medium disabled:opacity-50 cursor-pointer"
-            >
-              Vaciar {isPOSMode ? "venta" : "carrito"}
-            </button>
-          </div>
+          <CartSidebarFooter
+            isPOSMode={isPOSMode}
+            isPending={isPending}
+            totalCarrito={totalCarrito}
+            totalFinal={totalFinal}
+            descuentoDetalle={descuentoDetalle}
+            whatsappHref={generarLinkWhatsApp()}
+            onConfirmarVentaPOS={handleConfirmarVentaPOS}
+            onEnviarPedidoWhatsApp={handleEnviarPedidoWhatsApp}
+            onClearCart={clearCart}
+          />
         )}
       </div>
 

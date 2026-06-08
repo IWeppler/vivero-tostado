@@ -59,7 +59,7 @@ export function DeletePaymentModal({
               handleDelete();
             }}
             disabled={isDeleting}
-            className="bg-destructive text-destructive-foreground hover:bg-destructive/90 shadow-none"
+            className="bg-rose-600 hover:bg-rose-700 text-white"
           >
             {isDeleting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
             Sí, eliminar

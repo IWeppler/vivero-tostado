@@ -1,0 +1,276 @@
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation"; // 🚀 Importamos el router
+import { ConfiguracionPOS } from "@/entities/config/types";
+import { Button } from "@/shared/ui/button";
+import { Input } from "@/shared/ui/input";
+import { Label } from "@/shared/ui/label";
+import { Switch } from "@/shared/ui/switch";
+import {
+  Globe,
+  Clock,
+  Save,
+  Loader2,
+  Store,
+  ShoppingBag,
+  Type,
+} from "lucide-react";
+import { toast } from "sonner";
+import { createClient } from "@/shared/config/supabase/client";
+import { BannerManager } from "./banner-manager";
+import { FaFacebook, FaInstagram, FaWhatsapp } from "react-icons/fa";
+
+interface CatalogPanelProps {
+  config: ConfiguracionPOS;
+}
+
+export function CatalogPanel({ config }: Readonly<CatalogPanelProps>) {
+  const router = useRouter(); // 🚀 Inicializamos el router
+  const [isSaving, setIsSaving] = useState(false);
+  const [formData, setFormData] = useState({
+    catalogo_activo: config.catalogo_activo ?? true,
+    mostrar_precios: config.mostrar_precios ?? true,
+    mostrar_sin_stock: config.mostrar_sin_stock ?? false,
+    pedidos_whatsapp: config.pedidos_whatsapp ?? true,
+    direccion_visible: config.direccion_visible ?? true,
+    horario_visible: config.horario_visible ?? true,
+    horario_texto: config.horario_texto || "",
+    instagram: config.instagram || "",
+    facebook: config.facebook || "",
+    marquee_activo: config.marquee_activo ?? false,
+    marquee_texto: config.marquee_texto || "",
+  });
+
+  const handleChange = (field: string, value: string | boolean) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleSave = async () => {
+    setIsSaving(true);
+    const supabase = createClient();
+
+    const { error } = await supabase
+      .from("configuracion_pos")
+      .update(formData)
+      .eq("id", config.id);
+
+    setIsSaving(false);
+
+    if (error) {
+      toast.error("Error al guardar la configuración del catálogo.");
+      console.error(error);
+    } else {
+      toast.success("Catálogo actualizado correctamente.");
+      router.refresh(); // 🚀 FIX: Forzamos a Next.js a recargar el Layout y el Navbar para mostrar los nuevos datos
+    }
+  };
+
+  return (
+    <div className="space-y-8 animate-in fade-in-50 duration-300 pb-12">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-border pb-4">
+        <div>
+          <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
+            <Globe className="w-5 h-5 text-primary" /> Catálogo Online
+          </h2>
+          <p className="text-sm text-muted-foreground mt-1">
+            Configura cómo los clientes ven tu tienda pública y qué acciones
+            pueden realizar.
+          </p>
+        </div>
+        <Button
+          onClick={handleSave}
+          disabled={isSaving}
+          className="bg-primary hover:bg-primary/90 text-white shadow-none w-full sm:w-auto"
+        >
+          {isSaving ? (
+            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+          ) : (
+            <Save className="w-4 h-4 mr-2" />
+          )}
+          Guardar Cambios
+        </Button>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        {/* COLUMNA IZQUIERDA: Visibilidad y Funcionamiento */}
+        <div className="space-y-6">
+          <div className="bg-card border border-border rounded-2xl p-5 space-y-6">
+            <h3 className="font-bold text-foreground flex items-center gap-2 border-b border-border/50 pb-3">
+              <Store className="w-4 h-4 text-muted-foreground" /> Visibilidad de
+              la Tienda
+            </h3>
+
+            <div className="flex items-center justify-between gap-4">
+              <div className="space-y-0.5">
+                <Label className="text-sm font-semibold">Catálogo Activo</Label>
+                <p className="text-xs text-muted-foreground">
+                  Si está inactivo, mostrará un cartel de &quot;Cerrado
+                  temporalmente&quot;.
+                </p>
+              </div>
+              <Switch
+                checked={formData.catalogo_activo}
+                onCheckedChange={(v) => handleChange("catalogo_activo", v)}
+              />
+            </div>
+
+            <div className="flex items-center justify-between gap-4">
+              <div className="space-y-0.5">
+                <Label className="text-sm font-semibold">
+                  Recibir Pedidos por WhatsApp
+                </Label>
+                <p className="text-xs text-muted-foreground">
+                  Activa el carrito de compras y el envío de pedidos al WhatsApp
+                  del local.
+                </p>
+              </div>
+              <Switch
+                checked={formData.pedidos_whatsapp}
+                onCheckedChange={(v) => handleChange("pedidos_whatsapp", v)}
+              />
+            </div>
+
+            <div className="flex items-center justify-between gap-4">
+              <div className="space-y-0.5">
+                <Label className="text-sm font-semibold">Mostrar Precios</Label>
+                <p className="text-xs text-muted-foreground">
+                  Ocultar los precios convierte el catálogo en solo vidriera.
+                </p>
+              </div>
+              <Switch
+                checked={formData.mostrar_precios}
+                onCheckedChange={(v) => handleChange("mostrar_precios", v)}
+              />
+            </div>
+
+            <div className="flex items-center justify-between gap-4">
+              <div className="space-y-0.5">
+                <Label className="text-sm font-semibold">
+                  Mostrar Productos Sin Stock
+                </Label>
+                <p className="text-xs text-muted-foreground">
+                  Las plantas agotadas aparecerán tachadas al final de la lista.
+                </p>
+              </div>
+              <Switch
+                checked={formData.mostrar_sin_stock}
+                onCheckedChange={(v) => handleChange("mostrar_sin_stock", v)}
+              />
+            </div>
+          </div>
+
+          {/* MÓDULO MARQUEE */}
+          <div className="bg-card border border-border rounded-2xl p-5 space-y-5">
+            <div className="flex items-center justify-between gap-4 border-b border-border/50 pb-3">
+              <h3 className="font-bold text-foreground flex items-center gap-2">
+                <Type className="w-4 h-4 text-primary" /> Barra de Anuncios
+              </h3>
+              <Switch
+                checked={formData.marquee_activo}
+                onCheckedChange={(v) => handleChange("marquee_activo", v)}
+              />
+            </div>
+
+            <div
+              className={`space-y-2 transition-opacity ${!formData.marquee_activo ? "opacity-50 pointer-events-none" : ""}`}
+            >
+              <Label className="text-xs font-semibold text-foreground uppercase">
+                Texto Infinito
+              </Label>
+              <Input
+                value={formData.marquee_texto}
+                onChange={(e) => handleChange("marquee_texto", e.target.value)}
+                placeholder="Ej: 20% OFF EN EFECTIVO // ENVÍOS GRATIS"
+              />
+              <p className="text-xs text-muted-foreground">
+                Este texto aparecerá desplazándose en la parte superior de la
+                pantalla. Separa las promociones con &quot;//&quot;.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* COLUMNA DERECHA: Datos Públicos */}
+        <div className="space-y-6">
+          <div className="bg-card border border-border rounded-2xl p-5 space-y-5">
+            <h3 className="font-bold text-foreground flex items-center gap-2 border-b border-border/50 pb-3">
+              <ShoppingBag className="w-4 h-4 text-muted-foreground" /> Datos y
+              Redes
+            </h3>
+
+            <div className="flex items-center justify-between gap-4 mb-2">
+              <div className="space-y-0.5">
+                <Label className="text-sm font-semibold">
+                  Mostrar Dirección
+                </Label>
+                <p className="text-xs text-muted-foreground">
+                  Visible en la cabecera de la tienda.
+                </p>
+              </div>
+              <Switch
+                checked={formData.direccion_visible}
+                onCheckedChange={(v) => handleChange("direccion_visible", v)}
+              />
+            </div>
+
+            <div className="flex items-center justify-between gap-4 mb-8">
+              <div className="space-y-0.5">
+                <Label className="text-sm font-semibold">
+                  Mostrar Horarios
+                </Label>
+                <p className="text-xs text-muted-foreground">
+                  Indicador de abierto/cerrado según tu horario.
+                </p>
+              </div>
+              <Switch
+                checked={formData.horario_visible}
+                onCheckedChange={(v) => handleChange("horario_visible", v)}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-xs font-semibold text-foreground uppercase tracking-widest flex items-center gap-1.5">
+                <Clock className="w-3.5 h-3.5" /> Texto de Horarios
+              </Label>
+              <Input
+                value={formData.horario_texto}
+                onChange={(e) => handleChange("horario_texto", e.target.value)}
+                placeholder="Ej: Lun a Sáb 9:00 a 13:00 y 16:30 a 20:00"
+                className="bg-muted/50 border-border"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-xs font-semibold text-foreground uppercase tracking-widest flex items-center gap-1.5">
+                <FaInstagram className="w-3.5 h-3.5 text-pink-600" />
+                Link de Instagram
+              </Label>
+              <Input
+                value={formData.instagram}
+                onChange={(e) => handleChange("instagram", e.target.value)}
+                placeholder="https://instagram.com/tu_vivero"
+                className="bg-muted/50 border-border"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-xs font-semibold text-foreground uppercase tracking-widest flex items-center gap-1.5">
+                <FaFacebook className="w-3.5 h-3.5 text-blue-600" />
+                Link de Facebook
+              </Label>
+              <Input
+                value={formData.facebook}
+                onChange={(e) => handleChange("facebook", e.target.value)}
+                placeholder="https://facebook.com/tu_vivero"
+                className="bg-muted/50 border-border"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <BannerManager config={config} />
+    </div>
+  );
+}

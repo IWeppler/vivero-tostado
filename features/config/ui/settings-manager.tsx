@@ -10,6 +10,7 @@ import {
   Users,
   CreditCard,
   Settings,
+  FileSliders,
 } from "lucide-react";
 import {
   Select,
@@ -22,6 +23,8 @@ import { ConfigForm } from "./config-form";
 import { PromotionsPanel } from "@/features/promotions/ui/promotions-panel";
 import { PreferencesPanel } from "@/features/preferences/ui/preferences-panel";
 import { PaymentsPanel } from "@/features/payments/ui/payments-panel";
+import { CatalogPanel } from "@/features/catalog/ui/catalog-panel";
+import { CategoriesPanel } from "@/features/categories/ui/categories-panel";
 
 const SECTIONS = [
   {
@@ -35,6 +38,12 @@ const SECTIONS = [
     label: "Catálogo Online",
     icon: Globe,
     description: "Link público y preferencias",
+  },
+  {
+    id: "categoria",
+    label: "Categorías",
+    icon: FileSliders,
+    description: "Categorías y organización del catálogo",
   },
   {
     id: "promociones",
@@ -72,26 +81,31 @@ interface SettingsManagerProps {
   config: ConfiguracionPOS;
   promociones: any[];
   pagos: any[];
+  categorias?: any[];
 }
 
 export function SettingsManager({
   config,
   promociones,
   pagos,
+  categorias,
 }: Readonly<SettingsManagerProps>) {
   const [activeSection, setActiveSection] = useState("comercio");
 
-  // Este orquestador decide qué componente montar a la derecha
   const renderPanel = () => {
     switch (activeSection) {
       case "comercio":
         return <ConfigForm config={config} />;
+      case "categoria":
+        return <CategoriesPanel categorias={categorias || []} />;
       case "promociones":
         return <PromotionsPanel promociones={promociones} />;
       case "preferencias":
         return <PreferencesPanel />;
       case "pagos":
         return <PaymentsPanel pagos={pagos} />;
+      case "catalogo":
+        return <CatalogPanel config={config} />;
       default:
         return (
           <div className="bg-card text-card-foreground p-6 rounded-2xl border border-border flex flex-col items-center justify-center py-24 text-center">
@@ -107,6 +121,7 @@ export function SettingsManager({
 
   return (
     <div className="flex flex-col md:flex-row gap-6 lg:gap-8">
+      
       {/* SIDEBAR DE NAVEGACIÓN */}
       <aside className="w-full md:w-64 shrink-0">
         {/* Selector Mobile (Se oculta en Desktop) */}

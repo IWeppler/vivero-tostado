@@ -1,129 +1,99 @@
 "use client";
 
-import { useState, useMemo, Suspense } from "react";
+import { Suspense, useState } from "react";
 import { Producto } from "@/entities/productos/types";
-import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
+import { Plus, SearchX, ShoppingBag } from "lucide-react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { CategoryPills } from "./CategoryPills";
+import { CatalogToolbar, OrdenOption } from "./CatalogToolbar";
+import { ProductCard } from "./product-card";
 import {
-  ShoppingBag,
-  SearchX,
-  Plus,
-  SlidersHorizontal,
-  ArrowUpDown,
-  X,
-} from "lucide-react";
-import Link from "next/link";
-import { useSearchParams, useRouter, usePathname } from "next/navigation";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/shared/ui/select";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/shared/ui/dialog";
-import { Label } from "@/shared/ui/label";
-import {
-  TIPO_OPTIONS,
-  TODAS_LAS_VARIANTES,
-} from "@/entities/productos/constants";
-import Image from "next/image";
+  DEFAULT_ORDEN,
+  DEFAULT_TIPO,
+  DEFAULT_VARIANTE,
+  ITEMS_POR_PAGINA,
+  useCatalogFilters,
+} from "../hooks/use-catalog-filters";
 
 interface StoreCatalogProps {
   productos: Producto[];
 }
 
-const ITEMS_POR_PAGINA = 12;
+const ordenOptions: OrdenOption[] = [
+  { value: DEFAULT_ORDEN, label: "Más vendidos" },
+  { value: "recientes", label: "Últimos ingresos" },
+  { value: "menor_precio", label: "Menor precio" },
+  { value: "mayor_precio", label: "Mayor precio" },
+];
 
-function CatalogContent({ productos }: Readonly<{ productos: Producto[] }>) {
+export function StoreCatalog({ productos }: Readonly<StoreCatalogProps>) {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex justify-center items-center py-24">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        </div>
+      }
+    >
+      <CatalogContent productos={productos} />
+    </Suspense>
+  );
+}
+
+function CatalogContent({ productos }: Readonly<StoreCatalogProps>) {
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
   const searchQuery = searchParams.get("q") || "";
 
-  const [tipo, setTipo] = useState("todos");
-  const [variante, setVariante] = useState("todos");
-  const [orden, setOrden] = useState("recientes");
+  const [tipo, setTipo] = useState(DEFAULT_TIPO);
+  const [variante, setVariante] = useState(DEFAULT_VARIANTE);
+  const [orden, setOrden] = useState(DEFAULT_ORDEN);
   const [visibleCount, setVisibleCount] = useState(ITEMS_POR_PAGINA);
 
-  const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
+  const {
+    conteosPorCategoria,
+    productosFiltrados,
+    productosVisibles,
+    hayMasProductos,
+    hayFiltrosActivos,
+  } = useCatalogFilters({
+    productos,
+    searchQuery,
+    tipo,
+    variante,
+    orden,
+    visibleCount,
+  });
 
-  const ordenOptions = [
-    { value: "recientes", label: "Últimos ingresos" },
-    { value: "menor_precio", label: "Menor precio" },
-    { value: "mayor_precio", label: "Mayor precio" },
-  ];
+  const resetVisibleCount = () => setVisibleCount(ITEMS_POR_PAGINA);
 
-  const productosFiltradas = useMemo(() => {
-    const resultado = productos.filter((c) => {
-      const nombreStr = c.nombre || "";
-      const tipoStr = c.tipo || "";
+  const handleTipoChange = (value: string) => {
+    setTipo(value);
+    resetVisibleCount();
+  };
 
-      const matchSearch = nombreStr
-        .toLowerCase()
-        .includes(searchQuery.toLowerCase());
-      const matchTipo =
-        tipo === "todos" || tipoStr.toLowerCase() === tipo.toLowerCase();
+  const handleVarianteChange = (value: string) => {
+    setVariante(value);
+    resetVisibleCount();
+  };
 
-      const matchVariante =
-        variante === "todos" ||
-        (c.stock?.some(
-          (s) =>
-            (s.variante || "").toLowerCase() === variante.toLowerCase() &&
-            s.cantidad > 0,
-        ) ??
-          false);
-
-      return matchSearch && matchTipo && matchVariante;
-    });
-
-    resultado.sort((a, b) => {
-      if (orden === "recientes") {
-        return (
-          new Date(b.creado_en || 0).getTime() -
-          new Date(a.creado_en || 0).getTime()
-        );
-      }
-      if (orden === "menor_precio") return (a.precio || 0) - (b.precio || 0);
-      if (orden === "mayor_precio") return (b.precio || 0) - (a.precio || 0);
-      return 0;
-    });
-
-    return resultado;
-  }, [productos, searchQuery, tipo, variante, orden]);
-
-  const productosVisibles = productosFiltradas.slice(0, visibleCount);
-  const hayMasProductos = visibleCount < productosFiltradas.length;
-
-  const handleFiltrar =
-    (setter: React.Dispatch<React.SetStateAction<string>>) => (val: string) => {
-      setter(val);
-      setVisibleCount(ITEMS_POR_PAGINA);
-    };
+  const handleOrdenChange = (value: string) => {
+    setOrden(value);
+    resetVisibleCount();
+  };
 
   const limpiarFiltros = () => {
-    setTipo("todos");
-    setVariante("todos");
-    setOrden("recientes");
-    setVisibleCount(ITEMS_POR_PAGINA);
-    setIsMobileFiltersOpen(false);
+    setTipo(DEFAULT_TIPO);
+    setVariante(DEFAULT_VARIANTE);
+    setOrden(DEFAULT_ORDEN);
+    resetVisibleCount();
 
     if (searchQuery) {
       router.replace(pathname);
     }
   };
-
-  const hayFiltrosActivos =
-    tipo !== "todos" ||
-    variante !== "todos" ||
-    orden !== "recientes" ||
-    searchQuery !== "";
 
   if (productos.length === 0) {
     return (
@@ -141,210 +111,24 @@ function CatalogContent({ productos }: Readonly<{ productos: Producto[] }>) {
 
   return (
     <div className="space-y-6">
-      {/* TOOLBAR MOBILE */}
-      <div className="grid grid-cols-2 sm:hidden w-full border-y border-border bg-white sticky top-16 z-30 divide-x divide-border">
-        {/* BOTÓN FILTROS */}
-        <Dialog
-          open={isMobileFiltersOpen}
-          onOpenChange={setIsMobileFiltersOpen}
-        >
-          <DialogTrigger asChild>
-            <Button
-              variant="ghost"
-              className="w-full h-14 rounded-none border-0 border-r border-border uppercase tracking-widest text-xs font-bold text-foreground hover:bg-muted/30 focus-visible:ring-0 flex items-center justify-center gap-2"
-            >
-              <SlidersHorizontal className="w-4 h-4" />
-              Filtros
-              {hayFiltrosActivos && (
-                <span className="w-1.5 h-1.5 rounded-full bg-primary" />
-              )}
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="fixed inset-0 z-50 w-screen h-dvh max-w-none translate-x-0! translate-y-0! top-0! left-0! m-0 p-0 rounded-none border-none bg-white flex flex-col overflow-hidden [&>button]:hidden">
-            <DialogHeader className="p-4 border-b border-border flex flex-row items-center justify-between shadow-none space-y-0">
-              <DialogTitle className="uppercase tracking-widest text-sm font-bold m-0">
-                Filtrar Catálogo
-              </DialogTitle>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setIsMobileFiltersOpen(false)}
-                className="rounded-none cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </Button>
-            </DialogHeader>
+      <CategoryPills
+        tipo={tipo}
+        conteosPorCategoria={conteosPorCategoria}
+        onTipoChange={handleTipoChange}
+      />
 
-            <div className="flex-1 overflow-y-auto p-6 space-y-8">
-              <div className="space-y-4">
-                <Label className="uppercase tracking-widest text-[10px] text-muted-foreground font-bold">
-                  Tipo
-                </Label>
-                <Select value={tipo} onValueChange={handleFiltrar(setTipo)}>
-                  <SelectTrigger className="w-full h-12 rounded-none bg-[#f5f4f4] border-0 shadow-none uppercase tracking-widest text-xs font-bold focus:ring-0">
-                    <SelectValue placeholder="Tipo" />
-                  </SelectTrigger>
-                  <SelectContent className="rounded-none border-border">
-                    {TIPO_OPTIONS.map((opt) => (
-                      <SelectItem
-                        key={opt.value}
-                        value={opt.value}
-                        className="rounded-none uppercase tracking-widest text-xs py-3"
-                      >
-                        {opt.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+      <CatalogToolbar
+        variante={variante}
+        orden={orden}
+        searchQuery={searchQuery}
+        hayFiltrosActivos={hayFiltrosActivos}
+        ordenOptions={ordenOptions}
+        onVarianteChange={handleVarianteChange}
+        onOrdenChange={handleOrdenChange}
+        onLimpiarFiltros={limpiarFiltros}
+      />
 
-              <div className="space-y-4">
-                <Label className="uppercase tracking-widest text-[10px] text-muted-foreground font-bold">
-                  Talle
-                </Label>
-                <Select
-                  value={variante}
-                  onValueChange={handleFiltrar(setVariante)}
-                >
-                  <SelectTrigger className="w-full h-12 rounded-none bg-[#f5f4f4] border-0 shadow-none uppercase tracking-widest text-xs font-bold focus:ring-0">
-                    <SelectValue placeholder="Variante" />
-                  </SelectTrigger>
-                  <SelectContent className="rounded-none border-border">
-                    {TODAS_LAS_VARIANTES.map((opt) => (
-                      <SelectItem
-                        key={opt}
-                        value={opt}
-                        className="rounded-none uppercase tracking-widest text-xs py-3"
-                      >
-                        {opt}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            <div className="p-4 border-t border-border flex gap-3 bg-white mb-4">
-              <Button
-                variant="outline"
-                onClick={limpiarFiltros}
-                className="flex-1 rounded-none uppercase tracking-widest text-xs font-bold h-12 border-border shadow-none"
-              >
-                Limpiar
-              </Button>
-              <Button
-                onClick={() => setIsMobileFiltersOpen(false)}
-                className="flex-1 rounded-none uppercase tracking-widest text-xs font-bold h-12 shadow-none"
-              >
-                Ver Resultados
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
-
-        {/* BOTÓN ORDENAR */}
-        <Select value={orden} onValueChange={handleFiltrar(setOrden)}>
-          <SelectTrigger className="w-full h-14 my-1 rounded-none border-0 shadow-none uppercase tracking-widest text-xs font-bold text-foreground focus:ring-0 bg-transparent hover:bg-muted/30 [&>svg]:hidden px-0 flex items-center justify-center">
-            <div className="flex items-center justify-center gap-2 ">
-              <ArrowUpDown className="w-4 h-4" />
-              <span>Ordenar</span>
-            </div>
-          </SelectTrigger>
-          <SelectContent
-            position="popper"
-            sideOffset={4}
-            className="w-50 rounded-none border-border"
-          >
-            {ordenOptions.map((opt) => (
-              <SelectItem
-                key={opt.value}
-                value={opt.value}
-                className="rounded-none uppercase tracking-widest text-xs py-3"
-              >
-                {opt.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-
-      {/* TOOLBAR DESKTOP  */}
-      <div className="hidden sm:flex items-center justify-between py-3 border-b border-border bg-white sticky top-16 z-20 mb-8">
-        <div className="flex items-center gap-3">
-          <span className="uppercase tracking-widest text-[10px] font-bold text-muted-foreground mr-1">
-            Filtros:
-          </span>
-
-          <Select value={tipo} onValueChange={handleFiltrar(setTipo)}>
-            <SelectTrigger className="w-40 h-10 rounded-none border-0 bg-[#f5f4f4] shadow-none uppercase tracking-widest text-[10px] font-bold focus:ring-0 px-3">
-              <SelectValue placeholder="Tipo" />
-            </SelectTrigger>
-            <SelectContent className="rounded-none border-border">
-              {TIPO_OPTIONS.map((opt) => (
-                <SelectItem
-                  key={opt.value}
-                  value={opt.value}
-                  className="rounded-none uppercase tracking-widest text-[11px] py-2.5"
-                >
-                  {opt.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          <Select value={variante} onValueChange={handleFiltrar(setVariante)}>
-            <SelectTrigger className="w-40 h-10 rounded-none border-0 bg-[#f5f4f4] shadow-none uppercase tracking-widest text-[10px] font-bold focus:ring-0 px-3">
-              <SelectValue placeholder="Variante" />
-            </SelectTrigger>
-            <SelectContent className="rounded-none border-border">
-              {TODAS_LAS_VARIANTES.map((opt) => (
-                <SelectItem
-                  key={opt}
-                  value={opt}
-                  className="rounded-none uppercase tracking-widest text-[11px] py-2.5"
-                >
-                  {opt}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          {hayFiltrosActivos && (
-            <Button
-              variant="ghost"
-              onClick={limpiarFiltros}
-              className="h-10 rounded-none uppercase tracking-widest text-[10px] font-bold text-muted-foreground hover:text-foreground hover:bg-[#f5f4f4]"
-            >
-              Limpiar
-            </Button>
-          )}
-        </div>
-
-        <div className="flex items-center gap-3">
-          <span className="uppercase tracking-widest text-[10px] font-bold text-muted-foreground">
-            Ordenar:
-          </span>
-          <Select value={orden} onValueChange={handleFiltrar(setOrden)}>
-            <SelectTrigger className="w-50 h-10 rounded-none border-0 bg-[#f5f4f4] shadow-none uppercase tracking-widest text-[10px] font-bold focus:ring-0 px-3">
-              <SelectValue placeholder="Ordenar por" />
-            </SelectTrigger>
-            <SelectContent className="rounded-none border-border">
-              {ordenOptions.map((opt) => (
-                <SelectItem
-                  key={opt.value}
-                  value={opt.value}
-                  className="rounded-none uppercase tracking-widest text-[10px] py-2.5"
-                >
-                  {opt.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-
-      {/* GRILLA DE PRODUCTOS */}
-      {productosFiltradas.length === 0 ? (
+      {productosFiltrados.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-24 text-center">
           <SearchX
             className="w-12 h-12 text-muted-foreground/30 mb-4"
@@ -364,78 +148,9 @@ function CatalogContent({ productos }: Readonly<{ productos: Producto[] }>) {
       ) : (
         <>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-10 sm:gap-x-6 sm:gap-y-12">
-            {productosVisibles.map((producto) => {
-              let imagenes: string[] = [];
-              if (Array.isArray(producto.imagen_url)) {
-                imagenes = producto.imagen_url;
-              } else if (typeof producto.imagen_url === "string") {
-                try {
-                  const parsed = JSON.parse(producto.imagen_url);
-                  imagenes = Array.isArray(parsed)
-                    ? parsed
-                    : [producto.imagen_url];
-                } catch {
-                  imagenes = [producto.imagen_url];
-                }
-              }
-
-              const primeraImagen = imagenes[0] || null;
-              const linkDestino = producto.slug
-                ? `/store/${producto.slug}`
-                : "#";
-
-              return (
-                <div
-                  key={producto.id}
-                  className="group relative flex flex-col transition-all"
-                >
-                  <Link
-                    href={linkDestino}
-                    className="aspect-4/5 bg-[#f7f7f7] relative overflow-hidden flex items-center justify-center w-full shadow-none border border-border/40"
-                  >
-                    {primeraImagen ? (
-                      <Image
-                        src={primeraImagen}
-                        alt={producto.nombre || "Producto"}
-                        className="object-cover w-full h-full"
-                      />
-                    ) : (
-                      <ShoppingBag
-                        className="w-10 h-10 text-muted-foreground/20"
-                        strokeWidth={1}
-                      />
-                    )}
-
-                    {producto.tipo && (
-                      <div className="absolute top-3 left-3 z-5">
-                        <Badge
-                          variant="secondary"
-                          className="bg-white/90 text-black rounded-none uppercase text-[9px] font-bold tracking-widest px-2 py-0.5 border-none shadow-none"
-                        >
-                          {producto.tipo}
-                        </Badge>
-                      </div>
-                    )}
-                  </Link>
-
-                  <div className="pt-4 flex flex-col">
-                    <Link
-                      href={linkDestino}
-                      className="hover:underline decoration-1 underline-offset-4"
-                    >
-                      <h3 className="font-semibold text-foreground text-sm uppercase tracking-wide truncate">
-                        {producto.nombre || "Sin nombre"}
-                      </h3>
-                    </Link>
-                    <div className="mt-2">
-                      <span className="text-sm font-bold text-foreground">
-                        ${(producto.precio || 0).toLocaleString("es-AR")}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
+            {productosVisibles.map((producto) => (
+              <ProductCard key={producto.id} producto={producto} />
+            ))}
           </div>
 
           {hayMasProductos && (
@@ -458,16 +173,3 @@ function CatalogContent({ productos }: Readonly<{ productos: Producto[] }>) {
   );
 }
 
-export function StoreCatalog({ productos }: Readonly<StoreCatalogProps>) {
-  return (
-    <Suspense
-      fallback={
-        <div className="py-32 text-center uppercase tracking-widest font-bold text-muted-foreground">
-          Cargando catálogo...
-        </div>
-      }
-    >
-      <CatalogContent productos={productos} />
-    </Suspense>
-  );
-}

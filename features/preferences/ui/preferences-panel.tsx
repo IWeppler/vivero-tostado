@@ -23,18 +23,15 @@ interface BeforeInstallPromptEvent extends Event {
   prompt(): Promise<void>;
 }
 
-// 2. Aumentamos las interfaces globales de TypeScript
 declare global {
   interface Window {
     deferredPwaPrompt?: BeforeInstallPromptEvent;
   }
   interface Navigator {
-    standalone?: boolean; // Específico de iOS Safari
+    standalone?: boolean;
   }
 }
 
-// 🚀 FIX PWA: Capturamos el evento a nivel de módulo tan pronto como el navegador
-// evalúa este script. Así evitamos perderlo si se dispara antes de montar React.
 if (typeof window !== "undefined") {
   window.addEventListener("beforeinstallprompt", (e) => {
     e.preventDefault();
@@ -67,12 +64,9 @@ export function PreferencesPanel() {
   const [isInstalled, setIsInstalled] = useState(isPwaInstalled);
 
   useEffect(() => {
-    // 🚀 FIX WARNING: Diferimos el setMounted y la lectura del tema al siguiente ciclo
-    // del event loop para evitar renderizados en cascada (cascading renders)
     const timer = setTimeout(() => {
       setMounted(true);
 
-      // 1. Detectar el tema actual
       const storedTheme = localStorage.getItem("theme") as Theme | null;
       if (storedTheme) {
         setTheme(storedTheme);
@@ -82,10 +76,6 @@ export function PreferencesPanel() {
       setDeferredPrompt(getDeferredPwaPrompt());
     }, 0);
 
-    // 2. Comprobar si la PWA ya está instalada (Standalone mode)
-
-    // 3. Recuperar el evento PWA si ya fue capturado globalmente
-    // 4. Mantener la escucha por si el evento se dispara tarde
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
       const pwaEvent = e as BeforeInstallPromptEvent;
@@ -144,10 +134,8 @@ export function PreferencesPanel() {
       return;
     }
 
-    // Muestra el prompt nativo de instalación
     await deferredPrompt.prompt();
 
-    // Espera la decisión del usuario
     const { outcome } = await deferredPrompt.userChoice;
 
     if (outcome === "accepted") {
@@ -214,7 +202,7 @@ export function PreferencesPanel() {
             </button>
             <button
               onClick={() => changeTheme("system")}
-              className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all hidden sm:flex ${
+              className={`flex-1 items-center justify-center gap-2 py-2.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all hidden sm:flex ${
                 theme === "system"
                   ? "bg-background shadow-sm text-foreground ring-1 ring-black/5 dark:ring-white/10"
                   : "text-muted-foreground hover:text-foreground"
@@ -243,11 +231,11 @@ export function PreferencesPanel() {
           <Button
             onClick={handleInstallClick}
             disabled={isInstalled}
-            className={`w-full font-bold h-11 rounded-xl shadow-none uppercase tracking-widest text-xs transition-all ${
+            className={`w-full font-semibold h-11 rounded-xl shadow-none uppercase tracking-widest text-xs transition-all ${
               isInstalled
-                ? "bg-emerald-50 text-emerald-700 border border-emerald-200 cursor-default opacity-100 dark:bg-emerald-900/20 dark:text-emerald-400 dark:border-emerald-800"
+                ? "bg-emerald-50 text-emerald-700"
                 : deferredPrompt
-                  ? "bg-emerald-600 hover:bg-emerald-700 text-white"
+                  ? "bg-accent-lime hover:bg-emerald-700 text-white"
                   : "bg-muted text-muted-foreground"
             }`}
           >

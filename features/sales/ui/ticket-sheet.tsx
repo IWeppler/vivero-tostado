@@ -23,6 +23,7 @@ import {
   Wallet,
   ArrowUpRight,
   ArrowDownRight,
+  Split,
 } from "lucide-react";
 import { TicketData } from "@/entities/ventas/types";
 import { ConfiguracionPOS } from "@/entities/config/types";
@@ -77,9 +78,19 @@ export function TicketSheet({
     }
 
     mensaje += `--------------------------------\n`;
-    mensaje += `*TOTAL PAGADO: $${ticket.total.toLocaleString("es-AR")}*\n`;
-    mensaje += `Medio de pago: ${ticket.metodoPago}\n\n`;
-    mensaje += `${mensajeDespedida}`;
+    mensaje += `*TOTAL PAGADO: $${ticket.total.toLocaleString("es-AR")}*\n\n`;
+
+    // Mostrar pagos limpios en WhatsApp (Pago Único vs Pago Mixto)
+    if (ticket.pagosDesglosados && ticket.pagosDesglosados.length > 1) {
+      mensaje += `*Medios de Pago:*\n`;
+      ticket.pagosDesglosados.forEach((p) => {
+        mensaje += `🔸 ${p.nombre}: $${p.monto.toLocaleString("es-AR")}\n`;
+      });
+    } else {
+      mensaje += `*Medio de pago:* ${ticket.metodoPago}\n`;
+    }
+
+    mensaje += `\n${mensajeDespedida}`;
 
     const url = `https://wa.me/?text=${encodeURIComponent(mensaje)}`;
     window.open(url, "_blank");
@@ -162,6 +173,94 @@ export function TicketSheet({
                 </div>
               </div>
 
+              {/* RESUMEN FINANCIERO CON SOPORTE MULTI-PAGO */}
+              {ticket?.montoNeto !== undefined && (
+                <div className="rounded-xl border border-border bg-card overflow-hidden shadow-sm">
+                  <div className="px-4 py-3 bg-muted/40 border-b border-border flex items-center justify-between">
+                    <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-2">
+                      <Wallet className="w-4 h-4 text-muted-foreground/70" />{" "}
+                      Resumen Financiero
+                    </h3>
+                  </div>
+                  <div className="divide-y divide-border">
+                    {/* Lista de Pagos Desglosados */}
+                    {ticket.pagosDesglosados &&
+                    ticket.pagosDesglosados.length > 1 ? (
+                      <div className="px-4 py-3 bg-indigo-50/30 dark:bg-indigo-950/20">
+                        <span className="flex items-center gap-2 text-xs font-bold text-indigo-700 dark:text-indigo-400 uppercase tracking-widest mb-2">
+                          <Split className="w-3.5 h-3.5" /> Métodos Utilizados
+                        </span>
+                        <div className="space-y-1.5 pl-5">
+                          {ticket.pagosDesglosados.map((p, idx) => (
+                            <div
+                              key={idx}
+                              className="flex justify-between text-sm font-medium"
+                            >
+                              <span className="text-muted-foreground">
+                                {p.nombre}
+                              </span>
+                              <span>${p.monto.toLocaleString("es-AR")}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ) : (
+                      <DetailRow
+                        icon={<CreditCard className="w-3.5 h-3.5" />}
+                        label="Método de pago"
+                        value={ticket.metodoPago}
+                      />
+                    )}
+
+                    <DetailRow
+                      icon={
+                        <ArrowUpRight className="w-3.5 h-3.5 text-blue-500" />
+                      }
+                      label="Cobro Bruto"
+                      value={`$${ticket.total.toLocaleString("es-AR")}`}
+                    />
+
+                    {(ticket.comisionMonto ?? 0) > 0 ? (
+                      <DetailRow
+                        icon={
+                          <ArrowDownRight className="w-3.5 h-3.5 text-rose-500" />
+                        }
+                        label="Comisión"
+                        value={`-$${ticket.comisionMonto?.toLocaleString("es-AR")}`}
+                      />
+                    ) : (
+                      <DetailRow
+                        icon={
+                          <ArrowDownRight className="w-3.5 h-3.5 text-emerald-500" />
+                        }
+                        label="Comisión"
+                        value="$0"
+                      />
+                    )}
+
+                    {ticket.acreditacionDias !== undefined && (
+                      <DetailRow
+                        label="Acreditación"
+                        value={
+                          ticket.acreditacionDias === 0
+                            ? "Inmediata"
+                            : `En ${ticket.acreditacionDias} día(s)`
+                        }
+                      />
+                    )}
+
+                    <div className="bg-emerald-50/50 dark:bg-emerald-950/20 flex items-center justify-between px-4 py-3 border-t border-border">
+                      <span className="flex items-center gap-2 text-sm font-bold text-emerald-800 dark:text-emerald-500">
+                        Neto Estimado
+                      </span>
+                      <span className="text-base font-black text-emerald-600 dark:text-emerald-400">
+                        ${ticket.montoNeto?.toLocaleString("es-AR")}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* TRANSACTION DETAILS */}
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
@@ -201,58 +300,6 @@ export function TicketSheet({
                     />
                   )}
                 </div>
-              </div>
-
-              {/* RESUMEN FINANCIERO */}
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <Wallet className="w-4 h-4 text-muted-foreground/70" />{" "}
-                  <h3 className="text-[10px] md:text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                    Resumen de Cobro
-                  </h3>
-                </div>
-                {ticket?.montoNeto !== undefined && (
-                  <div className="rounded-xl border border-border bg-card overflow-hidden">
-                    <div className="divide-y divide-border">
-                      <DetailRow
-                        icon={<CreditCard className="w-3.5 h-3.5" />}
-                        label="Método de pago"
-                        value={ticket.metodoPago}
-                      />
-                      <DetailRow
-                        label="Cobro Bruto"
-                        value={`$${ticket.total.toLocaleString("es-AR")}`}
-                      />
-                      {(ticket.comisionMonto ?? 0) > 0 ? (
-                        <DetailRow
-                          label="Comisión"
-                          value={`-$${ticket.comisionMonto?.toLocaleString("es-AR")}`}
-                        />
-                      ) : (
-                        <DetailRow label="Comisión" value="$0" />
-                      )}
-
-                      {ticket.acreditacionDias !== undefined && (
-                        <DetailRow
-                          label="Acreditación"
-                          value={
-                            ticket.acreditacionDias === 0
-                              ? "Inmediata"
-                              : `En ${ticket.acreditacionDias} día(s)`
-                          }
-                        ></DetailRow>
-                      )}
-                      <div className="bg-muted flex items-center justify-between px-4 py-3">
-                        <span className="flex items-center gap-2 text-sm font-medium">
-                          Neto
-                        </span>
-                        <span className="text-base font-medium">
-                          ${ticket.montoNeto?.toLocaleString("es-AR")}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                )}
               </div>
 
               {/* ITEMS */}
@@ -302,7 +349,7 @@ export function TicketSheet({
                   })}
 
                   {/* Totals footer */}
-                  <div className="px-4 py-3 bg-muted/40 space-y-1.5">
+                  <div className="px-4 py-3 bg-muted/40 space-y-1.5 border-t border-border">
                     <div className="flex justify-between text-xs text-muted-foreground">
                       <span>Subtotal</span>
                       <span>${subtotalCarrito.toLocaleString("es-AR")}</span>
@@ -443,9 +490,29 @@ export function TicketSheet({
                   <span>TOTAL</span>
                   <span>${ticket?.total?.toLocaleString("es-AR")}</span>
                 </div>
-                <p className="text-xs pt-1 uppercase font-bold">
-                  Pago: {ticket?.metodoPago}
-                </p>
+
+                {/* 🚀 IMPRESIÓN MÉTODOS DE PAGO MIXTOS */}
+                <div className="pt-2 mt-2">
+                  <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">
+                    Medios de pago
+                  </p>
+                  {ticket?.pagosDesglosados &&
+                  ticket.pagosDesglosados.length > 1 ? (
+                    ticket.pagosDesglosados.map((p, idx) => (
+                      <div
+                        key={idx}
+                        className="flex justify-between text-xs font-bold uppercase"
+                      >
+                        <span>{p.nombre}</span>
+                        <span>${p.monto.toLocaleString("es-AR")}</span>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-xs uppercase font-bold">
+                      {ticket?.metodoPago}
+                    </p>
+                  )}
+                </div>
               </div>
 
               <div className="text-center pt-4 text-xs space-y-1">

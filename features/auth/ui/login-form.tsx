@@ -57,7 +57,11 @@ export function LoginForm() {
         </div>
       )}
 
-      <Button type="submit" disabled={isLoading} className="w-full">
+      <Button
+        type="submit"
+        disabled={isLoading}
+        className="w-full h-12 md:h-10"
+      >
         {isLoading ? "Ingresando..." : "Ingresar"}
       </Button>
     </form>

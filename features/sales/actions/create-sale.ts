@@ -3,30 +3,21 @@
 import { createClient } from "@/shared/config/supabase/server";
 import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
+import { CreateSalePaymentInput } from "@/entities/ventas/types";
 
 export async function registrarVentaAction(
   prevState: { error: string | null; success: boolean },
   formData: FormData,
 ) {
   const cartData = formData.get("cart_items") as string;
-  const metodoPagoId = formData.get("metodo_pago_id") as string;
-
   const promocionId = formData.get("promocion_id") as string | null;
   const descuentoMonto = Number(formData.get("descuento_monto") || 0);
 
-  console.log("\n=========================================");
-  console.log("🛠️ INICIANDO REGISTRO DE VENTA");
-  console.log("=========================================");
-  console.log("Payload items:", cartData);
-  console.log("Metodo Pago ID:", metodoPagoId);
-  console.log("Promocion ID:", promocionId, "| Descuento:", descuentoMonto);
+  const pagosRaw = formData.get("pagos") as string;
+  const metodoPagoIdLegacy = formData.get("metodo_pago_id") as string;
 
   if (!cartData) {
     return { error: "El carrito de ventas está vacío.", success: false };
-  }
-
-  if (!metodoPagoId) {
-    return { error: "Debes seleccionar un método de pago.", success: false };
   }
 
   const items = JSON.parse(cartData) as any[];
@@ -43,14 +34,11 @@ export async function registrarVentaAction(
   } = await supabase.auth.getUser();
 
   if (authError || !user) {
-    console.error("❌ Auth Error:", authError);
     return {
       error: "Debes iniciar sesión para realizar una venta.",
       success: false,
     };
   }
-
-  console.log("✅ Usuario autenticado:", user.id);
 
   // --- BLOQUEO ESTRICTO DE CAJA ---
   const { data: turnoAbierto, error: turnoError } = await supabase
@@ -61,33 +49,19 @@ export async function registrarVentaAction(
     .single();
 
   if (turnoError || !turnoAbierto) {
-    console.error("❌ Error verificando caja:", turnoError);
     return { error: "CAJA_CERRADA", success: false };
   }
 
-  console.log("✅ Caja abierta confirmada:", turnoAbierto.id);
-
-  // --- FETCH DEL MÉTODO DE PAGO ---
-  const { data: metodoData, error: metodoError } = await supabase
+  // --- FETCH DE TODOS LOS MÉTODOS DE PAGO CONFIGURADOS ---
+  const { data: metodosDb, error: metodosError } = await supabase
     .from("metodos_pago")
-    .select("*")
-    .eq("id", metodoPagoId)
-    .single();
-
-  if (metodoError || !metodoData) {
-    console.error("❌ Error buscando método de pago:", metodoError);
-    return {
-      error: "El método de pago seleccionado no existe en la base de datos.",
-      success: false,
-    };
+    .select("*");
+  if (metodosError || !metodosDb) {
+    return { error: "Error al consultar los métodos de pago.", success: false };
   }
 
-  console.log(
-    "✅ Método de pago encontrado:",
-    metodoData.nombre,
-    "| Comisión:",
-    metodoData.comision,
-  );
+  // Mapa de acceso rápido
+  const metodosMap = Object.fromEntries(metodosDb.map((m) => [m.id, m]));
 
   // --- PRE-CARGA DE PROMOCIÓN ---
   let promoData = null;
@@ -112,11 +86,9 @@ export async function registrarVentaAction(
         if (cats)
           categoriasPromo = cats.map((c) => c.categoria_nombre.toLowerCase());
       }
-      console.log("✅ Promoción aplicada:", promo.nombre);
     }
   }
 
-  // Identificamos cuánto suman los productos elegibles para prorratear el descuento
   let totalElegible = 0;
   items.forEach((item) => {
     let elegible = false;
@@ -132,7 +104,7 @@ export async function registrarVentaAction(
     }
   });
 
-  // --- 1. Validar Stock y Prorratear ---
+  // --- 1. Validar Stock y Prorratear Descuentos ---
   const itemsProcesados = [];
   let totalVenta = 0;
   let costoTotalVenta = 0;
@@ -148,10 +120,6 @@ export async function registrarVentaAction(
       .single();
 
     if (stockError || !stockActual) {
-      console.error(
-        `❌ Error de stock para ${item.nombre} (${item.variante}):`,
-        stockError,
-      );
       return { error: `Error de stock para ${item.variante}.`, success: false };
     }
 
@@ -198,29 +166,92 @@ export async function registrarVentaAction(
     totalSeguro - (isNaN(descuentoMonto) ? 0 : descuentoMonto),
   );
 
-  // --- 2. CÁLCULO FINANCIERO DEL PAGO ---
-  const montoBruto = totalConDescuento;
-  const comisionPorcentaje = Number(metodoData.comision || 0);
-  const comisionMonto = (montoBruto * comisionPorcentaje) / 100;
-  const montoNeto = montoBruto - comisionMonto;
+  // --- 2. 🚀 PREPARACIÓN DEL ARRAY DE PAGOS ---
+  let pagos: CreateSalePaymentInput[] = [];
 
-  // 💡 Mapeo seguro para la columna antigua
-  let metodoPagoSafe = "EFECTIVO";
-  if (metodoData.tipo === "TRANSFERENCIA") metodoPagoSafe = "TRANSFERENCIA";
-  if (metodoData.tipo === "TARJETA" || metodoData.tipo === "BILLETERA_VIRTUAL")
-    metodoPagoSafe = "TARJETA";
+  if (pagosRaw) {
+    // Si la UI ya mandó el array de pagos múltiples
+    pagos = JSON.parse(pagosRaw);
+  } else if (metodoPagoIdLegacy) {
+    // Retrocompatibilidad: Si la UI mandó un solo ID viejo, lo convertimos al formato nuevo
+    pagos = [
+      { metodoPagoId: metodoPagoIdLegacy, montoAsignado: totalConDescuento },
+    ];
+  } else {
+    return { error: "No se asignó un método de pago.", success: false };
+  }
+
+  if (pagos.length === 0) {
+    return { error: "La lista de pagos no puede estar vacía.", success: false };
+  }
+
+  // Validar que la suma de los pagos coincida con el total
+  const sumaPagos = pagos.reduce((acc, p) => acc + Number(p.montoAsignado), 0);
+
+  // Usamos un epsilon muy pequeño para evitar errores de precisión de coma flotante en JS
+  if (Math.abs(sumaPagos - totalConDescuento) > 0.05) {
+    return {
+      error: `La suma de pagos ($${sumaPagos.toFixed(2)}) no coincide con el total de la venta ($${totalConDescuento.toFixed(2)}).`,
+      success: false,
+    };
+  }
+
+  // --- 3. CÁLCULO FINANCIERO MASIVO (Iterando los pagos) ---
+  let comisionTotalGeneral = 0;
+  let totalNetoGeneral = 0;
+  const ventaPagosPayloads = [];
+
+  for (const pago of pagos) {
+    const metodoData = metodosMap[pago.metodoPagoId];
+    if (!metodoData) {
+      return {
+        error: "Uno de los métodos de pago seleccionados es inválido.",
+        success: false,
+      };
+    }
+
+    const montoBruto = Number(pago.montoAsignado);
+    const comisionPorcentaje = Number(metodoData.comision || 0);
+    const comisionMonto = (montoBruto * comisionPorcentaje) / 100;
+    const montoNeto = montoBruto - comisionMonto;
+
+    comisionTotalGeneral += comisionMonto;
+    totalNetoGeneral += montoNeto;
+
+    ventaPagosPayloads.push({
+      metodo_pago_id: metodoData.id,
+      metodo_nombre: metodoData.nombre,
+      metodo_tipo: metodoData.tipo,
+      monto_bruto: montoBruto,
+      comision_porcentaje: comisionPorcentaje,
+      comision_monto: comisionMonto,
+      monto_neto: montoNeto,
+      acreditacion_dias: metodoData.acreditacion_dias || 0,
+    });
+  }
+
+  let metodoPagoSafe = "PAGO_MIXTO";
+  if (pagos.length === 1) {
+    const m = metodosMap[pagos[0].metodoPagoId];
+    if (m.tipo === "TRANSFERENCIA") metodoPagoSafe = "TRANSFERENCIA";
+    else if (m.tipo === "TARJETA" || m.tipo === "BILLETERA_VIRTUAL")
+      metodoPagoSafe = "TARJETA";
+    else metodoPagoSafe = "EFECTIVO";
+  }
 
   const payloadVentas = {
     vendedor_id: user.id,
     metodo_pago: metodoPagoSafe,
-    total: montoBruto,
+    total: totalConDescuento,
     precio_costo: costoSeguro,
     cantidad: items.length,
+    total_bruto: totalConDescuento,
+    comision_total: comisionTotalGeneral,
+    total_neto: totalNetoGeneral,
+    es_pago_mixto: pagos.length > 1,
   };
 
-  console.log("🚀 Payload a insertar en 'ventas':", payloadVentas);
-
-  // --- 3. CREAR LA CABECERA (ventas) ---
+  // --- 4. CREAR LA CABECERA (ventas) ---
   const { data: nuevaVenta, error: ventaError } = await supabase
     .from("ventas")
     .insert(payloadVentas)
@@ -228,62 +259,42 @@ export async function registrarVentaAction(
     .single();
 
   if (ventaError || !nuevaVenta) {
-    console.error("❌ ERROR BD 'ventas':", ventaError);
-    // Devolvemos el mensaje exacto de Postgres
     return {
-      error: `Fallo en BD (Ventas): ${ventaError?.message || JSON.stringify(ventaError)}`,
+      error: `Fallo en BD (Ventas): ${ventaError.message}`,
       success: false,
     };
   }
 
-  console.log("✅ Venta cabecera creada con ID:", nuevaVenta.id);
-
-  // --- 4. REGISTRAR LA TRAZABILIDAD DEL PAGO (venta_pagos) ---
-  const payloadPagos = {
+  // --- 5. REGISTRAR EL DESGLOSE DE PAGOS (venta_pagos) ---
+  const pagosToInsert = ventaPagosPayloads.map((p) => ({
+    ...p,
     venta_id: nuevaVenta.id,
-    metodo_pago_id: metodoData.id,
-    metodo_nombre: metodoData.nombre,
-    metodo_tipo: metodoData.tipo,
-    monto_bruto: montoBruto,
-    comision_porcentaje: comisionPorcentaje,
-    comision_monto: comisionMonto,
-    monto_neto: montoNeto,
-    acreditacion_dias: metodoData.acreditacion_dias || 0,
-  };
-
-  console.log("🚀 Payload a insertar en 'venta_pagos':", payloadPagos);
-
+  }));
   const { error: pagoError } = await supabase
     .from("venta_pagos")
-    .insert(payloadPagos);
+    .insert(pagosToInsert);
 
   if (pagoError) {
-    console.error("❌ ERROR BD 'venta_pagos':", pagoError);
     return {
       error: `Fallo en BD (Venta Pagos): ${pagoError.message}`,
       success: false,
     };
   }
 
-  // --- 5. REGISTRAR TRAZABILIDAD DEL DESCUENTO ---
+  // --- 6. REGISTRAR TRAZABILIDAD DEL DESCUENTO ---
   if (
     promocionId &&
     promocionId !== "ninguna" &&
     descuentoMonto > 0 &&
     promoData
   ) {
-    const { error: descError } = await supabase
-      .from("ventas_descuentos")
-      .insert({
-        venta_id: nuevaVenta.id,
-        promocion_id: promocionId,
-        promocion_nombre: promoData.nombre,
-        tipo_descuento: promoData.tipo_descuento,
-        monto_descontado: descuentoMonto,
-      });
-
-    if (descError)
-      console.error("⚠️ Fallo insertando trazabilidad:", descError);
+    await supabase.from("ventas_descuentos").insert({
+      venta_id: nuevaVenta.id,
+      promocion_id: promocionId,
+      promocion_nombre: promoData.nombre,
+      tipo_descuento: promoData.tipo_descuento,
+      monto_descontado: descuentoMonto,
+    });
 
     await supabase
       .from("promociones")
@@ -293,7 +304,7 @@ export async function registrarVentaAction(
       .eq("id", promocionId);
   }
 
-  // --- 6. CREAR LOS DETALLES (ventas_items) ---
+  // --- 7. CREAR LOS DETALLES (ventas_items) ---
   const insertItems = itemsProcesados.map((item) => ({
     venta_id: nuevaVenta.id,
     producto_id: item.productoId,
@@ -308,34 +319,23 @@ export async function registrarVentaAction(
       promoData && item.descuentoMonto > 0 ? promoData.nombre : null,
   }));
 
-  console.log(
-    "🚀 Insertando items en 'ventas_items':",
-    insertItems.length,
-    "items.",
-  );
-
   const { error: itemsError } = await supabase
     .from("ventas_items")
     .insert(insertItems);
-
   if (itemsError) {
-    console.error("❌ ERROR BD 'ventas_items':", itemsError);
     return {
       error: `Fallo en BD (Ventas Items): ${itemsError.message}`,
       success: false,
     };
   }
 
-  // --- 7. DESCONTAR STOCK ---
+  // --- 8. DESCONTAR STOCK ---
   for (const item of itemsProcesados) {
     await supabase
       .from("productos_stock")
       .update({ cantidad: item.stockOriginal - item.cantidad })
       .eq("id", item.stockId);
   }
-
-  console.log("🎉 VENTA COMPLETADA EXITOSAMENTE");
-  console.log("=========================================\n");
 
   revalidatePath("/", "layout");
   return { error: null, success: true };

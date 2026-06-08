@@ -46,6 +46,11 @@ export interface VentaPago {
   creado_en?: string;
 }
 
+export interface CreateSalePaymentInput {
+  metodoPagoId: string;
+  montoAsignado: number;
+}
+
 export interface Venta {
   id: string;
   total: number;
@@ -59,6 +64,11 @@ export interface Venta {
   ventas_items?: VentaItem[];
   ventas_descuentos?: VentaDescuento[];
   venta_pagos?: VentaPago[];
+
+  total_bruto?: number;
+  comision_total?: number;
+  total_neto?: number;
+  es_pago_mixto?: boolean;
 }
 
 export interface TicketItemData {
@@ -81,4 +91,8 @@ export interface TicketData {
   comisionMonto?: number;
   montoNeto?: number;
   acreditacionDias?: number;
+  pagosDesglosados?: {
+    nombre: string;
+    monto: number;
+  }[];
 }

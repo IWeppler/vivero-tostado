@@ -4,37 +4,42 @@ import { useState, useMemo } from "react";
 import { Producto } from "@/entities/productos/types";
 import {
   ShoppingBag,
-  ArrowLeft,
   AlertCircle,
   ChevronLeft,
   ChevronRight,
   ShoppingCart,
+  ChevronDown,
+  Info,
 } from "lucide-react";
 import Link from "next/link";
-import { TODAS_LAS_VARIANTES } from "@/entities/productos/constants";
+import Image from "next/image";
 import { useCartStore } from "@/shared/store/cart-store";
 import { toast } from "sonner";
+import { ConfiguracionPOS } from "@/entities/config/types";
 
 interface ProductDetailProps {
   producto: Producto;
   baseUrl?: string;
   numeroWhatsApp?: string;
+  config?: ConfiguracionPOS | any;
 }
 
-export function ProductDetail({ producto }: Readonly<ProductDetailProps>) {
+export function ProductDetail({
+  producto,
+  config,
+}: Readonly<ProductDetailProps>) {
   const [varianteSeleccionada, setVarianteSeleccionada] = useState<
     string | null
   >(null);
   const [errorVariante, setErrorVariante] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [descOpen, setDescOpen] = useState(false);
 
   const addItem = useCartStore((state) => state.addItem);
 
-  // Manejo robusto de imágenes
   const imagenes = useMemo(() => {
-    if (Array.isArray(producto.imagen_url)) {
-      return producto.imagen_url;
-    } else if (typeof producto.imagen_url === "string") {
+    if (Array.isArray(producto.imagen_url)) return producto.imagen_url;
+    if (typeof producto.imagen_url === "string") {
       try {
         const parsed = JSON.parse(producto.imagen_url);
         return Array.isArray(parsed) ? parsed : [producto.imagen_url];
@@ -45,30 +50,23 @@ export function ProductDetail({ producto }: Readonly<ProductDetailProps>) {
     return [];
   }, [producto.imagen_url]);
 
-  // Cálculo del stock total
-  const stockTotal = useMemo(() => {
-    return producto.stock?.reduce((acc, s) => acc + s.cantidad, 0) || 0;
-  }, [producto.stock]);
-
+  const stockTotal = useMemo(
+    () => producto.stock?.reduce((acc, s) => acc + s.cantidad, 0) || 0,
+    [producto.stock],
+  );
   const estaAgotado = stockTotal === 0;
 
-  // Manejo del carrusel de imágenes
-  const handlePrevImage = () => {
+  const handlePrevImage = () =>
     setCurrentImageIndex((prev) =>
       prev === 0 ? imagenes.length - 1 : prev - 1,
     );
-  };
-
-  const handleNextImage = () => {
+  const handleNextImage = () =>
     setCurrentImageIndex((prev) =>
       prev === imagenes.length - 1 ? 0 : prev + 1,
     );
-  };
 
-  // Función para añadir al carrito
   const handleAddToCart = () => {
     if (estaAgotado) return;
-
     if (!varianteSeleccionada) {
       setErrorVariante(true);
       return;
@@ -97,213 +95,316 @@ export function ProductDetail({ producto }: Readonly<ProductDetailProps>) {
       stockMaximo: stockMaximo,
     });
 
-    toast.success("Producto añadido al carrito");
+    toast.success("Añadido al carrito de compras");
   };
 
-  const variantesDisponibles = useMemo(() => {
-    const variantesUnicas = Array.from(new Set(TODAS_LAS_VARIANTES)).filter(
-      (v) => v.toLowerCase() !== "todos",
-    );
-    return variantesUnicas;
-  }, []);
+  const variantesDelProducto = useMemo(() => {
+    if (!producto.stock || producto.stock.length === 0) return [];
+    const unicas = Array.from(new Set(producto.stock.map((s) => s.variante)));
+    return unicas.filter((v) => (v || "").toLowerCase() !== "todos");
+  }, [producto.stock]);
 
   return (
-    <div className="max-w-7xl mx-auto">
-      <div className="mb-8">
-        <Link
-          href="/store"
-          className="inline-flex items-center text-xs font-semibold tracking-widest uppercase text-muted-foreground hover:text-foreground transition-colors"
-        >
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Volver
-        </Link>
-      </div>
+    <div className="flex flex-col md:flex-row items-start mx-4 pb-8 md:pb-0 relative">
+      {/* LADO IZQUIERDO: IMÁGENES */}
+      <div className="w-full md:w-[55%] lg:w-[60%] flex flex-col md:pr-8 lg:pr-12 md:sticky md:top-32">
+        {/* Breadcrumb Oculto en Mobile, visible en Desktop */}
+        <nav className="hidden md:flex items-center text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-6">
+          <Link
+            href="/store"
+            className="hover:text-foreground transition-colors"
+          >
+            Catálogo
+          </Link>
+          <span className="mx-2 opacity-50">/</span>
+          {producto.tipo && (
+            <>
+              <Link
+                href={`/store?q=${producto.tipo}`}
+                className="hover:text-foreground transition-colors"
+              >
+                {producto.tipo}
+              </Link>
+              <span className="mx-2 opacity-50">/</span>
+            </>
+          )}
+          <span className="text-foreground truncate max-w-[200px]">
+            {producto.nombre}
+          </span>
+        </nav>
 
-      <div className="flex flex-col md:flex-row gap-10 lg:gap-16 items-start">
-        {/* Lado izquierdo: Imágenes */}
-        <div className="w-full md:w-3/5 lg:w-2/3 flex flex-col gap-4">
-          <div className="relative aspect-4/4 bg-[#f7f7f7] w-full flex items-center justify-center group overflow-hidden border border-border/40">
+        {/* Breadcrumb visible solo en Mobile */}
+        <nav className="flex md:hidden items-center text-[10px] font-bold uppercase tracking-widest text-muted-foreground my-4">
+          <Link href="/store" className="hover:text-foreground">
+            Catálogo
+          </Link>
+          <span className="mx-2 opacity-50">/</span>
+          {producto.tipo && (
+            <span className="text-foreground truncate max-w-[200px]">
+              {producto.tipo}
+            </span>
+          )}
+        </nav>
+
+        {/* Galería Mobile (Swipeable) */}
+        <div className="md:hidden flex overflow-x-auto snap-x snap-mandatory scrollbar-hide w-full bg-[#f7f7f7]">
+          {imagenes.length > 0 ? (
+            imagenes.map((img, i) => (
+              <div
+                key={i}
+                className="snap-center shrink-0 w-full aspect-[4/5] relative"
+              >
+                <Image
+                  src={img}
+                  alt={`${producto.nombre} ${i}`}
+                  fill
+                  className="object-cover"
+                  priority={i === 0}
+                  sizes="100vw"
+                />
+                {/* Paginación dots (solo visual mobile) */}
+                {imagenes.length > 1 && (
+                  <div className="absolute bottom-4 left-0 w-full flex justify-center gap-1.5">
+                    {imagenes.map((_, dotIdx) => (
+                      <div
+                        key={dotIdx}
+                        className={`w-1.5 h-1.5 rounded-full ${dotIdx === i ? "bg-black" : "bg-black/20"}`}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))
+          ) : (
+            <div className="snap-center shrink-0 w-full aspect-[4/5] flex flex-col items-center justify-center text-muted-foreground/30">
+              <ShoppingBag className="w-16 h-16 mb-2" strokeWidth={1} />
+            </div>
+          )}
+        </div>
+
+        {/* Galería Desktop (Imagen principal + Miniaturas) */}
+        <div className="hidden md:flex flex-col gap-3">
+          <div className="relative aspect-[4/5] bg-[#f7f7f7] w-full flex items-center justify-center group overflow-hidden border border-border/60">
             {imagenes.length > 0 ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
+              <Image
                 src={imagenes[currentImageIndex]}
-                alt={`${producto.nombre} - Vista ${currentImageIndex + 1}`}
-                className="object-cover w-full h-full transition-opacity duration-300"
+                alt={producto.nombre || ""}
+                fill
+                className="object-cover transition-opacity duration-300"
+                priority
+                sizes="(max-width: 1200px) 50vw, 33vw"
               />
             ) : (
-              <div className="flex flex-col items-center justify-center text-muted-foreground/30">
-                <ShoppingBag className="w-20 h-20 mb-4" strokeWidth={1} />
-                <span className="text-sm font-medium uppercase tracking-widest">
-                  Sin imagen
-                </span>
-              </div>
+              <ShoppingBag
+                className="w-20 h-20 text-muted-foreground/30"
+                strokeWidth={1}
+              />
             )}
-
             {imagenes.length > 1 && (
               <>
                 <button
                   onClick={handlePrevImage}
-                  className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/90 hover:bg-white text-foreground flex items-center justify-center rounded-none opacity-0 group-hover:opacity-100 transition-all duration-200 border border-border/50 cursor-pointer"
+                  className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-white hover:bg-neutral-100 text-foreground flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-200 border border-border cursor-pointer shadow-sm"
                 >
-                  <ChevronLeft className="w-6 h-6" strokeWidth={1.5} />
+                  <ChevronLeft className="w-5 h-5" strokeWidth={1.5} />
                 </button>
                 <button
                   onClick={handleNextImage}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/90 hover:bg-white text-foreground flex items-center justify-center rounded-none opacity-0 group-hover:opacity-100 transition-all duration-200 border border-border/50 cursor-pointer"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-white hover:bg-neutral-100 text-foreground flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-200 border border-border cursor-pointer shadow-sm"
                 >
-                  <ChevronRight className="w-6 h-6" strokeWidth={1.5} />
+                  <ChevronRight className="w-5 h-5" strokeWidth={1.5} />
                 </button>
               </>
             )}
           </div>
-
-          {/* Miniaturas */}
           {imagenes.length > 1 && (
-            <div className="flex gap-3 overflow-x-auto pb-2 custom-scrollbar">
+            <div className="flex gap-2 overflow-x-auto pb-2 custom-scrollbar mt-2">
               {imagenes.map((img, index) => (
                 <button
                   key={`thumb-${index}`}
                   onClick={() => setCurrentImageIndex(index)}
-                  className={`relative w-20 h-24 sm:w-24 sm:h-28 shrink-0 bg-[#f7f7f7] transition-all border-2 cursor-pointer ${
-                    currentImageIndex === index
-                      ? "border-foreground opacity-100"
-                      : "border-transparent opacity-60 hover:opacity-100 hover:border-border"
-                  }`}
+                  className={`relative w-20 h-28 shrink-0 bg-[#f7f7f7] transition-all border cursor-pointer ${currentImageIndex === index ? "border-foreground opacity-100" : "border-transparent opacity-60 hover:opacity-100 hover:border-border"}`}
                 >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
+                  <Image
                     src={img}
-                    alt={`Miniatura ${index + 1}`}
-                    className="object-cover w-full h-full"
+                    alt={`Thumb ${index}`}
+                    fill
+                    className="object-cover"
+                    sizes="80px"
                   />
                 </button>
               ))}
             </div>
           )}
         </div>
+      </div>
 
-        {/* Lado derecho: Información del producto */}
-        <div className="w-full md:w-2/5 lg:w-1/3 flex flex-col sticky top-24">
-          <div className="mb-6">
-            <div className="flex items-center gap-2 mb-2">
-              {producto.tipo && (
-                <>
-                  <span className="text-muted-foreground/30">•</span>
-                  <span className="text-xs font-bold tracking-widest text-muted-foreground uppercase">
-                    {producto.tipo}
-                  </span>
-                </>
+      {/* LADO DERECHO: INFORMACIÓN Y CTA */}
+      <div className="w-full md:w-[45%] lg:w-[40%] flex flex-col pt-4 sm:px-0">
+        {/* Títulos y Precio */}
+        <h1 className="text-2xl md:text-4xl font-semibold text-foreground uppercase tracking-tight mb-2 md:mb-4">
+          {producto.nombre}
+        </h1>
+
+        {/* Ocultar Precio si está configurado así */}
+        {config?.mostrar_precios !== false && (
+          <div className="text-xl md:text-2xl font-medium text-foreground mb-6 md:mb-8">
+            ${(producto.precio || 0).toLocaleString("es-AR")}
+          </div>
+        )}
+
+        {/*  Si no hay pedidos online, mostramos Solo Visualización en lugar de carrito */}
+        {config?.pedidos_whatsapp !== false ? (
+          <>
+            {/* Selección de Variantes */}
+            <div className="mb-6">
+              <h3 className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-3">
+                Selecciona una opción
+              </h3>
+              <div className="flex flex-wrap gap-2">
+                {variantesDelProducto.map((nombreVariante) => {
+                  const stockDeVariante = producto.stock?.find(
+                    (s) =>
+                      (s.variante || "").toLowerCase() ===
+                      nombreVariante.toLowerCase(),
+                  );
+                  const tieneStock = stockDeVariante
+                    ? stockDeVariante.cantidad > 0
+                    : false;
+                  const isSelected = varianteSeleccionada === nombreVariante;
+
+                  return (
+                    <button
+                      key={nombreVariante}
+                      type="button"
+                      disabled={!tieneStock}
+                      onClick={() => {
+                        setVarianteSeleccionada(nombreVariante);
+                        setErrorVariante(false);
+                      }}
+                      className={`min-w-[4rem] px-4 py-3 text-[10px] sm:text-xs font-semibold uppercase transition-all border ${
+                        isSelected
+                          ? "border-foreground bg-foreground text-background cursor-pointer"
+                          : tieneStock
+                            ? "border-border/60 bg-transparent text-foreground hover:border-foreground cursor-pointer"
+                            : "border-border/30 bg-transparent text-muted-foreground opacity-40 cursor-not-allowed line-through decoration-muted-foreground/40"
+                      }`}
+                    >
+                      {nombreVariante}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {errorVariante && (
+                <p className="text-rose-600 text-xs font-bold tracking-wide flex items-center mt-3 animate-in fade-in slide-in-from-top-1">
+                  <AlertCircle className="w-3.5 h-3.5 mr-1.5" /> Debes
+                  seleccionar una opción
+                </p>
               )}
             </div>
 
-            <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold text-foreground uppercase tracking-tight leading-none mb-4">
-              {producto.nombre || "Sin nombre"}
-            </h1>
-
-            <div className="text-xl font-medium text-foreground">
-              ${(producto.precio || 0).toLocaleString("es-AR")}
-            </div>
+            {/* Descripción Collapsible */}
             {producto.descripcion && (
-              <div className="mb-6 bg-muted/30 p-4 border-l-2 border-primary/50 text-sm text-muted-foreground leading-relaxed">
-                <h3 className="font-bold text-foreground uppercase tracking-widest text-xs mb-2">
-                  Ficha Botánica
-                </h3>
-                <p className="whitespace-pre-wrap">{producto.descripcion}</p>
+              <div className="border-t border-border/60 py-4 mt-2">
+                <button
+                  onClick={() => setDescOpen(!descOpen)}
+                  className="flex justify-between items-center w-full text-[10px] font-bold uppercase tracking-widest text-foreground cursor-pointer"
+                >
+                  <span>Descripción del Producto</span>
+                  <ChevronDown
+                    className={`w-4 h-4 transition-transform duration-300 ${descOpen ? "rotate-180" : ""}`}
+                  />
+                </button>
+
+                <div
+                  className={`grid transition-all duration-300 ease-in-out ${descOpen ? "grid-rows-[1fr] opacity-100 mt-4" : "grid-rows-[0fr] opacity-0"}`}
+                >
+                  <div className="overflow-hidden">
+                    <p className="text-sm text-muted-foreground whitespace-pre-wrap leading-relaxed">
+                      {producto.descripcion}
+                    </p>
+                  </div>
+                </div>
               </div>
             )}
-          </div>
 
-          <div className="w-full h-px bg-border/60 mb-8"></div>
-
-          {/* Selección de Variantes */}
-          <div className="mb-8">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xs font-bold uppercase tracking-widest text-foreground">
-                Selecciona una opción
-              </h3>
-            </div>
-
-            <div className="grid grid-cols-4 gap-2">
-              {variantesDisponibles.map((nombreVariante) => {
-                // Buscamos si hay stock para esta variante en el producto actual
-                const stockDeVariante = producto.stock?.find(
-                  (s) =>
-                    (s.variante || "").toLowerCase() ===
-                    nombreVariante.toLowerCase(),
-                );
-
-                const tieneStock = stockDeVariante
-                  ? stockDeVariante.cantidad > 0
-                  : false;
-                const isSelected = varianteSeleccionada === nombreVariante;
-
-                // 💡 2. Eliminamos el ternario anidado usando variables de clase claras
-                let buttonClassName =
-                  "py-3 rounded-none border text-sm font-semibold uppercase transition-all ";
-
-                if (isSelected) {
-                  buttonClassName +=
-                    "border-foreground bg-foreground text-background cursor-pointer";
-                } else if (tieneStock) {
-                  buttonClassName +=
-                    "border-border bg-transparent text-foreground hover:border-foreground/40 cursor-pointer";
-                } else {
-                  buttonClassName +=
-                    "border-border/40 bg-transparent text-muted-foreground opacity-40 cursor-not-allowed line-through";
-                }
-
-                return (
-                  <button
-                    key={nombreVariante}
-                    type="button"
-                    disabled={!tieneStock}
-                    onClick={() => {
-                      setVarianteSeleccionada(nombreVariante);
-                      setErrorVariante(false);
-                    }}
-                    className={buttonClassName}
-                  >
-                    {nombreVariante}
-                  </button>
-                );
-              })}
-            </div>
-
-            {errorVariante && (
-              <p className="text-destructive text-xs font-semibold tracking-wide flex items-center mt-3 animate-in fade-in slide-in-from-top-1">
-                <AlertCircle className="w-4 h-4 mr-1.5" />
-                Selecciona una opción para continuar
-              </p>
-            )}
-          </div>
-
-          {/* Botón de añadir al carrito */}
-          <div className="mt-4">
-            <button
-              onClick={handleAddToCart}
-              disabled={estaAgotado}
-              className={`
-                w-full flex items-center justify-center gap-3 py-4 px-6 rounded-none font-bold text-sm uppercase tracking-widest transition-colors cursor-pointer
-                ${
+            {/* Botón Desktop */}
+            <div className="hidden md:block border-t border-border/60 pt-6 mt-4">
+              <button
+                onClick={handleAddToCart}
+                disabled={estaAgotado}
+                className={`w-full flex items-center justify-center gap-3 py-4 rounded-none font-bold text-xs uppercase tracking-widest transition-colors cursor-pointer ${
                   estaAgotado
                     ? "bg-muted text-muted-foreground cursor-not-allowed border border-border"
-                    : "bg-foreground hover:bg-foreground/90 text-background"
-                }
-              `}
-            >
-              <ShoppingCart className="w-5 h-5" />
-              {estaAgotado ? "Agotado" : "Añadir al carrito"}
-            </button>
+                    : "bg-neutral-950 hover:bg-neutral-800 text-white"
+                }`}
+              >
+                <ShoppingCart className="w-4 h-4" />
+                {estaAgotado ? "Agotado" : "Añadir al carrito"}
+              </button>
+            </div>
+          </>
+        ) : (
+          /* MODO SOLO VISUALIZACIÓN */
+          <>
+            {producto.descripcion && (
+              <div className="border-t border-border/60 py-4 mt-2">
+                <button
+                  onClick={() => setDescOpen(!descOpen)}
+                  className="flex justify-between items-center w-full text-[10px] font-bold uppercase tracking-widest text-foreground cursor-pointer"
+                >
+                  <span>Descripción del Producto</span>
+                  <ChevronDown
+                    className={`w-4 h-4 transition-transform duration-300 ${descOpen ? "rotate-180" : ""}`}
+                  />
+                </button>
 
-            {!estaAgotado && (
-              <p className="text-center text-[11px] uppercase tracking-wide font-medium text-muted-foreground mt-4 leading-relaxed">
-                El pago y envío se coordinan <br /> de forma segura por WhatsApp
-                al finalizar.
-              </p>
+                <div
+                  className={`grid transition-all duration-300 ease-in-out ${descOpen ? "grid-rows-[1fr] opacity-100 mt-4" : "grid-rows-[0fr] opacity-0"}`}
+                >
+                  <div className="overflow-hidden">
+                    <p className="text-sm text-muted-foreground whitespace-pre-wrap leading-relaxed">
+                      {producto.descripcion}
+                    </p>
+                  </div>
+                </div>
+              </div>
             )}
-          </div>
-        </div>
+
+            <div className="border-t border-border/60 py-6 mt-2">
+              <div className="bg-muted/50 border border-border/50 p-4 flex flex-col items-center justify-center gap-2">
+                <Info className="w-5 h-5 text-muted-foreground mb-1" />
+                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest text-center">
+                  Modo Catálogo
+                </span>
+                <span className="text-xs text-muted-foreground text-center max-w-[250px]">
+                  Para consultar stock o realizar un pedido, contactanos
+                  directamente.
+                </span>
+              </div>
+            </div>
+          </>
+        )}
       </div>
+
+      {/* 🚀 STICKY FOOTER MOBILE (Oculto si no hay pedidos) */}
+      {config?.pedidos_whatsapp !== false && (
+        <div className="md:hidden fixed bottom-0 left-0 right-0 p-4 bg-white/95 backdrop-blur-md border-t border-border z-40 shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
+          <button
+            onClick={handleAddToCart}
+            disabled={estaAgotado}
+            className={`w-full flex items-center justify-center gap-3 py-4 rounded-none font-bold text-xs uppercase tracking-widest transition-colors cursor-pointer ${
+              estaAgotado
+                ? "bg-muted text-muted-foreground cursor-not-allowed border border-border"
+                : "bg-neutral-950 text-white"
+            }`}
+          >
+            <ShoppingCart className="w-4 h-4" />
+            {estaAgotado ? "Agotado" : "Añadir al carrito"}
+          </button>
+        </div>
+      )}
     </div>
   );
 }

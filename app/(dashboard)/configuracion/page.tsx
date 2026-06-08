@@ -23,6 +23,11 @@ export default async function ConfiguracionPage() {
     .select("*")
     .order("nombre", { ascending: true });
 
+  const { data: categorias } = await supabase
+    .from("categorias")
+    .select("*, categoria_atributos(*)")
+    .order("nombre", { ascending: true });
+
   return (
     <div className="space-y-6 mx-auto">
       {configError || !config ? (
@@ -35,6 +40,7 @@ export default async function ConfiguracionPage() {
           config={config}
           promociones={promociones || []}
           pagos={pagos || []}
+          categorias={categorias || []}
         />
       )}
     </div>
