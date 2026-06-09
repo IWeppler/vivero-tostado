@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { Suspense, useMemo, useState } from "react";
 import { Producto } from "@/entities/productos/types";
 import { Button } from "@/shared/ui/button";
 import { Plus, SearchX, ShoppingBag } from "lucide-react";
@@ -84,6 +84,26 @@ function CatalogContent({ productos }: Readonly<StoreCatalogProps>) {
     resetVisibleCount();
   };
 
+  const variantesDisponibles = useMemo(() => {
+    const variantes = new Set<string>();
+
+    productos.forEach((p) => {
+      // 1. Buscamos en el modelo nuevo
+      p.producto_variantes?.forEach((v) => {
+        if (v.stock > 0 && v.nombre_display !== "Único")
+          variantes.add(v.nombre_display);
+      });
+
+      // 2. Fallback al modelo viejo (Legacy)
+      p.stock?.forEach((s) => {
+        if (s.cantidad > 0 && s.variante !== "Único" && s.variante !== "Unico")
+          variantes.add(s.variante);
+      });
+    });
+
+    return Array.from(variantes).sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
+  }, [productos]);
+
   const limpiarFiltros = () => {
     setTipo(DEFAULT_TIPO);
     setVariante(DEFAULT_VARIANTE);
@@ -118,6 +138,7 @@ function CatalogContent({ productos }: Readonly<StoreCatalogProps>) {
       />
 
       <CatalogToolbar
+        variantesDisponibles={variantesDisponibles}
         variante={variante}
         orden={orden}
         searchQuery={searchQuery}
@@ -172,4 +193,3 @@ function CatalogContent({ productos }: Readonly<StoreCatalogProps>) {
     </div>
   );
 }
-

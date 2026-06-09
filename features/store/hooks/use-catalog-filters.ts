@@ -19,6 +19,10 @@ type ProductoConVentas = Producto & {
   ventas_count?: number;
 };
 
+function getCategoriaProducto(producto: Producto) {
+  return producto.categoria?.nombre || producto.tipo || "Sin categoría";
+}
+
 export function useCatalogFilters({
   productos,
   searchQuery,
@@ -30,7 +34,7 @@ export function useCatalogFilters({
   const conteosPorCategoria = useMemo(() => {
     const conteos: Record<string, number> = {};
     productos.forEach((producto) => {
-      const categoria = producto.tipo?.toLowerCase() || "";
+      const categoria = getCategoriaProducto(producto).toLowerCase();
       conteos[categoria] = (conteos[categoria] || 0) + 1;
     });
     return conteos;
@@ -39,7 +43,7 @@ export function useCatalogFilters({
   const productosFiltrados = useMemo(() => {
     const resultado = productos.filter((producto) => {
       const nombre = producto.nombre || "";
-      const tipoProducto = producto.tipo || "";
+      const tipoProducto = getCategoriaProducto(producto);
 
       const matchSearch = nombre
         .toLowerCase()
@@ -106,4 +110,3 @@ export function useCatalogFilters({
     hayFiltrosActivos,
   };
 }
-

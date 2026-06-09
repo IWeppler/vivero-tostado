@@ -28,6 +28,11 @@ export default async function ConfiguracionPage() {
     .select("*, categoria_atributos(*)")
     .order("nombre", { ascending: true });
 
+  const { data: atributos } = await supabase
+    .from("atributos")
+    .select("*, atributo_valores(*)")
+    .order("nombre", { ascending: true });
+
   return (
     <div className="space-y-6 mx-auto">
       {configError || !config ? (

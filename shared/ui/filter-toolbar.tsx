@@ -24,26 +24,23 @@ import {
   SlidersHorizontal,
   X,
 } from "lucide-react";
-import {
-  VARIANTE_OPTIONS,
-  TIPO_OPTIONS,
-} from "@/entities/productos/constants";
 import { SelectOption } from "@/shared/types/select";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { createClient } from "@/shared/config/supabase/client";
 
-const variantesPlanas: SelectOption[] = Array.isArray(VARIANTE_OPTIONS)
-  ? VARIANTE_OPTIONS
-  : [
-      { value: "todos", label: "Variantes" },
-      ...Array.from(
-        new Map(
-          Object.values(VARIANTE_OPTIONS)
-            .flat()
-            .filter((v) => v.value !== "todos")
-            .map((item) => [item.value, item]),
-        ).values(),
-      ),
-    ];
+// const variantesPlanas: SelectOption[] = Array.isArray(VARIANTE_OPTIONS)
+//   ? VARIANTE_OPTIONS
+//   : [
+//       { value: "todos", label: "Variantes" },
+//       ...Array.from(
+//         new Map(
+//           Object.values(VARIANTE_OPTIONS)
+//             .flat()
+//             .filter((v) => v.value !== "todos")
+//             .map((item) => [item.value, item]),
+//         ).values(),
+//       ),
+//     ];
 
 interface FilterToolbarProps {
   searchQuery: string;
@@ -65,6 +62,11 @@ interface FilterToolbarProps {
   actionButtons?: React.ReactNode;
 }
 
+type ToolbarCategory = {
+  id: string;
+  nombre: string;
+};
+
 export function FilterToolbar({
   searchQuery,
   onSearchChange,
@@ -81,6 +83,23 @@ export function FilterToolbar({
   actionButtons,
 }: Readonly<FilterToolbarProps>) {
   const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
+  const [categorias, setCategorias] = useState<ToolbarCategory[]>([]);
+
+  useEffect(() => {
+    const fetchCategorias = async () => {
+      const supabase = createClient();
+      const { data } = await supabase
+        .from("categorias")
+        .select("id, nombre")
+        .eq("activa", true)
+        .is("parent_id", null)
+        .order("orden");
+
+      setCategorias(data || []);
+    };
+
+    fetchCategorias();
+  }, []);
 
   return (
     <div className="space-y-4 mb-4">
@@ -148,13 +167,19 @@ export function FilterToolbar({
                       <SelectValue placeholder="Categoría" />
                     </SelectTrigger>
                     <SelectContent className="rounded-none border-border shadow-xl">
-                      {TIPO_OPTIONS.map((opt) => (
+                      <SelectItem
+                        value="todos"
+                        className="rounded-none uppercase tracking-widest text-xs py-3"
+                      >
+                        Todas
+                      </SelectItem>
+                      {categorias.map((cat) => (
                         <SelectItem
-                          key={opt.value}
-                          value={opt.value}
+                          key={cat.id}
+                          value={cat.id}
                           className="rounded-none uppercase tracking-widest text-xs py-3"
                         >
-                          {opt.value === "todos" ? "Todas" : opt.label}
+                          {cat.nombre}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -169,7 +194,7 @@ export function FilterToolbar({
                     <SelectTrigger className="w-full h-12 rounded-none bg-[#f5f4f4] border-0 shadow-none uppercase tracking-widest text-xs font-bold focus:ring-0">
                       <SelectValue placeholder="Variante" />
                     </SelectTrigger>
-                    <SelectContent className="rounded-none border-border shadow-xl">
+                    {/* <SelectContent className="rounded-none border-border shadow-xl">
                       {variantesPlanas.map((opt) => (
                         <SelectItem
                           key={opt.value}
@@ -179,7 +204,7 @@ export function FilterToolbar({
                           {opt.value === "todos" ? "Todas" : opt.label}
                         </SelectItem>
                       ))}
-                    </SelectContent>
+                    </SelectContent> */}
                   </Select>
                 </div>
               </div>
@@ -248,13 +273,19 @@ export function FilterToolbar({
             <SelectValue placeholder="Categoría" />
           </SelectTrigger>
           <SelectContent className="rounded-none shadow-md">
-            {TIPO_OPTIONS.map((opt) => (
+            <SelectItem
+              value="todos"
+              className="cursor-pointer rounded-none text-xs"
+            >
+              Categoría
+            </SelectItem>
+            {categorias.map((opt) => (
               <SelectItem
-                key={opt.value}
-                value={opt.value}
+                key={opt.id}
+                value={opt.id}
                 className="cursor-pointer rounded-none text-xs"
               >
-                {opt.value === "todos" ? "Categoría" : opt.label}
+                {opt.nombre}
               </SelectItem>
             ))}
           </SelectContent>
@@ -264,7 +295,7 @@ export function FilterToolbar({
           <SelectTrigger className="w-35 rounded-none shadow-none cursor-pointer border-border/60 hover:border-foreground/40 bg-white focus:ring-0 transition-colors text-xs font-medium h-10">
             <SelectValue placeholder="Variantes" />
           </SelectTrigger>
-          <SelectContent className="rounded-none shadow-md">
+          {/* <SelectContent className="rounded-none shadow-md">
             {variantesPlanas.map((opt) => (
               <SelectItem
                 key={opt.value}
@@ -274,7 +305,7 @@ export function FilterToolbar({
                 {opt.value === "todos" ? "Variantes" : opt.label}
               </SelectItem>
             ))}
-          </SelectContent>
+          </SelectContent> */}
         </Select>
 
         <Select value={orden} onValueChange={onOrdenChange}>

@@ -2,48 +2,25 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { Producto } from "@/entities/productos/types";
-import { TODAS_LAS_VARIANTES } from "@/entities/productos/constants";
+import type { Producto } from "@/entities/productos/types";
 import { Image as ImageIcon, Plus } from "lucide-react";
 import { Button } from "@/shared/ui/button";
-import { useCartStore } from "@/shared/store/cart-store";
-import { toast } from "sonner";
-import { ProductDetailSheet } from "./product-detail-sheet";
 import { formatearMoneda } from "@/shared/utils/formatters";
+import { useStockCartActions } from "../hooks/use-stock-cart-actions";
+import {
+  capitalizar,
+  getVariantesVisibles,
+  obtenerPrimeraImagen,
+} from "../lib/stock-product-utils";
+import { ProductEditDetailSheet } from "./edit-sheet";
 
 interface StockGridProps {
   productos: Producto[];
-  userRole: string; // Para saber si es admin y puede vender sin stock
+  userRole: string;
 }
 
-const capitalizar = (str: string) => {
-  if (!str) return "";
-  return str.charAt(0).toUpperCase() + str.slice(1).replace("_", " ");
-};
-
-const obtenerPrimeraImagen = (imagenUrl: unknown): string | null => {
-  if (!imagenUrl) return null;
-  if (Array.isArray(imagenUrl) && imagenUrl.length > 0) return imagenUrl[0];
-  if (typeof imagenUrl === "string") {
-    if (imagenUrl.startsWith("[")) {
-      try {
-        const parsed = JSON.parse(imagenUrl);
-        return Array.isArray(parsed) ? parsed[0] : imagenUrl;
-      } catch {
-        return imagenUrl;
-      }
-    }
-    return imagenUrl;
-  }
-  return null;
-};
-
 export function StockGrid({ productos, userRole }: Readonly<StockGridProps>) {
-  const addItem = useCartStore((state) => state.addItem);
-  const setIsOpen = useCartStore((state) => state.setIsOpen);
-  const isAdmin = userRole === "ADMIN";
-
-  // Estado para saber qué tarjeta tiene las variantes abiertas
+  const { isAdmin, agregarAlCarrito } = useStockCartActions(userRole);
   const [variantesAbiertas, setVariantesAbiertas] = useState<
     Record<string, boolean>
   >({});
@@ -57,26 +34,9 @@ export function StockGrid({ productos, userRole }: Readonly<StockGridProps>) {
     variante: string,
     stockMax: number,
   ) => {
-    if (stockMax <= 0 && !isAdmin) {
-      toast.error("No hay stock suficiente.");
-      return;
-    }
+    const agregado = agregarAlCarrito(producto, variante, stockMax);
 
-    addItem({
-      productoId: producto.id,
-      nombre: producto.nombre,
-      tipo: producto.tipo,
-      variante,
-      cantidad: 1,
-      precio: producto.precio,
-      imagenUrl: obtenerPrimeraImagen(producto.imagen_url),
-      stockMaximo: stockMax,
-    });
-
-    setIsOpen(true);
-
-    // Auto-cierra el panel
-    if (variantesAbiertas[producto.id]) {
+    if (agregado && variantesAbiertas[producto.id]) {
       setVariantesAbiertas((prev) => ({ ...prev, [producto.id]: false }));
     }
   };
@@ -92,37 +52,17 @@ export function StockGrid({ productos, userRole }: Readonly<StockGridProps>) {
   }
 
   return (
-    // grid-cols-2 para que se vean 2 columnas en celulares
     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 m-2">
       {productos.map((producto) => {
         const primeraImagen = obtenerPrimeraImagen(producto.imagen_url);
         const isOpen = variantesAbiertas[producto.id];
-
-        // Lógica de variantes (Igual que en la tabla)
-        const stockOrdenado = producto.stock
-          ? [...producto.stock].sort((a, b) => {
-              const indexA = TODAS_LAS_VARIANTES.indexOf(
-                a.variante.toUpperCase(),
-              );
-              const indexB = TODAS_LAS_VARIANTES.indexOf(
-                b.variante.toUpperCase(),
-              );
-              return (
-                (indexA === -1 ? 99 : indexA) - (indexB === -1 ? 99 : indexB)
-              );
-            })
-          : [];
-
-        const variantesParaVender = isAdmin
-          ? stockOrdenado
-          : stockOrdenado.filter((s) => s.cantidad > 0);
+        const variantesParaVender = getVariantesVisibles(producto, isAdmin);
         const esVentaDirecta = variantesParaVender.length === 1;
 
         return (
           <div key={producto.id} className="flex flex-col group relative">
-            {/* CONTENEDOR DE IMAGEN (Click abre detalles) */}
             <div className="relative aspect-4/5 bg-muted/30 rounded-xl overflow-hidden mb-3 border border-border/40 transition-all group-hover:border-border">
-              <ProductDetailSheet producto={producto} userRole={userRole}>
+              <ProductEditDetailSheet producto={producto}>
                 <div className="w-full h-full cursor-pointer">
                   {primeraImagen ? (
                     <Image
@@ -138,30 +78,33 @@ export function StockGrid({ productos, userRole }: Readonly<StockGridProps>) {
                     </div>
                   )}
                 </div>
-              </ProductDetailSheet>
+              </ProductEditDetailSheet>
 
-              {/* OVERLAY DE VARIANTES */}
               <div
                 className={`absolute bottom-0 left-0 w-full bg-white/95 backdrop-blur-md border-t border-border/50 transition-transform duration-300 ease-in-out flex flex-col p-2 ${
                   isOpen ? "translate-y-0" : "translate-y-full"
                 }`}
               >
                 <div className="flex gap-1.5 overflow-x-auto scrollbar-hide pb-1">
-                  {variantesParaVender.map((v) => (
+                  {variantesParaVender.map((variante) => (
                     <Button
-                      key={v.id}
+                      key={variante.id}
                       variant="outline"
                       size="sm"
                       onClick={() =>
-                        handleAgregarAlCarrito(producto, v.variante, v.cantidad)
+                        handleAgregarAlCarrito(
+                          producto,
+                          variante.variante,
+                          variante.cantidad,
+                        )
                       }
                       className={`h-8 px-3 rounded-md text-xs font-bold shrink-0 shadow-none border-border/60 ${
-                        v.cantidad > 0
+                        variante.cantidad > 0
                           ? "hover:bg-foreground hover:text-background hover:border-foreground"
                           : "opacity-40 line-through decoration-muted-foreground/50 cursor-not-allowed"
                       }`}
                     >
-                      {v.variante}
+                      {variante.variante}
                     </Button>
                   ))}
                   {variantesParaVender.length === 0 && (
@@ -172,7 +115,6 @@ export function StockGrid({ productos, userRole }: Readonly<StockGridProps>) {
                 </div>
               </div>
 
-              {/* BOTÓN + FLOTANTE */}
               {!isOpen && (
                 <Button
                   size="icon"
@@ -194,7 +136,6 @@ export function StockGrid({ productos, userRole }: Readonly<StockGridProps>) {
               )}
             </div>
 
-            {/* INFO DEL PRODUCTO */}
             <div className="px-1 flex flex-col">
               <div className="flex justify-between items-start gap-2">
                 <h3

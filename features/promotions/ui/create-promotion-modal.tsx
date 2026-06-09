@@ -20,9 +20,9 @@ import {
 } from "@/shared/ui/select";
 import { Loader2, Plus, Tag } from "lucide-react";
 import { ScrollArea } from "@/shared/ui/scroll-area";
-import { TIPO_OPTIONS } from "@/entities/productos/constants";
 import { createPromotionAction } from "../actions/create-promotion";
 import { toast } from "sonner";
+import { useActiveCategories } from "@/features/stock/hooks/use-active-categories";
 
 type PromotionActionState = {
   error: string | null;
@@ -39,13 +39,14 @@ export function CreatePromotionModal() {
   const [tipoRegla, setTipoRegla] = useState("METODO_PAGO");
   const [tipoDescuento, setTipoDescuento] = useState("PORCENTAJE");
   const [metodoPago, setMetodoPago] = useState("");
-  const [categoria, setCategoria] = useState("");
+  const [categoriaId, setCategoriaId] = useState("");
+  const categorias = useActiveCategories();
 
   const resetForm = () => {
     setTipoRegla("METODO_PAGO");
     setTipoDescuento("PORCENTAJE");
     setMetodoPago("");
-    setCategoria("");
+    setCategoriaId("");
   };
 
   const handleOpenChange = (open: boolean) => {
@@ -63,7 +64,10 @@ export function CreatePromotionModal() {
       }
 
       if (tipoRegla === "CATEGORIA") {
-        formData.append("categoria_nombre", categoria);
+        const categoriaSeleccionada = categorias.find(
+          (cat) => cat.id === categoriaId,
+        );
+        formData.append("categoria_nombre", categoriaSeleccionada?.nombre || "");
       }
 
       const result = await createPromotionAction(previousState, formData);
@@ -163,21 +167,19 @@ export function CreatePromotionModal() {
                 <div className="space-y-2 animate-in fade-in slide-in-from-top-2">
                   <Label>¿A qué categoría aplica?</Label>
                   <Select
-                    value={categoria}
-                    onValueChange={setCategoria}
+                    value={categoriaId}
+                    onValueChange={setCategoriaId}
                     required
                   >
                     <SelectTrigger className="w-full bg-background border-border">
                       <SelectValue placeholder="Selecciona categoría..." />
                     </SelectTrigger>
                     <SelectContent>
-                      {TIPO_OPTIONS.filter((o) => o.value !== "todos").map(
-                        (opt) => (
-                          <SelectItem key={opt.value} value={opt.value}>
-                            {opt.label}
-                          </SelectItem>
-                        ),
-                      )}
+                      {categorias.map((cat) => (
+                        <SelectItem key={cat.id} value={cat.id}>
+                          {cat.nombre}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>

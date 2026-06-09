@@ -30,7 +30,6 @@ import {
   Percent,
   Target,
 } from "lucide-react";
-import { TIPO_OPTIONS } from "@/entities/productos/constants";
 import {
   simularPreciosAction,
   aplicarPreciosAction,
@@ -38,10 +37,13 @@ import {
   OperacionPrecio,
   CampoObjetivo,
   TipoRedondeo,
+  PrevisualizacionItem,
 } from "../actions/update-prices";
 import { formatearMoneda } from "@/shared/utils/formatters";
+import { useActiveCategories } from "../hooks/use-active-categories";
 
 export function UpdatePricesModal() {
+  const categorias = useActiveCategories();
   const [isOpen, setIsOpen] = useState(false);
   const [step, setStep] = useState<1 | 2 | 3>(1);
 
@@ -60,7 +62,7 @@ export function UpdatePricesModal() {
   // --- ESTADO DE LA SIMULACIÓN ---
   const [isSimulating, setIsSimulating] = useState(false);
   const [isApplying, setIsApplying] = useState(false);
-  const [previewData, setPreviewData] = useState<any[]>([]);
+  const [previewData, setPreviewData] = useState<PrevisualizacionItem[]>([]);
   const [confirmado, setConfirmado] = useState(false);
 
   // --- HANDLERS ---
@@ -180,7 +182,7 @@ export function UpdatePricesModal() {
                   <Label>Seleccionar Alcance</Label>
                   <Select
                     value={alcance}
-                    onValueChange={(v: any) => setAlcance(v)}
+                    onValueChange={(v) => setAlcance(v as AlcancePrecio)}
                   >
                     <SelectTrigger className="h-12 rounded-xl">
                       <SelectValue placeholder="Selecciona..." />
@@ -204,13 +206,11 @@ export function UpdatePricesModal() {
                         <SelectValue placeholder="Elige la categoría..." />
                       </SelectTrigger>
                       <SelectContent className="rounded-xl">
-                        {TIPO_OPTIONS.filter((o) => o.value !== "todos").map(
-                          (opt) => (
-                            <SelectItem key={opt.value} value={opt.value}>
-                              {opt.label}
-                            </SelectItem>
-                          ),
-                        )}
+                        {categorias.map((cat) => (
+                          <SelectItem key={cat.id} value={cat.id}>
+                            {cat.nombre}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
@@ -242,7 +242,10 @@ export function UpdatePricesModal() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2 col-span-2 sm:col-span-1">
                   <Label>Campo Objetivo</Label>
-                  <Select value={campo} onValueChange={(v: any) => setCampo(v)}>
+                  <Select
+                    value={campo}
+                    onValueChange={(v) => setCampo(v as CampoObjetivo)}
+                  >
                     <SelectTrigger className="rounded-lg h-11">
                       <SelectValue />
                     </SelectTrigger>
@@ -258,7 +261,7 @@ export function UpdatePricesModal() {
                   <Label>Estrategia</Label>
                   <Select
                     value={operacion}
-                    onValueChange={(v: any) => setOperacion(v)}
+                    onValueChange={(v) => setOperacion(v as OperacionPrecio)}
                   >
                     <SelectTrigger className="rounded-lg h-11">
                       <SelectValue />
@@ -292,7 +295,7 @@ export function UpdatePricesModal() {
                   <Label>Redondeo (Sugerido)</Label>
                   <Select
                     value={redondeo}
-                    onValueChange={(v: any) => setRedondeo(v)}
+                    onValueChange={(v) => setRedondeo(v as TipoRedondeo)}
                   >
                     <SelectTrigger className="rounded-lg h-11">
                       <SelectValue />

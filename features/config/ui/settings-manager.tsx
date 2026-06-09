@@ -121,7 +121,6 @@ export function SettingsManager({
 
   return (
     <div className="flex flex-col md:flex-row gap-6 lg:gap-8">
-      
       {/* SIDEBAR DE NAVEGACIÓN */}
       <aside className="w-full md:w-64 shrink-0">
         {/* Selector Mobile (Se oculta en Desktop) */}

@@ -1,69 +1,50 @@
-Los items que tienen # al principio significa que ya estan hechos
+Los items que tienen ## al principio significa que ya estan hechos
 Los items que tienen ### al principio significa que estoy trabajando
 
-## ✅ Core implementado
+REPORTE POR CANAL DE VENTAS: Instagram, local, POS
 
-# 1 - Apertura y Cierre de Caja: Control de turnos. "El empleado Juan abrió la caja con $10.000 y la cerró con $45.000". Fundamental para la paz mental del dueño.
+# ✅ Core implementado
 
-# 2 - Ventas sin Fricción: Permitir ventas con stock negativo (mostrando una ⚠️ alerta visual). La realidad física manda; nunca bloquees una venta.
+## 1 - Apertura y Cierre de Caja: Control de turnos. "El empleado Juan abrió la caja con $10.000 y la cerró con $45.000". Fundamental para la paz mental del dueño.
 
-# 3 - Métodos de Pago Base: Implementar un selector al cobrar: Efectivo (por defecto), Tarjeta, Transferencia/App.
+## 2 - Ventas sin Fricción: Permitir ventas con stock negativo (mostrando una ⚠️ alerta visual). La realidad física manda; nunca bloquees una venta.
 
-# 4 - Pantalla de "Venta Realizada": El modal de éxito final con el botón estrella: "Enviar Comprobante por WhatsApp". Tu motor oculto de marketing.
+## 3 - Métodos de Pago Base: Implementar un selector al cobrar: Efectivo (por defecto), Tarjeta, Transferencia/App.
 
-# 5 - Detalle y Ganancia: La pantalla de resumen de cada venta que le muestre al dueño exactamente cuánta ganancia neta le dejó esa operación específica.
+## 4 - Pantalla de "Venta Realizada": El modal de éxito final con el botón estrella: "Enviar Comprobante por WhatsApp". Tu motor oculto de marketing.
 
-# 6 - Devoluciones Simples: Un botón de "Registrar Devolución" con motivo, preguntando si el stock y el dinero vuelven a sus lugares. Nada de "Notas de Crédito" complejas aún.
+## 5 - Detalle y Ganancia: La pantalla de resumen de cada venta que le muestre al dueño exactamente cuánta ganancia neta le dejó esa operación específica.
 
-# 7 - Descuentos Comerciales: Botón en el carrito para aplicar descuento por % o monto fijo. Ideal para el marketing cruzado que planeaste.
+## 6 - Devoluciones Simples: Un botón de "Registrar Devolución" con motivo, preguntando si el stock y el dinero vuelven a sus lugares. Nada de "Notas de Crédito" complejas aún.
 
-# 8 - Insights y Gráficos: Evolución de ventas y horarios pico, pero traducidos a lenguaje humano. Tarjetas con 💡 consejos (ej: "Asegura cambio a las 18hs, es tu pico de ventas"). Mantener el ranking de Mayor Rotación.
+## 7 - Descuentos Comerciales: Botón en el carrito para aplicar descuento por % o monto fijo. Ideal para el marketing cruzado que planeaste.
 
-Improves:
+## 8 - Insights y Gráficos: Evolución de ventas y horarios pico, pero traducidos a lenguaje humano. Tarjetas con 💡 consejos (ej: "Asegura cambio a las 18hs, es tu pico de ventas"). Mantener el ranking de Mayor Rotación.
 
-# mejorar ui carrito de venta
+# Improves:
+## mejorar ui carrito de venta
+## modificacion de precios masivos
+## boton de descargar pwa
+## ticket en formato pdf
+## dark/light mode
+## mejorar el dashboard inicial y mejorar el modulo de reportes/metricas
+## El modulo de reportes: quiero traer por fechas el Flujo de Ingresos Diarios; Ventas por Categoría no me trae correctamente las funciones; Rentabilidad por Categoría tiene el mismo problema ademas el chart no se ve bien.
+## modulo de reportes: margen operativo estimado en porcentaje, falta ver el monto en $ asociado.
+## Ingresos Brutos vs Ganancia Bruta: micro-copy. Total vendido antes de costos y gastos. y Ingresos menos costo de mercadería.
+## Reportes / Ventas: Agregaría ventas por día/hora.
+## Ventas por categoría debería tener selector de métrica: [Ingresos] [Unidades] [Tickets]
+## Reportes/Inventario: Agregaría “valor potencial de venta”
+## Además de capital inmovilizado al costo, sería útil mostrar: Valor al costo: $X; Valor potencial de venta: $Y; Ganancia potencial: $Z
+## Productos sin movimiento: definir ventana: hace 30 días - hace 60 días - hace 90 días
+## en el modulo de stock debo poder ordenar en la tabla por nombre (a-z), mas/menos stock (ej: -5, 1000), orden mayor/menor costo, orden mayor/menor precio venta, y filtro stock-bajo (solo con stock ej: 0 o -10).
+## Relación bajas/ingresos: Muy buen KPI: Bajas sobre ingresos: 2.4%. Porque $20.000 en bajas puede ser mucho o poco según cuánto vendiste.
 
-# modificacion de precios masivos
-
-# boton de descargar pwa
-
-# ticket en formato pdf
-
-# dark/light mode
-
-# mejorar el dashboard inicial y mejorar el modulo de reportes/metricas
-
-# el modulo de reportes: quiero traer por fechas el Flujo de Ingresos Diarios; Ventas por Categoría no me trae correctamente las funciones; Rentabilidad por Categoría tiene el mismo problema ademas el chart no se ve bien.
-
-# modulo de reportes: margen operativo estimado en porcentaje, falta ver el monto en $ asociado.
-
-# Ingresos Brutos vs Ganancia Bruta: micro-copy. Total vendido antes de costos y gastos. y Ingresos menos costo de mercadería.
-
-# Reportes / Ventas: Agregaría ventas por día/hora.
-
-# Ventas por categoría debería tener selector de métrica: [Ingresos] [Unidades] [Tickets]
-
-# Reportes/Inventario: Agregaría “valor potencial de venta”
-
-# Además de capital inmovilizado al costo, sería útil mostrar: Valor al costo: $X; Valor potencial de venta: $Y; Ganancia potencial: $Z
-
-# Productos sin movimiento: definir ventana: hace 30 días - hace 60 días - hace 90 días
-
-# en el modulo de stock debo poder ordenar en la tabla por nombre (a-z), mas/menos stock (ej: -5, 1000), orden mayor/menor costo, orden mayor/menor precio venta, y filtro stock-bajo (solo con stock ej: 0 o -10).
-
-# Relación bajas/ingresos: Muy buen KPI: Bajas sobre ingresos: 2.4%. Porque $20.000 en bajas puede ser mucho o poco según cuánto vendiste.
-
-## 🐛 Bugs / Correcciones necesarias
-
-# Reportes: Ventas por categoría no calcula correctamente.
-
-# Reportes: Rentabilidad por categoría no calcula correctamente.
-
-# Reportes: chart de rentabilidad por categoría no se ve bien.
-
-# Revisar obtención de datos por rango de fechas.
-
-# Revisar consistencia entre ingresos, ganancia, caja y descuentos.
+# 🐛 Bugs / Correcciones necesarias
+## Reportes: Ventas por categoría no calcula correctamente.
+## Reportes: Rentabilidad por categoría no calcula correctamente.
+## Reportes: chart de rentabilidad por categoría no se ve bien.
+## Revisar obtención de datos por rango de fechas.
+## Revisar consistencia entre ingresos, ganancia, caja y descuentos.
 
 ### Features para terminar el MVP:
 
@@ -104,7 +85,7 @@ plazo de acreditación
 
 # Admin:
 
--- 6. Estandarización Dinámica: Mover Categorías y Variantes (talles, colores) a la base de datos para que cada negocio cree las suyas propias.
+## 6. Estandarización Dinámica: Mover Categorías y Variantes (talles, colores) a la base de datos para que cada negocio cree las suyas propias.
 -- 7. El modulo de caja no deberia entrar en el primer nivel de emprendedor, si en el segundo
 -- 12. Separacion de modulos: Plan 1 — Emprendedor, Plan 2 — Gestión / Profesional, Plan 3 — Empresa / Multi-sucursal
 -- Postergado. Presupuestos y Órdenes: Estados de venta (Cobrado, Presupuesto, A Confirmar). Clave para oficios o ventas grandes.

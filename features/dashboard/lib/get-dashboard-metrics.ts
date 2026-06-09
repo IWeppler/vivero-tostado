@@ -6,7 +6,6 @@ import {
   VentaProducto,
   getSupabaseRelation,
 } from "@/entities/ventas/types";
-import { TIPO_OPTIONS } from "@/entities/productos/constants";
 
 export type PeriodoDashboard =
   | "hoy"
@@ -20,18 +19,36 @@ export type PeriodoDashboard =
 
 type VentaItemExtended = VentaItem & {
   precio_costo?: number | string;
-  producto_id?: string;
+  producto_id?: string | null;
 };
 
 type VentaProductoExtended = VentaProducto & {
   tipo?: string;
+  categoria?: { nombre?: string | null } | null;
+};
+
+type MovimientoBaja = {
+  producto_id?: string | null;
+  cantidad?: number | string | null;
+  motivo?: string | null;
+  creado_en: string;
+};
+
+type StockCriticoItem = {
+  nombre: string;
+  variante: string;
+  cantidad: number;
+};
+
+type ProductoSinMovimiento = Producto & {
+  diasSinVender: number;
 };
 
 export function getDashboardMetrics(
   ventas: Venta[],
   productos: Producto[],
-  egresos: EgresoCaja[] | any[] = [],
-  bajas: any[] = [],
+  egresos: EgresoCaja[] = [],
+  bajas: MovimientoBaja[] = [],
   periodo: PeriodoDashboard = "mes",
   desde?: string,
   hasta?: string,
@@ -215,8 +232,9 @@ export function getDashboardMetrics(
         ventas: 0,
         unidades: 0,
       };
-      const cantidadTicket = (v.ventas_items || []).reduce(
-        (acc: number, item: any) => acc + Number(item.cantidad || 0),
+      const cantidadTicket = ((v.ventas_items || []) as VentaItemExtended[]).reduce(
+        (acc: number, item: VentaItemExtended) =>
+          acc + Number(item.cantidad || 0),
         0,
       );
 
@@ -250,11 +268,12 @@ export function getDashboardMetrics(
 
       unidadesVendidas += cantidadItem;
 
-      const catOriginal = prodCat?.tipo || "Sin categoría";
-      const catOption = TIPO_OPTIONS.find(
-        (opt) => opt.value.toLowerCase() === catOriginal.toLowerCase(),
-      );
-      const cat = catOption ? catOption.label : catOriginal;
+      const cat =
+        prodCat?.categoria?.nombre ||
+        prodDataGuardado?.categoria?.nombre ||
+        prodCat?.tipo ||
+        prodDataGuardado?.tipo ||
+        "Sin categoría";
 
       if (!catMap.has(cat)) {
         catMap.set(cat, { ingresos: 0, unidades: 0, tickets: new Set() });
@@ -318,7 +337,7 @@ export function getDashboardMetrics(
     );
   });
 
-  // 🚀 NUEVA FÓRMULA MADRE: Ganancia Neta Real
+  // Ganancia Neta Real
   const resultadoOperativo =
     gananciaBrutaVentas - totalEgresos - totalComisiones;
   const margenPorcentaje =
@@ -329,8 +348,8 @@ export function getDashboardMetrics(
   let stockValorizadoCosto = 0;
   let stockValorizadoPotencial = 0;
   let productosCriticos = 0;
-  const stockCriticoDetallado: any[] = [];
-  const productosSinMovimiento: any[] = [];
+  const stockCriticoDetallado: StockCriticoItem[] = [];
+  const productosSinMovimiento: ProductoSinMovimiento[] = [];
 
   const ultimaVentaMap = new Map<string, Date>();
   ventas.forEach((v) => {
@@ -403,7 +422,7 @@ export function getDashboardMetrics(
     .sort((a, b) => a.ganancia - b.ganancia)
     .slice(0, 5);
 
-  // 🚀 COMPOSICIÓN FINANCIERA RENOVADA
+  //  COMPOSICIÓN FINANCIERA
   const donutData = [
     {
       label: "Costo Mercadería",
@@ -437,7 +456,7 @@ export function getDashboardMetrics(
     .filter((d) => d.value > 0)
     .sort((a, b) => b.value - a.value);
 
-  // 🚀 MAPEAMOS EL NUEVO OBJETO MULTIDIMENSIONAL DE PAGOS
+  //  MAPEAMOS EL NUEVO OBJETO MULTIDIMENSIONAL DE PAGOS
   const ventasPorMetodo = Array.from(metodoPagoMap.entries())
     .map(([label, data]) => ({
       label,

@@ -1,7 +1,7 @@
 import { getVentasAction } from "@/features/sales/actions/get-sales";
 import { getStockAction } from "@/features/stock/actions/get-product";
 import { RegistrarVentaModal } from "@/features/sales/ui/create-sale-modal";
-import { CrearProductoModal } from "@/features/stock/ui/create-modal";
+import { CrearProductoSheet } from "@/features/stock/ui/create-sheet";
 import { EgresoModal } from "@/features/caja/ui/egreso-modal";
 import { createClient } from "@/shared/config/supabase/server";
 import { cookies } from "next/headers";
@@ -191,7 +191,7 @@ export default async function DashboardPage() {
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <RegistrarVentaModal productos={productos} />
-            <CrearProductoModal />
+            <CrearProductoSheet />
             <EgresoModal />
           </div>
         </div>

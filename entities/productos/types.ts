@@ -1,14 +1,34 @@
 export interface ProductoStock {
   id: string;
+  producto_id?: string;
   variante: string;
   cantidad: number;
-  codigo_barras?: string | null;
+}
+
+export interface ProductoVariante {
+  id: string;
+  producto_id: string;
+  sku: string | null;
+  nombre_display: string;
+  precio: number | null;
+  costo: number | null;
+  stock: number;
+  stock_minimo: number;
+  activa: boolean;
+}
+
+export interface CategoriaRelacion {
+  id: string;
+  nombre: string;
+  slug: string;
 }
 
 export interface Producto {
   id: string;
   nombre: string;
   tipo: string;
+  categoria_id?: string | null;
+  categoria?: CategoriaRelacion | null;
   precio: number;
   precio_costo: number;
   imagen_url: string | null;
@@ -17,4 +37,5 @@ export interface Producto {
   slug: string | null;
   descripcion?: string | null;
   stock?: ProductoStock[];
+  producto_variantes?: ProductoVariante[];
 }

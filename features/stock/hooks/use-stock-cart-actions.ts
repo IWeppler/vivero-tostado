@@ -1,0 +1,44 @@
+"use client";
+
+import { toast } from "sonner";
+import type { Producto } from "@/entities/productos/types";
+import { useCartStore } from "@/shared/store/cart-store";
+import {
+  obtenerPrimeraImagen,
+  puedeVenderStock,
+} from "../lib/stock-product-utils";
+
+export function useStockCartActions(userRole: string) {
+  const addItem = useCartStore((state) => state.addItem);
+  const setIsOpen = useCartStore((state) => state.setIsOpen);
+  const isAdmin = userRole === "ADMIN";
+
+  const agregarAlCarrito = (
+    producto: Producto,
+    variante: string,
+    stockMax: number,
+  ) => {
+    if (!puedeVenderStock(stockMax, isAdmin)) {
+      toast.error("No hay stock suficiente.");
+      return false;
+    }
+
+    addItem({
+      productoId: producto.id,
+      nombre: producto.nombre,
+      tipo: producto.tipo,
+      variante,
+      cantidad: 1,
+      precio: producto.precio,
+      imagenUrl: obtenerPrimeraImagen(producto.imagen_url),
+      stockMaximo: stockMax,
+    });
+    setIsOpen(true);
+    return true;
+  };
+
+  return {
+    isAdmin,
+    agregarAlCarrito,
+  };
+}

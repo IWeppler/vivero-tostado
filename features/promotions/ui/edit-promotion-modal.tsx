@@ -19,10 +19,10 @@ import {
 } from "@/shared/ui/select";
 import { Loader2, Tag } from "lucide-react";
 import { ScrollArea } from "@/shared/ui/scroll-area";
-import { TIPO_OPTIONS } from "@/entities/productos/constants";
 import { editPromotionAction } from "../actions/manage-promotions";
 import { Promotion } from "./promotions-panel";
 import { toast } from "sonner";
+import { useActiveCategories } from "@/features/stock/hooks/use-active-categories";
 
 // --- CONSTANTES PARA LOS SELECTS ---
 const TIPO_REGLA_OPTIONS = [
@@ -44,6 +44,10 @@ const TIPO_DESCUENTO_OPTIONS = [
 
 type TipoRegla = (typeof TIPO_REGLA_OPTIONS)[number]["value"];
 type TipoDescuento = (typeof TIPO_DESCUENTO_OPTIONS)[number]["value"];
+type PromotionActionState = {
+  error: string | null;
+  success: boolean;
+};
 
 export function EditPromotionModal({
   promo,
@@ -61,12 +65,16 @@ export function EditPromotionModal({
   const [metodoPago, setMetodoPago] = useState(
     promo.promociones_metodos_pago?.[0]?.metodo_pago || "",
   );
-  const [categoria, setCategoria] = useState(
-    promo.promociones_categorias?.[0]?.categoria_nombre || "",
-  );
+  const [categoriaId, setCategoriaId] = useState("");
+  const categorias = useActiveCategories();
+  const categoriaInicialNombre =
+    promo.promociones_categorias?.[0]?.categoria_nombre || "";
+  const categoriaSeleccionada =
+    categorias.find((cat) => cat.id === categoriaId) ||
+    categorias.find((cat) => cat.nombre === categoriaInicialNombre);
 
   const [, formAction, isPending] = useActionState(
-    async (previousState: any, formData: FormData) => {
+    async (previousState: PromotionActionState, formData: FormData) => {
       formData.append("id", promo.id);
       formData.append("tipo_regla", tipoRegla);
       formData.append("tipo_descuento", tipoDescuento);
@@ -74,7 +82,10 @@ export function EditPromotionModal({
       if (tipoRegla === "METODO_PAGO")
         formData.append("metodo_pago", metodoPago);
       if (tipoRegla === "CATEGORIA")
-        formData.append("categoria_nombre", categoria);
+        formData.append(
+          "categoria_nombre",
+          categoriaSeleccionada?.nombre || categoriaInicialNombre,
+        );
 
       const result = await editPromotionAction(previousState, formData);
 
@@ -164,21 +175,19 @@ export function EditPromotionModal({
                 <div className="space-y-2 animate-in fade-in slide-in-from-top-2">
                   <Label>¿A qué categoría aplica?</Label>
                   <Select
-                    value={categoria}
-                    onValueChange={setCategoria}
+                    value={categoriaSeleccionada?.id || ""}
+                    onValueChange={setCategoriaId}
                     required
                   >
                     <SelectTrigger className="w-full bg-background border-border">
                       <SelectValue placeholder="Selecciona categoría..." />
                     </SelectTrigger>
                     <SelectContent>
-                      {TIPO_OPTIONS.filter((o) => o.value !== "todos").map(
-                        (opt) => (
-                          <SelectItem key={opt.value} value={opt.value}>
-                            {opt.label}
-                          </SelectItem>
-                        ),
-                      )}
+                      {categorias.map((cat) => (
+                        <SelectItem key={cat.id} value={cat.id}>
+                          {cat.nombre}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>

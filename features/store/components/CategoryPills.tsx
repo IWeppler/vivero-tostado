@@ -1,4 +1,3 @@
-import { TIPO_OPTIONS } from "@/entities/productos/constants";
 import { Button } from "@/shared/ui/button";
 
 interface CategoryPillsProps {
@@ -26,23 +25,23 @@ export function CategoryPills({
         Ver todo
       </Button>
 
-      {TIPO_OPTIONS.filter((option) => option.value !== "todos").map(
-        (option) => {
-          const count = conteosPorCategoria[option.value.toLowerCase()] || 0;
-          if (count === 0) return null;
+      {Object.entries(conteosPorCategoria)
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([categoria, count]) => {
+          if (count === 0 || !categoria) return null;
 
           return (
             <Button
-              key={option.value}
-              variant={tipo === option.value ? "default" : "outline"}
+              key={categoria}
+              variant={tipo === categoria ? "default" : "outline"}
               className={`rounded-full h-12 md:h-9 px-5 text-xs font-semibold shrink-0 shadow-none border-border/60 transition-colors ${
-                tipo === option.value
+                tipo === categoria
                   ? "bg-foreground text-background border-transparent hover:bg-foreground/90"
                   : "bg-background text-muted-foreground hover:bg-muted hover:text-foreground"
               }`}
-              onClick={() => onTipoChange(option.value)}
+              onClick={() => onTipoChange(categoria)}
             >
-              {option.label}{" "}
+              {categoria}{" "}
               <span className="ml-1.5 opacity-60 font-normal">({count})</span>
             </Button>
           );
@@ -51,4 +50,3 @@ export function CategoryPills({
     </div>
   );
 }
-

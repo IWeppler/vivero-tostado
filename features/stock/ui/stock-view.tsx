@@ -16,10 +16,9 @@ import {
   MoreHorizontal,
 } from "lucide-react";
 import { Input } from "@/shared/ui/input";
-import { CrearProductoModal } from "@/features/stock/ui/create-modal";
+import { CrearProductoSheet } from "@/features/stock/ui/create-sheet";
 import { ImportarPedidoModal } from "@/features/purchases/ui/create-purchase-modal";
 import Link from "next/link";
-import { TIPO_OPTIONS } from "@/entities/productos/constants";
 import { UpdatePricesModal } from "./update-prices-modal";
 import {
   DropdownMenu,
@@ -42,15 +41,20 @@ export function StockView({ productos, userRole }: Readonly<StockViewProps>) {
 
   const isAdmin = userRole === "ADMIN";
 
-  // Lógica de filtrado por producto.
+  // Lógica de filtrado por producto adaptada al modelo dinámico
   const productosFiltrados = useMemo(() => {
     return productos.filter((p) => {
       const matchSearch = p.nombre
         ?.toLowerCase()
         .includes(searchQuery.toLowerCase());
+
+      // Intentamos leer la categoría nueva, si no existe usamos el 'tipo' viejo
+      const catNombre = p.categoria?.nombre || p.tipo || "Sin categoría";
+
       const matchCat =
         categoriaActiva === "todos" ||
-        p.tipo?.toLowerCase() === categoriaActiva.toLowerCase();
+        catNombre.toLowerCase() === categoriaActiva.toLowerCase();
+
       return matchSearch && matchCat;
     });
   }, [productos, searchQuery, categoriaActiva]);
@@ -66,11 +70,17 @@ export function StockView({ productos, userRole }: Readonly<StockViewProps>) {
   const conteosPorCategoria = useMemo(() => {
     const conteos: Record<string, number> = {};
     productos.forEach((p) => {
-      const cat = p.tipo?.toLowerCase() || "";
+      const cat = p.categoria?.nombre || p.tipo || "Sin categoría";
       conteos[cat] = (conteos[cat] || 0) + 1;
     });
     return conteos;
   }, [productos]);
+
+  const categoriasDisponibles = useMemo(() => {
+    return Object.keys(conteosPorCategoria).sort((a, b) =>
+      a < b ? -1 : a > b ? 1 : 0,
+    );
+  }, [conteosPorCategoria]);
 
   const limpiarFiltros = () => {
     setSearchQuery("");
@@ -155,14 +165,14 @@ export function StockView({ productos, userRole }: Readonly<StockViewProps>) {
               </DropdownMenu>
 
               <div className="[&_button]:h-10 [&_button]:w-10 sm:[&_button]:w-auto [&_button]:p-0 sm:[&_button]:px-4 [&_button_span]:hidden sm:[&_button_span]:inline [&_button_svg]:mr-0 sm:[&_button_svg]:mr-2 [&_button]:shrink-0">
-                <CrearProductoModal />
+                <CrearProductoSheet />
               </div>
             </div>
           )}
         </div>
       </div>
 
-      {/* 2. BARRA DE CATEGORÍAS (Pills) Y LIMPIEZA */}
+      {/* 2. BARRA DE CATEGORÍAS DINÁMICAS Y LIMPIEZA */}
       <div className="flex items-start gap-2">
         <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide flex-1 px-1 sm:px-0">
           <Button
@@ -179,24 +189,28 @@ export function StockView({ productos, userRole }: Readonly<StockViewProps>) {
           >
             Todas ({productos.length})
           </Button>
-          {TIPO_OPTIONS.filter((opt) => opt.value !== "todos").map((opt) => {
-            const count = conteosPorCategoria[opt.value.toLowerCase()] || 0;
 
+          {categoriasDisponibles.map((catNombre) => {
+            const count = conteosPorCategoria[catNombre];
             return (
               <Button
-                key={opt.value}
-                variant={categoriaActiva === opt.value ? "default" : "outline"}
+                key={catNombre}
+                variant={
+                  categoriaActiva === catNombre.toLowerCase()
+                    ? "default"
+                    : "outline"
+                }
                 className={`rounded-full h-8 px-4 text-xs font-semibold shrink-0 transition-colors shadow-none border-border/60 ${
-                  categoriaActiva === opt.value
+                  categoriaActiva === catNombre.toLowerCase()
                     ? "bg-foreground text-background border-transparent"
                     : "bg-background text-muted-foreground hover:bg-muted hover:text-foreground"
                 }`}
                 onClick={() => {
-                  setCategoriaActiva(opt.value);
+                  setCategoriaActiva(catNombre.toLowerCase());
                   setPaginaActual(1);
                 }}
               >
-                {opt.label} ({count})
+                {catNombre} ({count})
               </Button>
             );
           })}

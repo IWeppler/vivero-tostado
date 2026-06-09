@@ -3,7 +3,6 @@
 import { Fragment, useState, useMemo } from "react";
 import Image from "next/image";
 import { Producto } from "@/entities/productos/types";
-import { TODAS_LAS_VARIANTES } from "@/entities/productos/constants";
 import {
   Table,
   TableBody,
@@ -13,8 +12,6 @@ import {
   TableRow,
 } from "@/shared/ui/table";
 import { Button } from "@/shared/ui/button";
-import { useCartStore } from "@/shared/store/cart-store";
-import { toast } from "sonner";
 import {
   Edit2,
   ImageIcon,
@@ -26,11 +23,9 @@ import {
   ArrowUp,
   ArrowDown,
 } from "lucide-react";
-import { EditarProductoModal } from "./edit-modal";
+import { ProductEditDetailSheet } from "./edit-sheet";
 import { EliminarProductoModal } from "./delete-modal";
-import { TogglePublicado } from "./toggle-shared";
 import { BajaModal } from "@/features/baja/ui/baja-modal";
-import { ProductDetailSheet } from "./product-detail-sheet";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -38,6 +33,13 @@ import {
   DropdownMenuTrigger,
 } from "@/shared/ui/dropdown-menu";
 import { formatearMoneda } from "@/shared/utils/formatters";
+import { useStockCartActions } from "../hooks/use-stock-cart-actions";
+import {
+  capitalizar as capitalizarTipo,
+  getTotalStock,
+  getVariantesVisibles,
+  obtenerPrimeraImagen as getPrimeraImagen,
+} from "../lib/stock-product-utils";
 
 interface StockTableProps {
   productos: Producto[];
@@ -45,6 +47,15 @@ interface StockTableProps {
 }
 
 const capitalizar = (str: string) => {
+  return capitalizarTipo(str);
+};
+
+const obtenerPrimeraImagen = (imagenUrl: unknown): string | null => {
+  return getPrimeraImagen(imagenUrl);
+};
+
+/*
+const capitalizarOld = (str: string) => {
   if (!str) return "";
   return str.charAt(0).toUpperCase() + str.slice(1).replace("_", " ");
 };
@@ -70,11 +81,10 @@ const obtenerPrimeraImagen = (imagenUrl: unknown): string | null => {
 const getTotalStock = (producto: Producto) => {
   return (producto.stock || []).reduce((acc, curr) => acc + curr.cantidad, 0);
 };
+*/
 
 export function StockTable({ productos, userRole }: Readonly<StockTableProps>) {
-  const addItem = useCartStore((state) => state.addItem);
-  const setIsOpen = useCartStore((state) => state.setIsOpen);
-  const isAdmin = userRole === "ADMIN";
+  const { isAdmin, agregarAlCarrito } = useStockCartActions(userRole);
   const [variantesAbiertas, setVariantesAbiertas] = useState<
     Record<string, boolean>
   >({});
@@ -91,22 +101,7 @@ export function StockTable({ productos, userRole }: Readonly<StockTableProps>) {
     variante: string,
     stockMax: number,
   ) => {
-    if (stockMax <= 0 && !isAdmin) {
-      toast.error("No hay stock suficiente.");
-      return;
-    }
-
-    addItem({
-      productoId: producto.id,
-      nombre: producto.nombre,
-      tipo: producto.tipo,
-      variante,
-      cantidad: 1,
-      precio: producto.precio,
-      imagenUrl: obtenerPrimeraImagen(producto.imagen_url),
-      stockMaximo: stockMax,
-    });
-    setIsOpen(true);
+    agregarAlCarrito(producto, variante, stockMax);
   };
 
   // --- LÓGICA DE ORDENAMIENTO ---
@@ -221,26 +216,8 @@ export function StockTable({ productos, userRole }: Readonly<StockTableProps>) {
             {productosProcesados.map((producto) => {
               const primeraImagen = obtenerPrimeraImagen(producto.imagen_url);
 
-              const stockOrdenado = producto.stock
-                ? [...producto.stock].sort((a, b) => {
-                    const indexA = TODAS_LAS_VARIANTES.indexOf(
-                      a.variante.toUpperCase(),
-                    );
-                    const indexB = TODAS_LAS_VARIANTES.indexOf(
-                      b.variante.toUpperCase(),
-                    );
-                    return (
-                      (indexA === -1 ? 99 : indexA) -
-                      (indexB === -1 ? 99 : indexB)
-                    );
-                  })
-                : [];
-
               const totalUnidades = getTotalStock(producto);
-
-              const variantesVisibles = isAdmin
-                ? stockOrdenado
-                : stockOrdenado.filter((v) => v.cantidad > 0);
+              const variantesVisibles = getVariantesVisibles(producto, isAdmin);
 
               const sinStock = totalUnidades <= 0;
               const variantesEstanAbiertas = variantesAbiertas[producto.id];
@@ -255,9 +232,8 @@ export function StockTable({ productos, userRole }: Readonly<StockTableProps>) {
                     }`}
                   >
                     <TableCell className="pl-1 sm:pl-4 py-2.5">
-                      <ProductDetailSheet
+                      <ProductEditDetailSheet
                         producto={producto}
-                        userRole={userRole}
                       >
                         <button className="w-10 h-10 sm:w-11 sm:h-11 rounded-lg bg-muted/60 flex items-center justify-center overflow-hidden border border-border/80 cursor-pointer hover:opacity-85 transition-opacity shrink-0 shadow-none">
                           {primeraImagen ? (
@@ -273,19 +249,16 @@ export function StockTable({ productos, userRole }: Readonly<StockTableProps>) {
                             <ImageIcon className="w-4.5 h-4.5 text-muted-foreground/60" />
                           )}
                         </button>
-                      </ProductDetailSheet>
+                      </ProductEditDetailSheet>
                     </TableCell>
 
                     <TableCell className="py-2.5 px-0 mx-0">
                       <div className="flex flex-col">
-                        <ProductDetailSheet
-                          producto={producto}
-                          userRole={userRole}
-                        >
+                        <ProductEditDetailSheet producto={producto}>
                           <button className="font-semibold text-foreground text-sm sm:text-base hover:text-primary transition-colors text-left truncate max-w-30 sm:max-w-55 cursor-pointer">
                             {producto.nombre}
                           </button>
-                        </ProductDetailSheet>
+                        </ProductEditDetailSheet>
                         <div className="flex items-center gap-0.5 md:gap-1.5 mt-0.5 text-xs text-muted-foreground">
                           <span className="capitalize">
                             {capitalizar(producto.tipo)}
@@ -396,7 +369,7 @@ export function StockTable({ productos, userRole }: Readonly<StockTableProps>) {
                               className="w-52 p-1.5 rounded-xl border-border/60 shadow-md bg-card z-40"
                             >
                               <div className="flex flex-col gap-0.5">
-                                <div className="flex items-center justify-between px-2.5 py-2 text-sm hover:bg-muted rounded-lg transition-colors">
+                                {/* <div className="flex items-center justify-between px-2.5 py-2 text-sm hover:bg-muted rounded-lg transition-colors">
                                   <span className="font-semibold text-muted-foreground text-xs uppercase tracking-wider">
                                     Catálogo web:
                                   </span>
@@ -407,9 +380,9 @@ export function StockTable({ productos, userRole }: Readonly<StockTableProps>) {
                                     }
                                   />
                                 </div>
-                                <DropdownMenuSeparator className="my-1 bg-border/60" />
+                                <DropdownMenuSeparator className="my-1 bg-border/60" /> */}
 
-                                <EditarProductoModal producto={producto}>
+                                <ProductEditDetailSheet producto={producto}>
                                   <Button
                                     variant="ghost"
                                     className="w-full justify-start h-9 px-2 text-sm font-medium cursor-pointer rounded-lg hover:bg-muted transition-colors"
@@ -417,7 +390,7 @@ export function StockTable({ productos, userRole }: Readonly<StockTableProps>) {
                                     <Edit2 className="w-4 h-4 mr-2.5 text-emerald-600" />
                                     Editar producto
                                   </Button>
-                                </EditarProductoModal>
+                                </ProductEditDetailSheet>
 
                                 <BajaModal producto={producto}>
                                   <Button

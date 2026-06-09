@@ -17,6 +17,8 @@ export async function getStockAction(): Promise<{
       .select(
         `
         *,
+        categoria:categorias(id, nombre, slug),
+        producto_variantes(*),
         stock:productos_stock(id, variante, cantidad)
         `,
       )

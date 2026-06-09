@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 
-import { EditarProductoModal } from "./edit-modal";
+import { ProductEditDetailSheet } from "./edit-sheet";
 import { EliminarProductoModal } from "./delete-modal";
 import { useCartStore } from "@/shared/store/cart-store";
 import { Button } from "@/shared/ui/button";
@@ -228,7 +228,7 @@ export function ProductDetailSheet({
               {isAdmin && (
                 <div className="grid grid-cols-2 gap-3 mt-2">
                   <div className="flex justify-center w-full [&>button]:w-full">
-                    <EditarProductoModal producto={producto} />
+                    <ProductEditDetailSheet producto={producto} />
                   </div>
                   <div className="flex justify-center w-full [&>button]:w-full">
                     <EliminarProductoModal

@@ -11,24 +11,22 @@ export async function editarProductoAction(
 ) {
   const id = formData.get("id") as string;
   const nombre = formData.get("nombre") as string;
-
-  const categoriaForm = formData.get("categoria") as string;
-
+  const categoria_id = formData.get("categoria_id") as string;
+  const descripcion = formData.get("descripcion") as string;
   const precio = Number.parseFloat(formData.get("precio") as string);
   const precio_costo = Number.parseFloat(
     formData.get("precio_costo") as string,
   );
-  const descripcion = formData.get("descripcion") as string;
+  const publicado = formData.get("publicado") === "true";
+
+  const tieneVariantes = formData.get("tieneVariantes") === "true";
+  const stockBase = Number.parseInt(
+    (formData.get("stockBase") as string) || "0",
+  );
 
   const archivos = formData.getAll("imagenes") as File[];
 
-  if (
-    !id ||
-    !nombre ||
-    !categoriaForm ||
-    Number.isNaN(precio) ||
-    Number.isNaN(precio_costo)
-  ) {
+  if (!id || !nombre || Number.isNaN(precio) || Number.isNaN(precio_costo)) {
     return {
       error: "Por favor completa todos los campos obligatorios.",
       success: false,
@@ -38,8 +36,8 @@ export async function editarProductoAction(
   const cookieStore = await cookies();
   const supabase = createClient(cookieStore);
 
+  // 1. Subir imágenes si hay nuevas
   let imagen_url: string | undefined = undefined;
-
   const validFiles = archivos.filter((f) => f.size > 0);
   if (validFiles.length > 0) {
     const urls = [];
@@ -58,26 +56,21 @@ export async function editarProductoAction(
         urls.push(publicUrl);
       }
     }
-
     if (urls.length > 0) {
       imagen_url = JSON.stringify(urls);
     }
   }
 
-  let slug = slugify(`${nombre}-${categoriaForm}`);
-  const sufijo = Math.random().toString(36).substring(2, 6);
-  slug = `${slug}-${sufijo}`;
-
+  // 2. Actualizar Cabecera de Producto
   const updateData: any = {
     nombre,
-    tipo: categoriaForm,
+    categoria_id: categoria_id || null,
     precio,
     precio_costo,
-    slug,
     descripcion,
+    publicado,
   };
 
-  if (descripcion) updateData.descripcion = descripcion;
   if (imagen_url !== undefined) updateData.imagen_url = imagen_url;
 
   const { error: errorProducto } = await supabase
@@ -88,37 +81,153 @@ export async function editarProductoAction(
   if (errorProducto) {
     console.error("Error BD:", errorProducto);
     return {
-      error: "Hubo un error al actualizar el producto en la base de datos.",
+      error: "Hubo un error al actualizar el producto base.",
       success: false,
     };
   }
 
-  const stockParaUpsert: any[] = [];
+  // 3. Procesar Variantes Editadas
+  // Estrategia: Borramos todo lo viejo de PV y PVV y reinsertamos lo que mande el form.
+  // Nota: En un sistema gigante esto podría romper históricos si se borran IDs.
+  // Para el MVP y simplificar, asumimos que el usuario edita la grilla final.
 
-  for (const [key, value] of formData.entries()) {
-    if (key.startsWith("stock_")) {
-      const variante = key.replace("stock_", "");
-      const cantidad = Number.parseInt(value as string, 10);
+  if (!tieneVariantes) {
+    // Borramos todas las variantes dinámicas que tuviera antes
+    await supabase.from("producto_variantes").delete().eq("producto_id", id);
 
-      stockParaUpsert.push({
-        producto_id: id,
-        variante: variante,
-        cantidad: Number.isNaN(cantidad) ? 0 : cantidad,
-      });
-    }
-  }
+    // Insertamos/Upsertamos variante Unica
+    await supabase.from("producto_variantes").insert({
+      producto_id: id,
+      nombre_display: "Único",
+      stock: stockBase,
+    });
 
-  if (stockParaUpsert.length > 0) {
-    const { error: errorStock } = await supabase
+    // Legacy support
+    await supabase.from("productos_stock").delete().eq("producto_id", id);
+    await supabase
       .from("productos_stock")
-      .upsert(stockParaUpsert, { onConflict: "producto_id, variante" });
+      .insert({ producto_id: id, variante: "Único", cantidad: stockBase });
+  } else {
+    // Es producto con opciones dinámicas
+    const opcionesStr = formData.get("opciones") as string;
+    const variantesStr = formData.get("variantes") as string;
 
-    if (errorStock) {
-      console.error("Error Stock BD:", errorStock);
-      return {
-        error: "Producto actualizado, pero hubo un error con el stock.",
-        success: false,
-      };
+    if (opcionesStr && variantesStr) {
+      const opciones = JSON.parse(opcionesStr) as {
+        nombre: string;
+        valores: string[];
+      }[];
+      const variantes = JSON.parse(variantesStr) as any[];
+
+      const attrMap: Record<string, string> = {};
+      const valMap: Record<string, Record<string, string>> = {};
+
+      // A. Crear o reciclar Opciones
+      for (const op of opciones) {
+        const slugAttr = slugify(op.nombre);
+        let { data: attr } = await supabase
+          .from("atributos")
+          .select("id")
+          .eq("slug", slugAttr)
+          .single();
+        if (!attr) {
+          const { data: newAttr } = await supabase
+            .from("atributos")
+            .insert({
+              nombre: op.nombre,
+              slug: slugAttr,
+              tipo: "TEXT",
+              activo: true,
+            })
+            .select("id")
+            .single();
+          attr = newAttr;
+        }
+        if (attr) {
+          attrMap[op.nombre] = attr.id;
+          valMap[op.nombre] = {};
+          for (const v of op.valores) {
+            const slugVal = slugify(v);
+            let { data: valData } = await supabase
+              .from("atributo_valores")
+              .select("id")
+              .eq("atributo_id", attr.id)
+              .eq("slug", slugVal)
+              .single();
+            if (!valData) {
+              const { data: newVal } = await supabase
+                .from("atributo_valores")
+                .insert({
+                  atributo_id: attr.id,
+                  valor: v,
+                  slug: slugVal,
+                  activo: true,
+                })
+                .select("id")
+                .single();
+              valData = newVal;
+            }
+            if (valData) valMap[op.nombre][v] = valData.id;
+          }
+        }
+      }
+
+      // Borramos variantes viejas para refrescar la grilla limpia
+      await supabase.from("producto_variantes").delete().eq("producto_id", id);
+      await supabase.from("productos_stock").delete().eq("producto_id", id); // legacy
+
+      // B. Guardar las Variantes nuevas
+      for (const v of variantes) {
+        const nombreDisplay = opciones
+          .map((op) => v.valores[op.nombre])
+          .filter(Boolean)
+          .join(" / ");
+
+        const vPrecio = v.precio ? Number.parseFloat(v.precio) : null;
+        const vCosto = v.precio_costo
+          ? Number.parseFloat(v.precio_costo)
+          : null;
+        const vStock = Number.parseInt(v.stock || "0");
+
+        const { data: varData } = await supabase
+          .from("producto_variantes")
+          .insert({
+            producto_id: id,
+            nombre_display: nombreDisplay,
+            precio: vPrecio,
+            costo: vCosto,
+            stock: vStock,
+            sku: v.sku || null,
+          })
+          .select("id")
+          .single();
+
+        if (varData) {
+          const varValores = [];
+          for (const [opNombre, opValor] of Object.entries(v.valores)) {
+            const aId = attrMap[opNombre];
+            const avId = valMap[opNombre]?.[opValor as string];
+            if (aId && avId) {
+              varValores.push({
+                variante_id: varData.id,
+                atributo_id: aId,
+                atributo_valor_id: avId,
+              });
+            }
+          }
+          if (varValores.length > 0)
+            await supabase.from("producto_variante_valores").insert(varValores);
+        }
+
+        // Legacy support
+        await supabase
+          .from("productos_stock")
+          .insert({
+            producto_id: id,
+            variante: nombreDisplay,
+            cantidad: vStock,
+          });
+      }
     }
   }
 

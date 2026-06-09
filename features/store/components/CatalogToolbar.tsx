@@ -1,6 +1,5 @@
 "use client";
 
-import { TODAS_LAS_VARIANTES } from "@/entities/productos/constants";
 import { Button } from "@/shared/ui/button";
 import {
   Dialog,
@@ -31,6 +30,7 @@ interface CatalogToolbarProps {
   searchQuery: string;
   hayFiltrosActivos: boolean;
   ordenOptions: OrdenOption[];
+  variantesDisponibles: string[];
   onVarianteChange: (value: string) => void;
   onOrdenChange: (value: string) => void;
   onLimpiarFiltros: () => void;
@@ -42,6 +42,7 @@ export function CatalogToolbar({
   searchQuery,
   hayFiltrosActivos,
   ordenOptions,
+  variantesDisponibles,
   onVarianteChange,
   onOrdenChange,
   onLimpiarFiltros,
@@ -103,7 +104,8 @@ export function CatalogToolbar({
                     >
                       Todos los talles
                     </SelectItem>
-                    {TODAS_LAS_VARIANTES.map((option) => (
+                    {/* 🚀 MAPEO DINÁMICO */}
+                    {variantesDisponibles.map((option) => (
                       <SelectItem
                         key={option}
                         value={option}
@@ -177,7 +179,8 @@ export function CatalogToolbar({
               >
                 Cualquier Talle
               </SelectItem>
-              {TODAS_LAS_VARIANTES.map((option) => (
+              {/* 🚀 MAPEO DINÁMICO */}
+              {variantesDisponibles.map((option) => (
                 <SelectItem
                   key={option}
                   value={option}
@@ -225,4 +228,3 @@ export function CatalogToolbar({
     </>
   );
 }
-

@@ -1,261 +1,327 @@
 "use client";
 
-import { useState, useTransition } from "react";
-import {
-  FolderTree,
-  CheckCircle2,
-  XCircle,
-  MoreVertical,
-  Edit2,
-  Trash2,
-  Power,
-  Loader2,
-  FileSliders,
-} from "lucide-react";
+import { useState, useRef } from "react";
 import { Button } from "@/shared/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/shared/ui/dropdown-menu";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/shared/ui/alert-dialog";
+import { Input } from "@/shared/ui/input";
 import { toast } from "sonner";
 import {
-  toggleCategoriaAction,
-  deleteCategoriaAction,
-} from "../actions/manage-categories";
-import { CreateCategoriaModal } from "./create-categories-modal";
-import { EditCategoriaModal } from "./edit-categories-modal";
+  GripVertical,
+  Eye,
+  EyeOff,
+  Trash2,
+  FolderTree,
+  Loader2,
+  Indent,
+  Outdent,
+  CornerDownRight,
+} from "lucide-react";
+import { bulkSaveCategoriasAction } from "../actions/manage-categories";
 
 export interface Categoria {
   id: string;
   nombre: string;
-  slug: string;
-  descripcion?: string;
+  slug?: string;
+  descripcion?: string | null;
   activa: boolean;
   orden: number;
+  parent_id?: string | null;
 }
+
+// 2. Extendemos para manejar el estado local temporal
+type LocalCategory = Categoria & {
+  isNew?: boolean;
+  tempId?: string;
+  isDeleted?: boolean;
+};
+
+const generateId = () => {
+  if (typeof crypto !== "undefined" && crypto.randomUUID)
+    return crypto.randomUUID();
+  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, function (c) {
+    const r = (Math.random() * 16) | 0,
+      v = c === "x" ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
+};
 
 export function CategoriesPanel({
   categorias,
 }: Readonly<{ categorias: Categoria[] }>) {
-  const [editingCat, setEditingCat] = useState<Categoria | null>(null);
-  const [deletingCat, setDeletingCat] = useState<Categoria | null>(null);
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [, startTransition] = useTransition();
+  const [isSaving, setIsSaving] = useState(false);
+  const [hasChanges, setHasChanges] = useState(false);
+  const [deletedIds, setDeletedIds] = useState<string[]>([]);
+  const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
-  const handleToggle = (cat: Categoria) => {
-    startTransition(async () => {
-      const res = await toggleCategoriaAction(cat.id, cat.activa);
-      if (res.success) {
-        toast.info(`Categoría ${cat.activa ? "desactivada" : "activada"}`);
-      } else {
-        toast.error(res.error || "Ocurrió un error.");
-      }
-    });
+  // Estado local para manejar la UI de forma optimista
+  const [cats, setCats] = useState<LocalCategory[]>(() => [
+    ...categorias,
+    {
+      id: "",
+      nombre: "",
+      activa: true,
+      isNew: true,
+      tempId: "new-initial",
+      orden: categorias.length,
+    },
+  ]);
+
+  const tempIdCounterRef = useRef(0);
+
+  const createTempId = () => {
+    tempIdCounterRef.current += 1;
+    return `new-${tempIdCounterRef.current}`;
   };
 
-  const handleDelete = async () => {
-    if (!deletingCat) return;
-    setIsDeleting(true);
-    const res = await deleteCategoriaAction(deletingCat.id);
-    setIsDeleting(false);
+  const handleNameChange = (index: number, newName: string) => {
+    const newCats = [...cats];
+    newCats[index].nombre = newName;
+
+    if (index === newCats.length - 1 && newName.trim() !== "") {
+      newCats.push({
+        id: generateId(),
+        nombre: "",
+        activa: true,
+        isNew: true,
+        orden: newCats.length,
+        parent_id: newCats[index].parent_id,
+      });
+    }
+
+    setCats(newCats);
+    setHasChanges(true);
+  };
+
+  const handleIndent = (index: number) => {
+    if (index === 0) return; // La primera no puede ser subcategoría
+
+    const newCats = [...cats];
+    const prev = newCats[index - 1];
+
+    // Su padre será el ítem anterior (o el padre del ítem anterior si este ya era subcategoría)
+    const newParentId = prev.parent_id ? prev.parent_id : prev.id;
+    newCats[index].parent_id = newParentId;
+
+    setCats(newCats);
+    setHasChanges(true);
+  };
+
+  const handleOutdent = (index: number) => {
+    const newCats = [...cats];
+    newCats[index].parent_id = null; // Vuelve a ser categoría principal
+    setCats(newCats);
+    setHasChanges(true);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent, index: number) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      if (index + 1 < inputRefs.current.length) {
+        inputRefs.current[index + 1]?.focus();
+      }
+    }
+
+    if (e.key === "Tab") {
+      const isSub = !!cats[index].parent_id;
+      if (e.shiftKey && isSub) {
+        e.preventDefault();
+        handleOutdent(index);
+      } else if (!e.shiftKey && !isSub && index > 0) {
+        e.preventDefault();
+        handleIndent(index);
+      }
+    }
+  };
+
+  const toggleVisibility = (index: number) => {
+    const newCats = [...cats];
+    newCats[index].activa = !newCats[index].activa;
+    setCats(newCats);
+    setHasChanges(true);
+  };
+
+  const handleDelete = (index: number) => {
+    const catToRemove = cats[index];
+    if (!catToRemove.isNew && catToRemove.id) {
+      setDeletedIds([...deletedIds, catToRemove.id]);
+    }
+    const newCats = cats.filter((_, i) => i !== index);
+
+    // Siempre debe quedar al menos una fila vacía al final
+    if (
+      newCats.length === 0 ||
+      newCats[newCats.length - 1].nombre.trim() !== ""
+    ) {
+      newCats.push({
+        id: "",
+        nombre: "",
+        activa: true,
+        isNew: true,
+        tempId: createTempId(),
+        orden: newCats.length,
+      });
+    }
+
+    setCats(newCats);
+    setHasChanges(true);
+  };
+
+  const handleSave = async () => {
+    setIsSaving(true);
+
+    // Filtramos para enviar solo las que tienen nombre y no están marcadas para eliminar
+    const toUpsert = cats.filter((c) => c.nombre.trim() !== "");
+
+    const res = await bulkSaveCategoriasAction(toUpsert, deletedIds);
+
+    setIsSaving(false);
 
     if (res.success) {
-      toast.success("Categoría eliminada.");
-      setDeletingCat(null);
+      toast.success("Categorías actualizadas correctamente.");
+      setHasChanges(false);
+      setDeletedIds([]);
     } else {
-      toast.error(res.error || "No se pudo eliminar.");
-      setDeletingCat(null);
+      toast.error(res.error || "Ocurrió un error al guardar.");
     }
   };
 
   return (
     <div className="space-y-6 animate-in fade-in-50 duration-300">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-border pb-4">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 border-b border-border pb-4">
         <div>
-          <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
-            <FileSliders className="w-5 h-5 text-primary" /> Catálogo Online
-          </h2>
+          <div className="flex items-center gap-2 mb-1">
+            <FolderTree className="w-6 h-6 text-primary" />
+            <h2 className="text-2xl font-bold text-foreground">Categorías</h2>
+          </div>
           <p className="text-sm text-muted-foreground mt-1">
-            Administra las categorías para organizar tu catálogo de productos.
+            Para organizar tus productos, creá categorías que aparecerán en el
+            menú de tu tienda y POS.
           </p>
         </div>
-        <CreateCategoriaModal />
+
+        <div className="flex flex-col items-end gap-2 w-full sm:w-auto">
+          <Button
+            onClick={handleSave}
+            disabled={!hasChanges || isSaving}
+            className="w-full sm:w-auto bg-primary hover:bg-primary/90 text-white font-semibold rounded-lg"
+          >
+            {isSaving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+            Guardar Cambios
+          </Button>
+        </div>
       </div>
 
-      {categorias.length === 0 ? (
-        <div className="bg-card text-card-foreground p-12 rounded-2xl border border-border flex flex-col items-center justify-center text-center">
-          <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4">
-            <FolderTree className="w-8 h-8 text-muted-foreground/50" />
-          </div>
-          <h3 className="text-lg font-bold">No hay categorías configuradas</h3>
-          <p className="text-muted-foreground mt-2 max-w-sm text-sm">
-            Agrega tu primera categoría (ej: Interior, Macetas) para comenzar a
-            clasificar tus productos dinámicamente.
-          </p>
-        </div>
-      ) : (
-        <div className="bg-card rounded-2xl border border-border overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm text-left">
-              <thead className="bg-muted/40 text-muted-foreground text-[10px] uppercase font-bold tracking-widest border-b border-border/50">
-                <tr>
-                  <th className="px-5 py-4 w-1/3">Nombre</th>
-                  <th className="px-5 py-4">Descripción</th>
-                  <th className="px-5 py-4 text-center">Estado</th>
-                  <th className="px-5 py-4 text-right">Acciones</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border/60">
-                {categorias.map((cat) => (
-                  <tr
-                    key={cat.id}
-                    className={`transition-colors group ${
-                      !cat.activa
-                        ? "bg-muted/10 opacity-70"
-                        : "hover:bg-muted/30"
-                    }`}
-                  >
-                    <td className="px-5 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="p-2 rounded-lg border bg-background text-foreground">
-                          <FolderTree className="w-4 h-4 text-muted-foreground" />
-                        </div>
-                        <div className="flex flex-col">
-                          <span className="font-bold text-foreground">
-                            {cat.nombre}
-                          </span>
-                          <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider mt-0.5">
-                            /{cat.slug}
-                          </span>
-                        </div>
-                      </div>
-                    </td>
+      <div className="bg-white rounded-xl border border-border overflow-hidden">
+        <div className="flex flex-col divide-y divide-border/60">
+          {cats.map((cat, idx) => {
+            const isLastEmptyRow = idx === cats.length - 1 && cat.nombre === "";
+            const isSubcategoria = !!cat.parent_id;
 
-                    <td className="px-5 py-4 text-muted-foreground">
-                      <span className="line-clamp-2 max-w-xs">
-                        {cat.descripcion || (
-                          <span className="italic opacity-50">
-                            Sin descripción
-                          </span>
-                        )}
-                      </span>
-                    </td>
+            return (
+              <div
+                key={cat.id}
+                className={`flex items-center gap-3 p-3 transition-colors ${isLastEmptyRow ? "bg-muted/10" : "hover:bg-muted/30"}`}
+              >
+                {/* Drag Handle (Visual) */}
+                <div
+                  className={`flex items-center ${isSubcategoria ? "ml-8" : ""}`}
+                >
+                  <div className="cursor-grab text-muted-foreground/30 hover:text-muted-foreground px-1">
+                    <GripVertical className="w-5 h-5" />
+                  </div>
+                  {isSubcategoria && (
+                    <CornerDownRight className="w-4 h-4 text-muted-foreground/50 mr-2" />
+                  )}
+                </div>
 
-                    <td className="px-5 py-4 text-center">
-                      {cat.activa ? (
-                        <div className="flex items-center justify-center gap-1.5 text-emerald-600 dark:text-emerald-400 font-semibold text-xs">
-                          <CheckCircle2 className="w-4 h-4" /> Activa
-                        </div>
-                      ) : (
-                        <div className="flex items-center justify-center gap-1.5 text-muted-foreground font-semibold text-xs">
-                          <XCircle className="w-4 h-4" /> Inactiva
-                        </div>
-                      )}
-                    </td>
+                {/* Input Dinámico */}
+                <div className="flex-1 relative">
+                  <Input
+                    ref={(el) => {
+                      inputRefs.current[idx] = el;
+                    }}
+                    value={cat.nombre}
+                    onChange={(e) => handleNameChange(idx, e.target.value)}
+                    onKeyDown={(e) => handleKeyDown(e, idx)}
+                    placeholder={
+                      isLastEmptyRow && isSubcategoria
+                        ? "+ Agregar subcategoría..."
+                        : isLastEmptyRow
+                          ? "+ Agregar categoría..."
+                          : "Nombre de la categoría"
+                    }
+                    className={`h-11 shadow-none font-medium transition-all ${
+                      isLastEmptyRow
+                        ? "border-dashed border-border bg-transparent hover:border-primary/50 focus:border-solid focus:bg-background"
+                        : "border-border/50 bg-background focus:ring-2 focus:ring-[#0051ff]/20 focus:border-[#0051ff]"
+                    } ${!cat.activa ? "text-muted-foreground line-through decoration-muted-foreground/50" : "text-foreground"}`}
+                  />
+                </div>
 
-                    <td className="px-5 py-4 text-right">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-muted-foreground hover:text-foreground cursor-pointer rounded-md hover:bg-muted"
-                          >
-                            <MoreVertical className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent
-                          align="end"
-                          className="w-48 p-1.5 rounded-xl border-border/60 bg-card"
+                {/* Acciones de Fila */}
+                {!isLastEmptyRow && (
+                  <div className="flex items-center gap-1 shrink-0">
+                    {/* Botones de Indentar/Desindentar (Soporte visual además del teclado) */}
+                    {!isSubcategoria &&
+                      idx > 0 &&
+                      !cats[idx - 1].nombre.trim().length === false && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleIndent(idx)}
+                          className="h-9 w-9 rounded-md text-muted-foreground hover:text-primary hover:bg-primary/10 hidden sm:flex"
+                          title="Convertir en subcategoría (Tab)"
                         >
-                          <DropdownMenuItem
-                            onClick={() => handleToggle(cat)}
-                            className="cursor-pointer text-sm font-medium rounded-lg h-9"
-                          >
-                            <Power className="w-4 h-4 mr-2" />
-                            {cat.activa ? "Desactivar" : "Activar"}
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => setEditingCat(cat)}
-                            className="cursor-pointer text-sm font-medium rounded-lg h-9"
-                          >
-                            <Edit2 className="w-4 h-4 mr-2 text-blue-600" />
-                            Editar
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator className="my-1 bg-border/60" />
-                          <DropdownMenuItem
-                            onClick={() => setDeletingCat(cat)}
-                            className="cursor-pointer text-sm font-medium text-destructive focus:text-destructive focus:bg-destructive/10 rounded-lg h-9"
-                          >
-                            <Trash2 className="w-4 h-4 mr-2" />
-                            Eliminar
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                          <Indent className="w-4 h-4" />
+                        </Button>
+                      )}
+                    {isSubcategoria && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleOutdent(idx)}
+                        className="h-9 w-9 rounded-md text-muted-foreground hover:text-primary hover:bg-primary/10 hidden sm:flex"
+                        title="Convertir en categoría principal (Shift + Tab)"
+                      >
+                        <Outdent className="w-4 h-4" />
+                      </Button>
+                    )}
+
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => toggleVisibility(idx)}
+                      className={`h-9 w-9 rounded-md transition-colors ${!cat.activa ? "text-amber-600 hover:text-amber-700 hover:bg-amber-50" : "text-muted-foreground hover:text-foreground hover:bg-muted"}`}
+                      title={
+                        cat.activa ? "Ocultar en tienda" : "Mostrar en tienda"
+                      }
+                    >
+                      {cat.activa ? (
+                        <Eye className="w-4 h-4" />
+                      ) : (
+                        <EyeOff className="w-4 h-4" />
+                      )}
+                    </Button>
+
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleDelete(idx)}
+                      className="h-9 w-9 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                      title="Eliminar"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
-      )}
-
-      {/* MODALES INDEPENDIENTES */}
-      {editingCat && (
-        <EditCategoriaModal
-          categoria={editingCat}
-          open={!!editingCat}
-          onOpenChange={(open) => !open && setEditingCat(null)}
-        />
-      )}
-
-      {/* MODAL DE ELIMINAR */}
-      <AlertDialog
-        open={!!deletingCat}
-        onOpenChange={(open) => !open && setDeletingCat(null)}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>
-              ¿Eliminar categoría &quot;{deletingCat?.nombre}&quot;?
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              Esta acción no se puede deshacer. Sólo podrás eliminarla si no
-              tiene productos asociados en tu catálogo.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={isDeleting}>
-              Cancelar
-            </AlertDialogCancel>
-            <AlertDialogAction
-              onClick={(e) => {
-                e.preventDefault();
-                handleDelete();
-              }}
-              disabled={isDeleting}
-              className="bg-rose-600 hover:bg-rose-700 text-white"
-            >
-              {isDeleting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-              Sí, eliminar
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      </div>
     </div>
   );
 }

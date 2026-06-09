@@ -12,7 +12,7 @@ export type OperacionPrecio =
 export type CampoObjetivo = "PRECIO" | "COSTO" | "AMBOS";
 export type TipoRedondeo = "SIN_REDONDEO" | "10" | "50" | "100" | "90" | "99";
 
-interface PrevisualizacionItem {
+export interface PrevisualizacionItem {
   producto_id: string;
   nombre: string;
   categoria: string;
@@ -69,10 +69,12 @@ export async function simularPreciosAction(
 
   let query = supabase
     .from("productos")
-    .select("id, nombre, tipo, precio, precio_costo");
+    .select(
+      "id, nombre, tipo, categoria_id, precio, precio_costo, categoria:categorias(nombre)",
+    );
 
   if (alcance === "CATEGORIA" && categoriaFiltro !== "todos") {
-    query = query.ilike("tipo", categoriaFiltro);
+    query = query.eq("categoria_id", categoriaFiltro);
   }
 
   const { data: productos, error } = await query;
@@ -104,10 +106,14 @@ export async function simularPreciosAction(
       nuevoPrecio = aplicarRedondeo(nuevoPrecio, redondeo);
     }
 
+    const categoriaRelacion = Array.isArray(prod.categoria)
+      ? prod.categoria[0]
+      : prod.categoria;
+
     return {
       producto_id: prod.id,
       nombre: prod.nombre || "Sin nombre",
-      categoria: prod.tipo || "Sin categoría",
+      categoria: categoriaRelacion?.nombre || prod.tipo || "Sin categoría",
       costo_anterior: costoBase,
       costo_nuevo: nuevoCosto,
       diferencia_costo: nuevoCosto - costoBase,
@@ -193,11 +199,12 @@ export async function aplicarPreciosAction(
 
     revalidatePath("/stock");
     return { success: true };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error en aplicarPreciosAction:", error);
+    const message = error instanceof Error ? error.message : null;
     return {
       error:
-        error.message ||
+        message ||
         "Ocurrió un error inesperado al actualizar los precios.",
     };
   }
